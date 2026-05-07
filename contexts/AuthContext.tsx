@@ -31,42 +31,76 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     async function init() {
-      const { data: { session } } = await supabase.auth.getSession()
-      
-      if (!session) {
-        setLoading(false)
-        if (!PUBLIC_ROUTES.includes(pathname)) {
-          router.push('/login')
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+
+        if (!session) {
+          setLoading(false)
+          if (!PUBLIC_ROUTES.includes(pathname)) router.push('/login')
+          return
         }
-        return
-      }
 
-      const { data: perfilData } = await supabase
-        .from('perfis')
-        .select('*')
-        .eq('id', session.user.id)
-        .single()
+        const { data: perfilData, error } = await supabase
+          .from('perfis')
+          .select('*')
+          .eq('id', session.user.id)
+          .single()
 
-      if (perfilData) {
+        if (error || !perfilData) {
+          setLoading(false)
+          if (!PUBLIC_ROUTES.includes(pathname)) router.push('/login')
+          return
+        }
+
         setPerfil(perfilData)
-        // Redireciona baseado no perfil apenas se estiver numa rota pública
+
+        // Redireciona só se estiver em rota pública
         if (PUBLIC_ROUTES.includes(pathname)) {
-          if (perfilData.status === 'pendente') router.push('/aguardando')
-          else if (perfilData.papel === 'coordenador') router.push('/')
-          else if (perfilData.papel === 'mentor') router.push('/mentor')
-          else if (perfilData.papel === 'aluno') router.push('/meu-perfil')
+          if (perfilData.status === 'pendente') {
+            router.push('/aguardando')
+          } else if (perfilData.papel === 'coordenador') {
+            router.push('/')
+          } else if (perfilData.papel === 'mentor') {
+            router.push('/mentor')
+          } else if (perfilData.papel === 'aluno') {
+            router.push('/meu-perfil')
+          }
         }
-      } else {
-        // Tem sessão mas não tem perfil — vai para login
-        await supabase.auth.signOut()
-        router.push('/login')
+      } catch (e) {
+        console.error('Auth error:', e)
+      } finally {
+        setLoading(false)
       }
-      
-      setLoading(false)
     }
 
     init()
-  }, []) // Roda só uma vez ao montar
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (event === 'SIGNED_OUT') {
+          setPerfil(null)
+          router.push('/login')
+        } else if (event === 'SIGNED_IN' && session) {
+          const { data } = await supabase
+            .from('perfis')
+            .select('*')
+            .eq('id', session.user.id)
+            .single()
+          if (data) {
+            setPerfil(data)
+            if (PUBLIC_ROUTES.includes(pathname)) {
+              if (data.papel === 'coordenador') router.push('/')
+              else if (data.papel === 'mentor') router.push('/mentor')
+              else if (data.papel === 'aluno') router.push('/meu-perfil')
+              else router.push('/aguardando')
+            }
+          }
+        }
+      }
+    )
+
+    return () => subscription.unsubscribe()
+  }, [pathname])
 
   async function signOut() {
     await supabase.auth.signOut()

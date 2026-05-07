@@ -23,10 +23,22 @@ const tabsAluno = [
 
 export default function Nav() {
   const path = usePathname()
-  const { perfil, signOut } = useAuth()
+  const { perfil, signOut, loading } = useAuth()
 
-  const tabs = perfil?.papel === 'coordenador' ? tabsCoordenador
-    : perfil?.papel === 'mentor' ? tabsMentor
+  // Enquanto carrega, mostra barra mínima
+  if (loading) {
+    return (
+      <nav style={{
+        position: 'fixed', bottom: 0, left: 0, right: 0,
+        background: 'white', borderTop: '0.5px solid rgba(0,0,0,0.08)',
+        height: 56, zIndex: 100,
+      }} />
+    )
+  }
+
+  const papel = perfil?.papel
+  const tabs = papel === 'coordenador' ? tabsCoordenador
+    : papel === 'mentor' ? tabsMentor
     : tabsAluno
 
   return (
