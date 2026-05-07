@@ -23,7 +23,7 @@
 
 3. Navegue até a pasta do projeto (substitua SEU_USUARIO pelo seu nome de usuário no Mac):
    ```
-   cd /Users/SEU_USUARIO/Downloads/mentoria-estrategia
+   cd /Users/viniciusfulconi/Downloads/mentoria-estrategia
    ```
 
 4. Execute estes comandos um por um:
@@ -32,7 +32,7 @@
    git add .
    git commit -m "primeiro commit"
    git branch -M main
-   git remote add origin https://github.com/SEU_USUARIO_GITHUB/mentoria-estrategia.git
+   git remote add origin https://github.com/viniciusfulconi/mentoria-estrategia.git
    git push -u origin main
    ```
    (substitua SEU_USUARIO_GITHUB pelo seu usuário do GitHub)
