@@ -23,9 +23,11 @@ function detectFase(sheetName: string): string {
   return 'outro'
 }
 
-function detectTipo(sheetName: string): string {
-  if (sheetName.includes('IME')) return 'IME'
-  return 'ITA'
+function excelDateToISO(serial: number): string | null {
+  if (!serial || isNaN(serial)) return null
+  const base = new Date(1899, 11, 30)
+  const date = new Date(base.getTime() + serial * 86400000)
+  return date.toISOString().split('T')[0]
 }
 
 export default function UploadSimulados() {
@@ -34,28 +36,56 @@ export default function UploadSimulados() {
   const [log, setLog] = useState<string[]>([])
   const [done, setDone] = useState(false)
 
-  function addLog(msg: string) {
-    setLog(prev => [...prev, msg])
-  }
+  function addLog(msg: string) { setLog(prev => [...prev, msg]) }
 
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
-    setLoading(true)
-    setLog([])
-    setDone(false)
+    setLoading(true); setLog([]); setDone(false)
 
     try {
       const buf = await file.arrayBuffer()
       const wb = XLSX.read(buf, { type: 'array' })
-      const sheets = wb.SheetNames.filter(n =>
-        !n.includes('Ids Alunos') && n !== 'Sheet1'
-      )
 
-      addLog(`📋 Planilha lida: ${sheets.length} abas encontradas`)
+      addLog(`📋 Planilha lida: ${wb.SheetNames.length} abas`)
 
-      // Limpar dados antigos
-      addLog('🗑 Limpando dados anteriores...')
+      // 1. Importar alunos da aba "Ids Alunos"
+      const idsSheet = parseSheet(wb, 'Ids Alunos')
+      if (idsSheet.length) {
+        addLog(`👤 Importando ${idsSheet.length} alunos...`)
+        
+        // Busca quais alunos já criaram conta para não sobrescrever
+        const { data: jasCadastrados } = await supabase
+          .from('alunos_dados').select('id_aluno, cadastrado')
+        const cadastradoMap: Record<string, boolean> = {}
+        ;(jasCadastrados || []).forEach((a: any) => { cadastradoMap[a.id_aluno] = a.cadastrado })
+
+        const alunosData = idsSheet.map((r: Row) => {
+          const idAluno = String(r['IdAluno'] || '')
+          return {
+            id_aluno: idAluno,
+            nome: String(r['Aluno'] || ''),
+            mentor: r['Mentor do Aluno'] || null,
+            data_nascimento: excelDateToISO(Number(r['Data nascimento do Aluno'])),
+            ingresso: r['Ingresso na Turma'] || null,
+            cotista: r['Cotista?'] === 'Sim',
+            cadastrado: cadastradoMap[idAluno] || false, // preserva se já cadastrou
+          }
+        }).filter(a => a.id_aluno && a.nome)
+
+        const { error: alunosErr } = await supabase
+          .from('alunos_dados')
+          .upsert(alunosData, { onConflict: 'id_aluno' })
+
+        if (alunosErr) addLog(`⚠ Erro ao importar alunos: ${alunosErr.message}`)
+        else addLog(`✅ ${alunosData.length} alunos importados`)
+      }
+
+      // 2. Importar resultados (todas as abas exceto Ids Alunos)
+      const sheets = wb.SheetNames.filter(n => n !== 'Ids Alunos')
+      addLog(`\n📊 Importando resultados de ${sheets.length} abas...`)
+
+      // Limpa resultados antigos
       await supabase.from('resultados').delete().neq('id', '00000000-0000-0000-0000-000000000000')
 
       let total = 0
@@ -65,11 +95,9 @@ export default function UploadSimulados() {
         if (!rows.length) continue
 
         const fase = detectFase(sheetName)
-        const tipo = detectTipo(sheetName)
-        addLog(`📊 Processando: ${sheetName} (${rows.length} alunos)`)
+        addLog(`  → ${sheetName} (${rows.length} alunos)`)
 
         const records = rows.map((r: Row) => {
-          // Respostas 1ª fase (Q1..Q48 como letras)
           const respostas: Record<string, string> = {}
           const notasQuestoes: Record<string, number> = {}
 
@@ -81,15 +109,6 @@ export default function UploadSimulados() {
             }
           }
 
-          // Calcular acertos para 1ª fase ITA (48 questões em blocos de 12)
-          // Mat: Q1-12, Fis: Q13-24, Qui: Q25-36, Ing: Q37-48
-          // Nota: para 1ª fase, não temos o gabarito na planilha, mas temos acertos nas abas de ranking
-          // Usamos os campos diretos quando existem
-          const acertosMat = r['Acertos Matemática'] ?? r['Acertos Mat'] ?? null
-          const acertosFis = r['Acertos Física'] ?? r['Acertos Fis'] ?? null
-          const acertosQui = r['Acertos Química'] ?? r['Acertos Qui'] ?? null
-          const acertosIng = r['Acertos Inglês'] ?? r['Acertos Ing'] ?? null
-
           return {
             ciclo_nome: r['Simulado'] ?? sheetName,
             id_aluno: String(r['IdAluno'] ?? ''),
@@ -98,17 +117,16 @@ export default function UploadSimulados() {
             fase,
             classificacao: r['CL'] ? Number(r['CL']) : null,
             nota_final: r['Nota Final'] ?? r['Nota'] ?? null,
-            acertos_mat: acertosMat,
-            acertos_fis: acertosFis,
-            acertos_qui: acertosQui,
-            acertos_ing: acertosIng,
+            acertos_mat: r['Acertos Matemática'] ?? r['Acertos Mat'] ?? null,
+            acertos_fis: r['Acertos Física'] ?? r['Acertos Fis'] ?? null,
+            acertos_qui: r['Acertos Química'] ?? r['Acertos Qui'] ?? null,
+            acertos_ing: r['Acertos Inglês'] ?? r['Acertos Ing'] ?? null,
             acertos_total: r['Total'] ?? null,
             respostas: Object.keys(respostas).length ? respostas : null,
             notas_questoes: Object.keys(notasQuestoes).length ? notasQuestoes : null,
             pontos_inteiros: r['Pontos Inteiros'] ?? null,
             resultado: r['Resultado'] ?? r['Resultado Ciclo'] ?? null,
             motivo_reprovacao: r['Motivo Reprovação'] ?? r['Motivo Reprovação Ciclo'] ?? r['Motivo Eliminação'] ?? null,
-            // ranking
             media_1fase: r['Média 1a Fase'] ?? r['Media 1a Fase'] ?? null,
             media_2fase: r['Média 2a Fase'] ?? r['Media 2a Fase'] ?? null,
             nota_matematica: r['Matemática'] ?? r['Matematica'] ?? null,
@@ -123,19 +141,15 @@ export default function UploadSimulados() {
 
         if (records.length) {
           const { error } = await supabase.from('resultados').insert(records)
-          if (error) {
-            addLog(`❌ Erro em ${sheetName}: ${error.message}`)
-          } else {
-            total += records.length
-            addLog(`✅ ${sheetName}: ${records.length} registros importados`)
-          }
+          if (error) addLog(`❌ Erro em ${sheetName}: ${error.message}`)
+          else total += records.length
         }
       }
 
-      addLog(`\n🎉 Importação concluída! ${total} registros no total.`)
+      addLog(`\n🎉 Concluído! ${total} registros importados.`)
       setDone(true)
     } catch (err: any) {
-      addLog(`❌ Erro geral: ${err.message}`)
+      addLog(`❌ Erro: ${err.message}`)
     }
 
     setLoading(false)
@@ -150,30 +164,24 @@ export default function UploadSimulados() {
 
       <div style={{ padding: 16 }}>
         <div className="card" style={{ marginBottom: 16 }}>
-          <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 8 }}>📁 Selecione a planilha Excel</div>
+          <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 6 }}>📁 Upload da planilha</div>
           <div style={{ fontSize: 12, color: '#999', marginBottom: 14, lineHeight: 1.6 }}>
-            Faça upload do arquivo <strong>Gabaritos_ITA_IME_2026.xlsx</strong> (ou versão atualizada). 
-            Os dados anteriores serão substituídos automaticamente.
+            Selecione o arquivo <strong>Gabaritos_ITA_IME_2026.xlsx</strong>. Os dados de alunos e resultados serão atualizados automaticamente. Contas já criadas pelos alunos serão preservadas.
           </div>
-          <input
-            type="file"
-            accept=".xlsx,.xls"
-            onChange={handleFile}
-            disabled={loading}
-            style={{ width: '100%', padding: '10px', borderRadius: 10, border: '0.5px solid rgba(0,0,0,0.12)', background: '#F7F6F3', fontSize: 13, cursor: 'pointer' }}
-          />
+          <input type="file" accept=".xlsx,.xls" onChange={handleFile} disabled={loading}
+            style={{ width: '100%', padding: '10px', borderRadius: 10, border: '0.5px solid rgba(0,0,0,0.12)', background: '#F7F6F3', fontSize: 13, cursor: 'pointer' }} />
         </div>
 
         {loading && (
-          <div className="card" style={{ marginBottom: 16, textAlign: 'center', padding: 24 }}>
+          <div className="card" style={{ textAlign: 'center', padding: 24 }}>
             <div style={{ fontSize: 24, marginBottom: 8 }}>⏳</div>
-            <div style={{ fontSize: 13, color: '#999' }}>Processando planilha...</div>
+            <div style={{ fontSize: 13, color: '#999' }}>Processando...</div>
           </div>
         )}
 
         {log.length > 0 && (
           <div className="card" style={{ marginBottom: 16 }}>
-            <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 10, color: '#999', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Log de importação</div>
+            <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 10, color: '#999', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Log</div>
             <div style={{ fontFamily: 'monospace', fontSize: 11, lineHeight: 2, maxHeight: 300, overflowY: 'auto' }}>
               {log.map((l, i) => (
                 <div key={i} style={{ color: l.startsWith('❌') ? '#E24B4A' : l.startsWith('✅') ? '#1D9E75' : l.startsWith('🎉') ? '#534AB7' : '#666' }}>{l}</div>
@@ -184,12 +192,8 @@ export default function UploadSimulados() {
 
         {done && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <button className="btn-primary" onClick={() => router.push('/turma')}>
-              Ver turma completa →
-            </button>
-            <button className="btn-secondary" onClick={() => router.push('/simulados')}>
-              Ver por aluno →
-            </button>
+            <button className="btn-primary" onClick={() => router.push('/turma')}>Ver turma →</button>
+            <button className="btn-secondary" onClick={() => router.push('/simulados')}>Ver alunos →</button>
           </div>
         )}
       </div>
