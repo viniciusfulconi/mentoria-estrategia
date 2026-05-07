@@ -4,9 +4,9 @@ import { usePathname } from 'next/navigation'
 
 const tabs = [
   { href: '/', label: 'Início', icon: '⬡' },
-  { href: '/turmas', label: 'Turmas', icon: '◈' },
+  { href: '/simulados', label: 'Alunos', icon: '◎' },
+  { href: '/turma', label: 'Turma', icon: '◈' },
   { href: '/mentores', label: 'Mentores', icon: '◉' },
-  { href: '/alunos', label: 'Alunos', icon: '◎' },
   { href: '/aulas', label: 'Aulas', icon: '▶' },
 ]
 
