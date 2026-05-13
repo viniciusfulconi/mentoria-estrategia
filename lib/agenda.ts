@@ -1,15 +1,6 @@
-// Cores por matéria
-export const CORES_MATERIA: Record<string, string> = {
-  'Matemática': '#E53935',
-  'Física': '#1E88E5',
-  'Química': '#43A047',
-  'Português': '#FB8C00',
-  'Inglês': '#8E24AA',
-  'Biologia': '#00897B',
-  'Redação': '#F4511E',
-  'História': '#6D4C41',
-  'Geografia': '#546E7A',
-}
+// Cores por matéria — importado do arquivo central
+export { CORES_MATERIA } from './cores'
+import { CORES_MATERIA } from './cores'
 
 // Cores por tipo de atividade
 export const CORES_TIPO: Record<string, { bg: string, text: string }> = {

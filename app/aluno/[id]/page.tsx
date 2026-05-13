@@ -7,9 +7,10 @@ import { useRouter, useParams } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import Link from 'next/link'
 
+import { CORES_MATERIA as CORES_MAT_IMPORT } from '@/lib/cores'
 const CORES_MAT: Record<string, string> = {
-  'Matemática': '#534AB7', 'Física': '#1D9E75', 'Química': '#EF9F27',
-  'Português/Redação': '#D85A30', 'Inglês': '#2196F3', 'Biologia': '#8BC34A',
+  ...CORES_MAT_IMPORT,
+  'Português/Redação': '#FB8C00',
 }
 
 function BarChart({ dados }: { dados: { materia: string, pct: number }[] }) {

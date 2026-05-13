@@ -5,10 +5,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import Nav from '@/components/Nav'
 import Link from 'next/link'
 
-const CORES_MAT: Record<string, string> = {
-  'Matemática': '#534AB7', 'Física': '#1D9E75', 'Química': '#EF9F27',
-  'Português': '#D85A30', 'Inglês': '#2196F3', 'Biologia': '#8BC34A',
-}
+import { CORES_MATERIA as CORES_MAT } from '@/lib/cores'
 
 export default function ListasPage({ alunoId: propAlunoId }: { alunoId?: string }) {
   const { perfil } = useAuth()
