@@ -1,4 +1,5 @@
 'use client'
+import React from 'react'
 import ListasPage from '@/app/listas/page'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
@@ -229,6 +230,78 @@ export default function AlunoPage() {
     }
   }
 
+
+  function RadarChart({ dados, titulo }: { dados: { materia: string, nota: number }[], titulo: string }) {
+    if (!dados.length) return null
+    const n = dados.length
+    const cx = 150, cy = 150, raio = 110
+    const max = 10
+    const niveis = [2, 4, 6, 8, 10]
+
+    function ponto(idx: number, valor: number): [number, number] {
+      const angulo = (Math.PI * 2 * idx) / n - Math.PI / 2
+      const r = (valor / max) * raio
+      return [cx + r * Math.cos(angulo), cy + r * Math.sin(angulo)]
+    }
+
+    function pontoEixo(idx: number, r: number): [number, number] {
+      const angulo = (Math.PI * 2 * idx) / n - Math.PI / 2
+      return [cx + r * Math.cos(angulo), cy + r * Math.sin(angulo)]
+    }
+
+    const pontos = dados.map((d, i) => ponto(i, d.nota))
+    const polyPath = pontos.map(([x, y]) => `${x},${y}`).join(' ')
+
+    return (
+      <div style={{ textAlign: 'center' }}>
+        <svg viewBox="0 0 300 300" width="100%" style={{ maxWidth: 300 }}>
+          {/* Níveis */}
+          {niveis.map(nivel => {
+            const ps = dados.map((_, i) => pontoEixo(i, (nivel / max) * raio))
+            const path = ps.map(([x, y], i) => `${i === 0 ? 'M' : 'L'}${x},${y}`).join(' ') + 'Z'
+            return (
+              <g key={nivel}>
+                <path d={path} fill="none" stroke="rgba(0,0,0,0.08)" strokeWidth="1" />
+                <text x={cx} y={cy - (nivel / max) * raio - 3} textAnchor="middle" fontSize="8" fill="#bbb">{nivel}</text>
+              </g>
+            )
+          })}
+          {/* Eixos */}
+          {dados.map((_, i) => {
+            const [x, y] = pontoEixo(i, raio)
+            return <line key={i} x1={cx} y1={cy} x2={x} y2={y} stroke="rgba(0,0,0,0.08)" strokeWidth="1" />
+          })}
+          {/* Área preenchida */}
+          <polygon points={polyPath} fill="#534AB7" fillOpacity="0.15" stroke="#534AB7" strokeWidth="2" />
+          {/* Pontos */}
+          {pontos.map(([x, y], i) => {
+            const cor = (CORES_MAT as any)[dados[i].materia] || '#534AB7'
+            return (
+              <g key={i}>
+                <circle cx={x} cy={y} r="5" fill={cor} stroke="white" strokeWidth="1.5" />
+                <text x={x} y={y - 8} textAnchor="middle" fontSize="9" fontWeight="600" fill={cor}>
+                  {dados[i].nota.toFixed(1)}
+                </text>
+              </g>
+            )
+          })}
+          {/* Labels das matérias */}
+          {dados.map((d, i) => {
+            const [x, y] = pontoEixo(i, raio + 18)
+            const cor = (CORES_MAT as any)[d.materia] || '#534AB7'
+            // Quebra nome longo
+            const nome = d.materia.length > 10 ? d.materia.replace('/', '/\n') : d.materia
+            return (
+              <text key={i} x={x} y={y} textAnchor="middle" fontSize="10" fontWeight="600" fill={cor} dominantBaseline="middle">
+                {d.materia}
+              </text>
+            )
+          })}
+        </svg>
+      </div>
+    )
+  }
+
   if (loading) return <div style={{ padding: 40, textAlign: 'center', color: '#999' }}>Carregando...</div>
 
   const isOwn = meuPerfil?.papel === 'aluno'
@@ -322,6 +395,48 @@ export default function AlunoPage() {
                 })}
               </div>
             </div>
+
+            {/* Radar de desempenho */}
+            {rankings.length > 0 && (() => {
+              const campos = [
+                { label: 'Matemática', campo: 'nota_matematica' },
+                { label: 'Física', campo: 'nota_fisica' },
+                { label: 'Química', campo: 'nota_quimica' },
+                { label: 'Port./Red.', campo: 'media_linguagens' },
+              ]
+              const [modoRadar, setModoRadar] = React.useState<'media' | 'recente'>('media')
+
+              const dadosMedia = campos.map(({ label, campo }) => {
+                const vals = rankings.map(r => Number(r[campo])).filter(v => v > 0)
+                return { materia: label, nota: vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0 }
+              }).filter(d => d.nota > 0)
+
+              const ultimoRanking = rankings[rankings.length - 1]
+              const dadosRecente = campos.map(({ label, campo }) => ({
+                materia: label, nota: Number(ultimoRanking?.[campo] || 0)
+              })).filter(d => d.nota > 0)
+
+              const dadosRadar = modoRadar === 'media' ? dadosMedia : dadosRecente
+
+              return (
+                <div className="card" style={{ marginBottom: 14 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600 }}>Perfil por matéria</div>
+                    <div style={{ display: 'flex', gap: 4 }}>
+                      {(['media', 'recente'] as const).map(m => (
+                        <button key={m} onClick={() => setModoRadar(m)} style={{
+                          padding: '3px 10px', borderRadius: 12, fontSize: 10, border: 'none',
+                          background: modoRadar === m ? '#534AB7' : '#F1EFE8',
+                          color: modoRadar === m ? 'white' : '#666',
+                          cursor: 'pointer', fontFamily: 'DM Sans,sans-serif'
+                        }}>{m === 'media' ? 'Média geral' : 'Último ciclo'}</button>
+                      ))}
+                    </div>
+                  </div>
+                  <RadarChart dados={dadosRadar} titulo={modoRadar === 'media' ? 'Média geral' : 'Último ciclo'} />
+                </div>
+              )
+            })()}
 
             {/* Cronograma */}
             {cronogramaBarras.length > 0 && (
