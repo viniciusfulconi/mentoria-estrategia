@@ -161,26 +161,38 @@ export default function AlunoPage() {
     const total = gabarito + parcial + zero
     if (!total) return null
     const cor = CORES_MAT[materia] || '#534AB7'
-    const r = 40, cx = 50, cy = 50, stroke = 18
+    const r = 48, cx = 60, cy = 60, stroke = 20
     const circ = 2 * Math.PI * r
     const gab = (gabarito / total) * circ
     const par = (parcial / total) * circ
+    const pctGab = Math.round((gabarito / total) * 100)
+    const pctPar = Math.round((parcial / total) * 100)
+    const pctZer = Math.round((zero / total) * 100)
     return (
       <div style={{ textAlign: 'center' }}>
-        <svg viewBox="0 0 100 100" width="90" height="90">
+        <svg viewBox="0 0 120 120" width="130" height="130">
           <circle cx={cx} cy={cy} r={r} fill="none" stroke="#E8E8E8" strokeWidth={stroke} />
           <circle cx={cx} cy={cy} r={r} fill="none" stroke="#EF9F27" strokeWidth={stroke}
-            strokeDasharray={`${par} ${circ - par}`} strokeDashoffset={-(gab)} transform="rotate(-90 50 50)" />
+            strokeDasharray={`${par} ${circ - par}`} strokeDashoffset={-(gab)} transform="rotate(-90 60 60)" />
           <circle cx={cx} cy={cy} r={r} fill="none" stroke={cor} strokeWidth={stroke}
-            strokeDasharray={`${gab} ${circ - gab}`} strokeDashoffset="0" transform="rotate(-90 50 50)" />
-          <text x="50" y="47" textAnchor="middle" fontSize="11" fontWeight="600" fill="#1a1a1a">{Math.round((gabarito/total)*100)}%</text>
-          <text x="50" y="59" textAnchor="middle" fontSize="8" fill="#999">gabarito</text>
+            strokeDasharray={`${gab} ${circ - gab}`} strokeDashoffset="0" transform="rotate(-90 60 60)" />
+          <text x="60" y="55" textAnchor="middle" fontSize="14" fontWeight="700" fill="#1a1a1a">{pctGab}%</text>
+          <text x="60" y="70" textAnchor="middle" fontSize="9" fill="#999">gabarito</text>
         </svg>
-        <div style={{ fontSize: 10, fontWeight: 500, color: '#1a1a1a' }}>{materia}</div>
-        <div style={{ fontSize: 9, color: '#999', marginTop: 2 }}>
-          <span style={{ color: cor }}>■ {gabarito}g</span>{' '}
-          <span style={{ color: '#EF9F27' }}>■ {parcial}p</span>{' '}
-          <span style={{ color: '#ccc' }}>■ {zero}z</span>
+        <div style={{ fontSize: 12, fontWeight: 600, color: '#1a1a1a', marginTop: 4 }}>{materia}</div>
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginTop: 6, flexWrap: 'wrap' }}>
+          <span style={{ fontSize: 11, color: cor, display: 'flex', alignItems: 'center', gap: 3 }}>
+            <span style={{ width: 8, height: 8, borderRadius: 2, background: cor, display: 'inline-block' }} />
+            Gabarito: {gabarito} ({pctGab}%)
+          </span>
+          <span style={{ fontSize: 11, color: '#EF9F27', display: 'flex', alignItems: 'center', gap: 3 }}>
+            <span style={{ width: 8, height: 8, borderRadius: 2, background: '#EF9F27', display: 'inline-block' }} />
+            Parcial: {parcial} ({pctPar}%)
+          </span>
+          <span style={{ fontSize: 11, color: '#bbb', display: 'flex', alignItems: 'center', gap: 3 }}>
+            <span style={{ width: 8, height: 8, borderRadius: 2, background: '#E8E8E8', display: 'inline-block' }} />
+            Zero: {zero} ({pctZer}%)
+          </span>
         </div>
       </div>
     )
@@ -353,7 +365,6 @@ export default function AlunoPage() {
                       { fase: '2fase_mat', mat: 'Matemática' },
                       { fase: '2fase_fis', mat: 'Física' },
                       { fase: '2fase_qui', mat: 'Química' },
-                      { fase: '2fase_port', mat: 'Português/Redação' },
                     ].map(({ fase, mat }) => {
                       const p = pizzaData(fase)
                       if (!p.gabarito && !p.parcial && !p.zero) return null
