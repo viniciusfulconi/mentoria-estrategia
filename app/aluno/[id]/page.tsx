@@ -187,13 +187,19 @@ export default function AlunoPage() {
   }
 
   function pizzaData(fase: string) {
-    const reg = dados.find(r => r.ciclo_nome === cicloAtivo && r.fase === fase)
+    // Extrai o número do ciclo do cicloAtivo (ex: "Ranking C1" -> "1", "Ciclo 1 - ITA" -> "1")
+    const numCiclo = cicloAtivo?.match(/\d+/)?.[0] || ''
+    // Busca a aba correspondente que contenha o número do ciclo e a fase
+    const reg = dados.find(r => {
+      const temNumero = r.ciclo_nome?.includes(numCiclo)
+      return temNumero && r.fase === fase
+    })
     if (!reg?.notas_questoes) return { gabarito: 0, parcial: 0, zero: 0 }
     const vals = Object.values(reg.notas_questoes) as number[]
     return {
-      gabarito: vals.filter(v => v >= 0.9).length,
-      parcial: vals.filter(v => v > 0 && v < 0.9).length,
-      zero: vals.filter(v => v === 0).length,
+      gabarito: vals.filter((v: any) => Number(v) >= 0.9).length,
+      parcial: vals.filter((v: any) => Number(v) > 0 && Number(v) < 0.9).length,
+      zero: vals.filter((v: any) => Number(v) === 0).length,
     }
   }
 
