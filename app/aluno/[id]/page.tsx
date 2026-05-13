@@ -168,14 +168,27 @@ export default function AlunoPage() {
     const pctGab = Math.round((gabarito / total) * 100)
     const pctPar = Math.round((parcial / total) * 100)
     const pctZer = Math.round((zero / total) * 100)
+    const zerOffset = -(gab + par)
     return (
       <div style={{ textAlign: 'center' }}>
         <svg viewBox="0 0 120 120" width="130" height="130">
+          {/* Base cinza (zero) */}
           <circle cx={cx} cy={cy} r={r} fill="none" stroke="#E8E8E8" strokeWidth={stroke} />
+          {/* Zero — ocupa o restante */}
+          <circle cx={cx} cy={cy} r={r} fill="none" stroke="#D0D0D0" strokeWidth={stroke}
+            strokeDasharray={`${(zero/total)*circ} ${circ - (zero/total)*circ}`}
+            strokeDashoffset={zerOffset}
+            transform="rotate(-90 60 60)" />
+          {/* Parcial — laranja */}
           <circle cx={cx} cy={cy} r={r} fill="none" stroke="#EF9F27" strokeWidth={stroke}
-            strokeDasharray={`${par} ${circ - par}`} strokeDashoffset={-(gab)} transform="rotate(-90 60 60)" />
+            strokeDasharray={`${par} ${circ - par}`}
+            strokeDashoffset={-(gab)}
+            transform="rotate(-90 60 60)" />
+          {/* Gabarito — cor da matéria */}
           <circle cx={cx} cy={cy} r={r} fill="none" stroke={cor} strokeWidth={stroke}
-            strokeDasharray={`${gab} ${circ - gab}`} strokeDashoffset="0" transform="rotate(-90 60 60)" />
+            strokeDasharray={`${gab} ${circ - gab}`}
+            strokeDashoffset="0"
+            transform="rotate(-90 60 60)" />
           <text x="60" y="55" textAnchor="middle" fontSize="14" fontWeight="700" fill="#1a1a1a">{pctGab}%</text>
           <text x="60" y="70" textAnchor="middle" fontSize="9" fill="#999">gabarito</text>
         </svg>
