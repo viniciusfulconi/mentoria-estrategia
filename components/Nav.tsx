@@ -7,15 +7,15 @@ const tabsCoordenador = [
   { href: '/', label: 'Início', icon: '⬡' },
   { href: '/simulados', label: 'Alunos', icon: '◎' },
   { href: '/turma', label: 'Turma', icon: '◈' },
-  { href: '/cronograma', label: 'Agenda', icon: '📋' },
-  { href: '/horario', label: 'Horário', icon: '📅' },
+  { href: '/atendimentos', label: 'Atend.', icon: '🤝' },
   { href: '/csat', label: 'CSAT', icon: '⭐' },
+  { href: '/horario', label: 'Horário', icon: '📅' },
   { href: '/admin', label: 'Acessos', icon: '🔑' },
 ]
 
 const tabsMentor = [
   { href: '/mentor', label: 'Alunos', icon: '◎' },
-  { href: '/cronograma', label: 'Agenda', icon: '📋' },
+  { href: '/atendimentos', label: 'Atend.', icon: '🤝' },
   { href: '/horario', label: 'Horário', icon: '📅' },
   { href: '/aulas', label: 'Aulas', icon: '▶' },
 ]
