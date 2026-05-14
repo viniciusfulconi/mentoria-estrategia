@@ -141,13 +141,12 @@ export default function Horario() {
 
         {/* Visualização */}
         <div style={{ display: 'flex', gap: 4, marginBottom: 10 }}>
-          {(['dia', 'mes', 'ano'] as Visualizacao[]).map(v => (
+          {(['dia', 'semana', 'mes', 'ano'] as Visualizacao[]).map(v => (
             <button key={v} onClick={() => setVis(v)} style={{
               padding: '4px 12px', borderRadius: 16, fontSize: 11, border: 'none',
               background: vis === v ? '#534AB7' : '#F1EFE8', color: vis === v ? 'white' : '#666',
               cursor: 'pointer', fontFamily: 'DM Sans,sans-serif',
-              textTransform: 'capitalize'
-            }}>{v === 'dia' ? 'Dia' : v === 'mes' ? 'Mês' : 'Ano'}</button>
+            }}>{v === 'dia' ? 'Dia' : v === 'semana' ? 'Semana' : v === 'mes' ? 'Mês' : 'Ano'}</button>
           ))}
         </div>
 
