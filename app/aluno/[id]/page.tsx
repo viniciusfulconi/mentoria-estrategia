@@ -579,23 +579,24 @@ function GraficoQuestoes({ dados, turmaQuestoes, cicloAtivo, fase, titulo, corAl
   const barW = Math.max(8, Math.min(20, Math.floor(320 / questoes.length)))
   const gap = 2
   const totalW = questoes.length * (barW * 2 + gap + 4)
-  const h = 120
+  const h = 100
+  const padT = 16
   const padB = 20
 
   return (
     <div style={{ marginBottom: 16 }}>
       <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 8 }}>{titulo}</div>
       <div style={{ display: 'flex', gap: 12, fontSize: 10, color: '#666', marginBottom: 6 }}>
-        <span><span style={{ display: 'inline-block', width: 10, height: 10, background: corAluno, borderRadius: 2, marginRight: 4 }} />Aluno</span>
+        <span style={{ color: corAluno, fontWeight: 600 }}><span style={{ display: 'inline-block', width: 10, height: 10, background: corAluno, borderRadius: 2, marginRight: 4 }} />Aluno</span>
         <span><span style={{ display: 'inline-block', width: 10, height: 10, background: '#D0D0D0', borderRadius: 2, marginRight: 4 }} />Turma</span>
       </div>
       <div style={{ overflowX: 'auto', paddingBottom: 4 }}>
-        <svg viewBox={`0 0 ${Math.max(totalW, 300)} ${h + padB}`} width={Math.max(totalW, 300)} height={h + padB} style={{ display: 'block' }}>
+        <svg viewBox={`0 0 ${Math.max(totalW, 300)} ${padT + h + padB}`} width={Math.max(totalW, 300)} height={padT + h + padB} style={{ display: 'block' }}>
           {/* Linhas de referência */}
           {[0.25, 0.5, 0.75, 1.0].map(v => (
             <g key={v}>
-              <line x1="0" y1={h - v * h} x2={Math.max(totalW, 300)} y2={h - v * h} stroke="rgba(0,0,0,0.06)" strokeWidth="1" />
-              <text x="2" y={h - v * h - 2} fontSize="7" fill="#bbb">{(v * 100).toFixed(0)}%</text>
+              <line x1="0" y1={padT + h - v * h} x2={Math.max(totalW, 300)} y2={padT + h - v * h} stroke="rgba(0,0,0,0.06)" strokeWidth="1" />
+              <text x="2" y={padT + h - v * h - 2} fontSize="7" fill="#bbb">{(v * 100).toFixed(0)}%</text>
             </g>
           ))}
 
@@ -605,9 +606,7 @@ function GraficoQuestoes({ dados, turmaQuestoes, cicloAtivo, fase, titulo, corAl
             const x = i * (barW * 2 + gap + 4) + 2
             const hAluno = vAluno * h
             const hTurma = vTurma * h
-            const corBarra = corBom
-                ? (vAluno >= 0.9 ? corBom : vAluno >= 0.5 ? corMedio : corRuim)
-                : (vAluno >= 0.9 ? '#1D9E75' : vAluno >= 0.5 ? '#EF9F27' : '#E24B4A')
+            const corBarra = corAluno || '#534AB7'
 
             return (
               <g key={q}>
