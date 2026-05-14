@@ -12,14 +12,37 @@ export default function Turma() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    supabase.from('resultados').select('*').eq('fase', 'ranking').order('ciclo_nome')
+    // Busca todos os resultados — inclui ciclos sem ranking
+    supabase.from('resultados').select('*').order('ciclo_nome')
       .then(({ data }) => {
         const d = data || []
         setDados(d)
-        const cs = [...new Set(d.map(r => r.ciclo_nome))].sort()
+        // Pega ciclos únicos que têm fase 'ranking' OU qualquer dado
+        // Usa prefixo "Ciclo X" para agrupar
+        const todosCiclos = [...new Set(d.map((r: any) => {
+          // Normaliza o nome do ciclo removendo a fase
+          const nome = r.ciclo_nome || ''
+          const match = nome.match(/Ciclo \d+/)
+          return match ? match[0] : nome
+        }))].filter(Boolean).sort() as string[]
+
+        // Gera nomes de ranking para cada ciclo
+        const ciclosRanking = todosCiclos.map(c => {
+          const rankingExiste = d.some((r: any) => r.ciclo_nome === `Ranking ${c}` || r.fase === 'ranking' && r.ciclo_nome?.includes(c.replace('Ciclo ', '')))
+          return rankingExiste ? `Ranking ${c}` : c
+        })
+
+        // Usa os ciclos reais de ranking quando existem, senão usa o ciclo direto
+        const cs = [...new Set(d.filter((r: any) => r.fase === 'ranking').map((r: any) => r.ciclo_nome))].sort() as string[]
+        // Adiciona ciclos sem ranking
+        todosCiclos.forEach(c => {
+          const num = c.replace('Ciclo ', '')
+          const temRanking = cs.some(r => r.includes(num))
+          if (!temRanking) cs.push(c)
+        })
+        cs.sort()
         setCiclos(cs)
         if (cs.length) setCicloAtivo(cs[cs.length - 1])
-        // 'geral' é adicionado pelo componente
         setLoading(false)
       })
   }, [])
@@ -51,7 +74,25 @@ export default function Turma() {
 
   const cicloData = cicloAtivo === 'geral'
     ? alunosGeral
-    : dados.filter(r => r.ciclo_nome === cicloAtivo).sort((a, b) => mediaAluno(b) - mediaAluno(a))
+    : (() => {
+        // Tenta filtrar por nome exato primeiro (ranking)
+        const exato = dados.filter(r => r.ciclo_nome === cicloAtivo)
+        if (exato.length > 0) return exato.sort((a, b) => mediaAluno(b) - mediaAluno(a))
+        // Se não encontrar, filtra por ciclos que contenham o número
+        const num = cicloAtivo.replace('Ciclo ', '').trim()
+        const porNum = dados.filter(r => r.ciclo_nome?.includes(`Ciclo ${num}`))
+        // Agrupa por aluno e calcula média
+        const porAluno: Record<string, any> = {}
+        porNum.forEach(r => {
+          if (!porAluno[r.id_aluno]) porAluno[r.id_aluno] = { ...r, _fasesNotas: [] }
+          const n = mediaAluno(r)
+          if (n > 0) porAluno[r.id_aluno]._fasesNotas.push(n)
+        })
+        return Object.values(porAluno).map((r: any) => ({
+          ...r,
+          _mediaGeral: r._fasesNotas.length ? r._fasesNotas.reduce((a: number, b: number) => a + b, 0) / r._fasesNotas.length : 0
+        })).sort((a: any, b: any) => b._mediaGeral - a._mediaGeral)
+      })()
 
   // Alunos que precisam de atenção: reprovados ou média < 5
   const atencao = cicloData.filter(r =>
