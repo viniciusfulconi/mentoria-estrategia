@@ -531,12 +531,16 @@ export default function AlunoPage() {
 function GraficoQuestoes({ dados, turmaQuestoes, cicloAtivo, fase, titulo, corAluno }: any) {
   // cicloAtivo pode ser "Ciclo 1" ou "Ranking Ciclo 1" — extrai o número
   const cicloNum = String(cicloAtivo || '').match(/\d+/)?.[0] || ''
-  if (!cicloNum) return null
+  if (!cicloNum) { console.log('GQ: sem cicloNum', cicloAtivo); return null }
 
   // Pega dados do aluno para essa fase/ciclo
   const regAluno = dados.find((r: any) =>
     String(r.ciclo_nome || '').includes(`Ciclo ${cicloNum}`) && r.fase === fase
   )
+  console.log('GQ debug:', { cicloAtivo, cicloNum, fase, 
+    dadosFases: dados.map((r: any) => ({cn: r.ciclo_nome, f: r.fase, temNQ: !!r.notas_questoes})),
+    regAluno: regAluno ? {cn: regAluno.ciclo_nome, f: regAluno.fase, nq: regAluno.notas_questoes} : null
+  })
   if (!regAluno?.notas_questoes) return null
 
   const questoesAluno = regAluno.notas_questoes as Record<string, number>
