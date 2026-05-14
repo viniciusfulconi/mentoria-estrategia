@@ -51,10 +51,18 @@ export default function Horario() {
   const inicioAno = new Date(dataAtual.getFullYear(), 0, 1)
   const fimAno = new Date(dataAtual.getFullYear(), 11, 31)
 
+  // Calcula intervalo da semana atual
+  const inicioSemana = new Date(dataAtual)
+  inicioSemana.setDate(dataAtual.getDate() - dataAtual.getDay())
+  inicioSemana.setHours(0, 0, 0, 0)
+  const fimSemana = new Date(inicioSemana)
+  fimSemana.setDate(inicioSemana.getDate() + 6)
+  fimSemana.setHours(23, 59, 59, 0)
+
   const atividadesExpandidas = expandirRecorrentes(
     atividades,
-    vis === 'ano' ? inicioAno : vis === 'mes' ? inicioMes : new Date(dataAtual.getFullYear(), dataAtual.getMonth(), dataAtual.getDate()),
-    vis === 'ano' ? fimAno : vis === 'mes' ? fimMes : new Date(dataAtual.getFullYear(), dataAtual.getMonth(), dataAtual.getDate(), 23, 59)
+    vis === 'ano' ? inicioAno : vis === 'semana' ? inicioSemana : vis === 'mes' ? inicioMes : new Date(dataAtual.getFullYear(), dataAtual.getMonth(), dataAtual.getDate()),
+    vis === 'ano' ? fimAno : vis === 'semana' ? fimSemana : vis === 'mes' ? fimMes : new Date(dataAtual.getFullYear(), dataAtual.getMonth(), dataAtual.getDate(), 23, 59)
   )
 
   // Vestibulares futuros
@@ -72,11 +80,11 @@ export default function Horario() {
   // Horas de estudo por matéria (semana atual)
   const horasEstudo: Record<string, number> = {}
   const hoje = new Date()
-  const inicioSemana = new Date(hoje)
-  inicioSemana.setDate(hoje.getDate() - hoje.getDay())
-  const fimSemana = new Date(inicioSemana)
-  fimSemana.setDate(inicioSemana.getDate() + 6)
-  expandirRecorrentes(atividades, inicioSemana, fimSemana)
+  const inicioSemanaHoje = new Date(hoje)
+  inicioSemanaHoje.setDate(hoje.getDate() - hoje.getDay())
+  const fimSemanaHoje = new Date(inicioSemanaHoje)
+  fimSemanaHoje.setDate(inicioSemanaHoje.getDate() + 6)
+  expandirRecorrentes(atividades, inicioSemanaHoje, fimSemanaHoje)
     .filter(a => a.tipo === 'estudo' && a.materia && a.data_fim)
     .forEach(a => {
       const h = (new Date(a.data_fim).getTime() - new Date(a.data_inicio).getTime()) / 3600000
@@ -325,12 +333,13 @@ function ViewDia({ data, atividades, onSelect, isAluno, perfil, onDelete }: any)
 // ========== VIEW SEMANA ==========
 function ViewSemana({ dataAtual, atividadesExpandidas, onSelect, onSelectDia }: any) {
   const hoje = new Date()
-  const inicioSemana = new Date(dataAtual)
-  inicioSemana.setDate(dataAtual.getDate() - dataAtual.getDay())
+  const inicioSemanaLocal = new Date(dataAtual)
+  inicioSemanaLocal.setDate(dataAtual.getDate() - dataAtual.getDay())
+  inicioSemanaLocal.setHours(0, 0, 0, 0)
 
   const dias = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(inicioSemana)
-    d.setDate(inicioSemana.getDate() + i)
+    d.setDate(inicioSemanaLocal.getDate() + i)
     return d
   })
 
