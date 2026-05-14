@@ -9,6 +9,7 @@ const tabsCoordenador = [
   { href: '/turma', label: 'Turma', icon: '◈' },
   { href: '/atendimentos', label: 'Atend.', icon: '🤝' },
   { href: '/csat', label: 'CSAT', icon: '⭐' },
+  { href: '/cronograma', label: 'Crono.', icon: '📋' },
   { href: '/horario', label: 'Horário', icon: '📅' },
   { href: '/admin', label: 'Acessos', icon: '🔑' },
 ]
