@@ -61,9 +61,9 @@ export default function Turma() {
   )
 
   // Destaques por matéria (top 3 de cada)
-  function top3(campo: string) {
+  function top10(campo: string) {
     return [...cicloData].filter(r => r[campo] !== null)
-      .sort((a, b) => Number(b[campo]) - Number(a[campo])).slice(0, 3)
+      .sort((a, b) => Number(b[campo]) - Number(a[campo])).slice(0, 10)
   }
 
   // Por mentor — usa TODOS os ciclos para média geral
@@ -213,13 +213,13 @@ export default function Turma() {
             {aba === 'destaques' && (
               <div>
                 {[
-                  { label: '🏆 Top Matemática', campo: 'nota_matematica' },
-                  { label: '⚡ Top Física', campo: 'nota_fisica' },
-                  { label: '🧪 Top Química', campo: 'nota_quimica' },
-                  { label: '📝 Top Linguagens', campo: 'media_linguagens' },
-                  { label: '🎯 Top 1ª Fase', campo: 'media_1fase' },
+                  { label: '🏆 Top 10 Matemática', campo: 'nota_matematica' },
+                  { label: '⚡ Top 10 Física', campo: 'nota_fisica' },
+                  { label: '🧪 Top 10 Química', campo: 'nota_quimica' },
+                  { label: '📝 Top 10 Linguagens', campo: 'media_linguagens' },
+                  { label: '🎯 Top 10 — 1ª Fase', campo: 'media_1fase' },
                 ].map(({ label, campo }) => {
-                  const top = top3(campo)
+                  const top = top10(campo)
                   if (!top.length) return null
                   return (
                     <div key={campo} className="card" style={{ marginBottom: 12 }}>

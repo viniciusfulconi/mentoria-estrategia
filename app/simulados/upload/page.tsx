@@ -45,8 +45,6 @@ export default function UploadSimulados() {
     if (name.includes('Quím') || name.includes('Quim')) return { ciclo: cicloBase, tipo: '2fase_qui', concurso }
     if (name.includes('Port') || name.includes('Lingu')) return { ciclo: cicloBase, tipo: '2fase_port', concurso }
     if (name.includes('Inglês') || name.includes('Ingles')) return { ciclo: cicloBase, tipo: '2fase_ing', concurso }
-    if (name.includes('Simulado Zero')) return { ciclo: 'Simulado Zero', tipo: '1fase', concurso }
-    if (name.includes('Diagnóstico')) return { ciclo: name, tipo: '1fase', concurso }
     if (name.includes('Processo')) return { ciclo: name, tipo: '1fase', concurso }
     return { ciclo: cicloBase, tipo: 'outro', concurso }
   }
@@ -178,7 +176,13 @@ export default function UploadSimulados() {
 
     // 3. Processa cada aba de notas
     const ignorar = ['Ids Alunos', 'Processo Seletivo']
-    const abasNotas = wb.SheetNames.filter(n => !ignorar.includes(n) && !n.includes('Ranking'))
+    const abasNotas = wb.SheetNames.filter(n => 
+      !ignorar.includes(n) && 
+      !n.includes('Ranking') && 
+      !n.includes('Simulado Zero') &&
+      !n.includes('Ciclo 0') &&
+      !n.includes('Diagnóstico')
+    )
     addLog(`\n📊 Processando ${abasNotas.length} abas de notas...`)
 
     const todosDados: any[] = []
