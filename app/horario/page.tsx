@@ -7,7 +7,7 @@ import Nav from '@/components/Nav'
 import Link from 'next/link'
 import { corAtividade, formatHora, diasParaData, expandirRecorrentes, MESES, DIAS_SEMANA } from '@/lib/agenda'
 
-type Visualizacao = 'dia' | 'mes' | 'ano'
+type Visualizacao = 'dia' | 'semana' | 'mes' | 'ano'
 
 export default function Horario() {
   const { perfil } = useAuth()
@@ -86,6 +86,7 @@ export default function Horario() {
   function navAnterior() {
     const d = new Date(dataAtual)
     if (vis === 'dia') d.setDate(d.getDate() - 1)
+    else if (vis === 'semana') d.setDate(d.getDate() - 7)
     else if (vis === 'mes') d.setMonth(d.getMonth() - 1)
     else d.setFullYear(d.getFullYear() - 1)
     setDataAtual(d)
@@ -94,6 +95,7 @@ export default function Horario() {
   function navProximo() {
     const d = new Date(dataAtual)
     if (vis === 'dia') d.setDate(d.getDate() + 1)
+    else if (vis === 'semana') d.setDate(d.getDate() + 7)
     else if (vis === 'mes') d.setMonth(d.getMonth() + 1)
     else d.setFullYear(d.getFullYear() + 1)
     setDataAtual(d)
@@ -101,6 +103,11 @@ export default function Horario() {
 
   function tituloNav() {
     if (vis === 'dia') return dataAtual.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })
+    if (vis === 'semana') {
+      const ini = new Date(dataAtual); ini.setDate(dataAtual.getDate() - dataAtual.getDay())
+      const fim = new Date(ini); fim.setDate(ini.getDate() + 6)
+      return `${ini.toLocaleDateString('pt-BR', { day:'2-digit', month:'short' })} – ${fim.toLocaleDateString('pt-BR', { day:'2-digit', month:'short', year:'numeric' })}`
+    }
     if (vis === 'mes') return `${MESES[dataAtual.getMonth()]} ${dataAtual.getFullYear()}`
     return String(dataAtual.getFullYear())
   }
@@ -181,6 +188,16 @@ export default function Horario() {
                 isAluno={isAluno}
                 perfil={perfil}
                 onDelete={(id: string) => { setAtividades(prev => prev.filter(a => a.id !== id)); carregarDados() }}
+              />
+            )}
+
+            {/* VISUALIZAÇÃO SEMANAL */}
+            {vis === 'semana' && (
+              <ViewSemana
+                dataAtual={dataAtual}
+                atividadesExpandidas={atividadesExpandidas}
+                onSelect={setAtividadeSelecionada}
+                onSelectDia={(d: Date) => { setDataAtual(d); setVis('dia') }}
               />
             )}
 
@@ -305,6 +322,77 @@ function ViewDia({ data, atividades, onSelect, isAluno, perfil, onDelete }: any)
   )
 }
 
+
+// ========== VIEW SEMANA ==========
+function ViewSemana({ dataAtual, atividadesExpandidas, onSelect, onSelectDia }: any) {
+  const hoje = new Date()
+  const inicioSemana = new Date(dataAtual)
+  inicioSemana.setDate(dataAtual.getDate() - dataAtual.getDay())
+
+  const dias = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(inicioSemana)
+    d.setDate(inicioSemana.getDate() + i)
+    return d
+  })
+
+  const DIAS_CURTO = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
+
+  function atividadesDoDia(data: Date): any[] {
+    return atividadesExpandidas.filter((a: any) => {
+      const d = new Date(a.data_inicio)
+      return d.getDate() === data.getDate() &&
+        d.getMonth() === data.getMonth() &&
+        d.getFullYear() === data.getFullYear()
+    }).sort((a: any, b: any) => new Date(a.data_inicio).getTime() - new Date(b.data_inicio).getTime())
+  }
+
+  return (
+    <div>
+      {/* Header dos dias */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4, marginBottom: 8 }}>
+        {dias.map((d, i) => {
+          const isHoje = d.getDate() === hoje.getDate() && d.getMonth() === hoje.getMonth() && d.getFullYear() === hoje.getFullYear()
+          return (
+            <div key={i} onClick={() => onSelectDia(d)} style={{ textAlign: 'center', cursor: 'pointer', padding: '6px 2px', borderRadius: 8, background: isHoje ? '#EEEDFE' : 'transparent' }}>
+              <div style={{ fontSize: 10, color: isHoje ? '#534AB7' : '#999' }}>{DIAS_CURTO[i]}</div>
+              <div style={{ fontSize: 16, fontWeight: isHoje ? 700 : 400, color: isHoje ? '#534AB7' : '#1a1a1a' }}>{d.getDate()}</div>
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Grade de atividades */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4 }}>
+        {dias.map((d, i) => {
+          const ativs = atividadesDoDia(d)
+          const isHoje = d.getDate() === hoje.getDate() && d.getMonth() === hoje.getMonth() && d.getFullYear() === hoje.getFullYear()
+          return (
+            <div key={i} style={{ minHeight: 120, borderRadius: 8, border: `1px solid ${isHoje ? '#534AB7' : 'rgba(0,0,0,0.06)'}`, padding: 4, background: isHoje ? '#FAFAFE' : 'white' }}>
+              {ativs.length === 0 ? (
+                <div style={{ height: '100%', minHeight: 100 }} />
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                  {ativs.map((a: any) => {
+                    const { bg, text } = corAtividade(a)
+                    return (
+                      <div key={a.id} onClick={() => onSelect(a)} style={{ background: bg, borderRadius: 5, padding: '4px 6px', cursor: 'pointer' }}>
+                        <div style={{ fontSize: 9, color: text, fontWeight: 600, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
+                          {formatHora(a.data_inicio)} {a.titulo}
+                        </div>
+                        {a.materia && <div style={{ fontSize: 8, color: text, opacity: 0.8 }}>{a.materia}</div>}
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 // ========== VIEW MÊS ==========
 function ViewMes({ dataAtual, atividadesExpandidas, onSelectDia }: any) {
   const ano = dataAtual.getFullYear()
@@ -347,11 +435,17 @@ function ViewMes({ dataAtual, atividadesExpandidas, onSelectDia }: any) {
             }}>
               <div style={{ fontSize: 11, fontWeight: isHoje ? 700 : 400, color: isHoje ? '#534AB7' : '#333', textAlign: 'center', marginBottom: 2 }}>{dia}</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                {ativs.slice(0, 3).map((a: any) => {
-                  const { bg } = corAtividade(a)
-                  return <div key={a.id} style={{ height: 4, borderRadius: 2, background: bg }} />
+                {ativs.slice(0, 2).map((a: any) => {
+                  const { bg, text } = corAtividade(a)
+                  return (
+                    <div key={a.id} style={{ background: bg, borderRadius: 3, padding: '1px 4px', marginBottom: 1 }}>
+                      <div style={{ fontSize: 8, color: text, fontWeight: 500, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
+                        {a.titulo}
+                      </div>
+                    </div>
+                  )
                 })}
-                {ativs.length > 3 && <div style={{ fontSize: 8, color: '#999', textAlign: 'center' }}>+{ativs.length - 3}</div>}
+                {ativs.length > 2 && <div style={{ fontSize: 8, color: '#999', textAlign: 'center' }}>+{ativs.length - 2}</div>}
               </div>
             </div>
           )
