@@ -607,13 +607,20 @@ function GraficoQuestoes({ dados, turmaQuestoes, cicloAtivo, fase, titulo, corAl
             const hAluno = vAluno * h
             const hTurma = vTurma * h
             const corBarra = corAluno || '#534AB7'
+            const pctTurma = Math.round(vTurma * 100)
 
             return (
               <g key={q}>
-                {/* Barra turma */}
-                <rect x={x} y={h - hTurma} width={barW} height={hTurma} fill="#D0D0D0" rx="2" />
+                {/* Barra turma — só mostra se há dados da turma */}
+                {registrosTurma.length > 0 && (
+                  <rect x={x} y={h - Math.max(hTurma, 1)} width={barW} height={Math.max(hTurma, 1)} fill="#D0D0D0" rx="2" />
+                )}
+                {registrosTurma.length > 0 && pctTurma > 0 ? (
+                  <text x={x + barW/2} y={h - hTurma - 2} textAnchor="middle" fontSize="7" fill="#999">{pctTurma}%</text>
+                ) : null}
                 {/* Barra aluno */}
-                <rect x={x + barW + gap} y={h - hAluno} width={barW} height={hAluno} fill={corBarra} rx="2" />
+                <rect x={registrosTurma.length > 0 ? x + barW + gap : x + barW/2} y={h - Math.max(hAluno, 1)} width={barW} height={Math.max(hAluno, 1)} fill={corBarra} rx="2" />
+                <text x={registrosTurma.length > 0 ? x + barW + gap + barW/2 : x + barW} y={h - hAluno - 2} textAnchor="middle" fontSize="7" fill={corBarra}>{Math.round(vAluno * 100)}%</text>
                 {/* Label questão */}
                 <text x={x + barW} y={h + padB - 4} textAnchor="middle" fontSize="7" fill="#999">
                   {q.replace('Q', '')}
