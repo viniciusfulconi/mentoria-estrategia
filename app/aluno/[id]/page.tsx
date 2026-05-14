@@ -458,9 +458,9 @@ export default function AlunoPage() {
                 <div className="card" style={{ marginBottom: 14 }}>
                   <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 14 }}>Acertos por questão vs turma</div>
                   <GraficoQuestoes dados={dados} turmaQuestoes={turmaQuestoes} cicloAtivo={cicloAtivo} fase="1fase" titulo="1ª Fase" corAluno="#534AB7" />
-                  <GraficoQuestoes dados={dados} turmaQuestoes={turmaQuestoes} cicloAtivo={cicloAtivo} fase="2fase_mat" titulo="2ª Fase — Matemática" corAluno="#534AB7" />
-                  <GraficoQuestoes dados={dados} turmaQuestoes={turmaQuestoes} cicloAtivo={cicloAtivo} fase="2fase_fis" titulo="2ª Fase — Física" corAluno="#1E88E5" />
-                  <GraficoQuestoes dados={dados} turmaQuestoes={turmaQuestoes} cicloAtivo={cicloAtivo} fase="2fase_qui" titulo="2ª Fase — Química" corAluno="#E53935" />
+                  <GraficoQuestoes dados={dados} turmaQuestoes={turmaQuestoes} cicloAtivo={cicloAtivo} fase="2fase_mat" titulo="2ª Fase — Matemática" corAluno="#534AB7" corBom="#1D9E75" corMedio="#EF9F27" corRuim="#E24B4A" />
+                  <GraficoQuestoes dados={dados} turmaQuestoes={turmaQuestoes} cicloAtivo={cicloAtivo} fase="2fase_fis" titulo="2ª Fase — Física" corAluno="#1E88E5" corBom="#1D9E75" corMedio="#EF9F27" corRuim="#E24B4A" />
+                  <GraficoQuestoes dados={dados} turmaQuestoes={turmaQuestoes} cicloAtivo={cicloAtivo} fase="2fase_qui" titulo="2ª Fase — Química" corAluno="#E53935" corBom="#1D9E75" corMedio="#EF9F27" corRuim="#E24B4A" />
                 </div>
 
                 <div className="card" style={{ marginBottom: 14 }}>
@@ -537,7 +537,7 @@ export default function AlunoPage() {
 }
 
 
-function GraficoQuestoes({ dados, turmaQuestoes, cicloAtivo, fase, titulo, corAluno }: any) {
+function GraficoQuestoes({ dados, turmaQuestoes, cicloAtivo, fase, titulo, corAluno, corBom, corMedio, corRuim }: any) {
   // cicloAtivo pode ser "Ciclo 1" ou "Ranking Ciclo 1" — extrai o número
   const cicloNum = String(cicloAtivo || '').match(/\d+/)?.[0] || ''
   if (!cicloNum) return null
@@ -605,7 +605,9 @@ function GraficoQuestoes({ dados, turmaQuestoes, cicloAtivo, fase, titulo, corAl
             const x = i * (barW * 2 + gap + 4) + 2
             const hAluno = vAluno * h
             const hTurma = vTurma * h
-            const corBarra = vAluno >= 0.9 ? '#1D9E75' : vAluno >= 0.5 ? '#EF9F27' : '#E24B4A'
+            const corBarra = corBom
+                ? (vAluno >= 0.9 ? corBom : vAluno >= 0.5 ? corMedio : corRuim)
+                : (vAluno >= 0.9 ? '#1D9E75' : vAluno >= 0.5 ? '#EF9F27' : '#E24B4A')
 
             return (
               <g key={q}>
