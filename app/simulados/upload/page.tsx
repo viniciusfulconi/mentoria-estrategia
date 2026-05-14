@@ -170,6 +170,15 @@ export default function UploadSimulados() {
       addLog(`✅ ${alunosData.length} alunos importados`)
     }
 
+    // Monta mapa nome -> id para fallback
+    const idsRows2 = parseSheet(wb, 'Ids Alunos')
+    const nomeParaId: Record<string, string> = {}
+    idsRows2.forEach((r: any) => {
+      const id = String(r['IdAluno'] || '').trim()
+      const nome = String(r['Aluno'] || '').trim().toLowerCase()
+      if (id && nome) nomeParaId[nome] = id
+    })
+
     // 2. Limpa resultados antigos
     addLog(`\n🗑 Limpando resultados anteriores...`)
     await supabase.from('resultados').delete().neq('id', '00000000-0000-0000-0000-000000000000')
@@ -196,8 +205,13 @@ export default function UploadSimulados() {
       addLog(`  → ${sheetName} (${rows.length} alunos)`)
 
       const records = rows.map(r => {
-        const idAluno = String(r['IdAluno'] ?? '').trim()
-        if (!idAluno || idAluno === 'null') return null
+        let idAluno = String(r['IdAluno'] ?? '').trim()
+        // Fallback: busca ID pelo nome quando IdAluno está vazio
+        if (!idAluno || idAluno === 'null' || idAluno === 'undefined') {
+          const nomeAluno = String(r['Aluno'] || '').trim().toLowerCase()
+          idAluno = nomeParaId[nomeAluno] || ''
+        }
+        if (!idAluno) return null
 
         // Notas por questão para assertividade
         const notasQuestoes: Record<string, number> = {}
