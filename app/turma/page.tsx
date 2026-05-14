@@ -13,34 +13,13 @@ export default function Turma() {
 
   useEffect(() => {
     // Busca todos os resultados — inclui ciclos sem ranking
-    supabase.from('resultados').select('*').order('ciclo_nome')
+    supabase.from('resultados').select('*').eq('fase', 'ranking').order('ciclo_nome')
       .then(({ data }) => {
         const d = data || []
         setDados(d)
-
-        // Ciclos com ranking
-        const comRanking = [...new Set(
-          d.filter((r: any) => r.fase === 'ranking').map((r: any) => r.ciclo_nome)
-        )].sort() as string[]
-
-        // Adiciona ciclos parciais (sem ranking)
-        const ciclosBase = [...new Set(
-          d.map((r: any) => {
-            const n = String(r.ciclo_nome || '')
-            const m = n.match(/Ciclo [0-9]+/)
-            return m ? m[0] : null
-          }).filter(Boolean)
-        )] as string[]
-
-        ciclosBase.forEach((c: string) => {
-          const num = c.replace('Ciclo ', '').trim()
-          const jatem = comRanking.some((r: string) => r.includes(num))
-          if (!jatem) comRanking.push(c)
-        })
-        comRanking.sort()
-
-        setCiclos(comRanking)
-        if (comRanking.length) setCicloAtivo(comRanking[comRanking.length - 1])
+        const cs = [...new Set(d.map((r: any) => r.ciclo_nome))].sort() as string[]
+        setCiclos(cs)
+        if (cs.length) setCicloAtivo(cs[cs.length - 1])
         setLoading(false)
       })
   }, [])
@@ -72,25 +51,7 @@ export default function Turma() {
 
   const cicloData = cicloAtivo === 'geral'
     ? alunosGeral
-    : (() => {
-        // Tenta filtrar por nome exato primeiro (ranking)
-        const exato = dados.filter(r => r.ciclo_nome === cicloAtivo)
-        if (exato.length > 0) return exato.sort((a, b) => mediaAluno(b) - mediaAluno(a))
-        // Se não encontrar, filtra por ciclos que contenham o número
-        const num = cicloAtivo.replace('Ciclo ', '').trim()
-        const porNum = dados.filter(r => r.ciclo_nome?.includes(`Ciclo ${num}`))
-        // Agrupa por aluno e calcula média
-        const porAluno: Record<string, any> = {}
-        porNum.forEach(r => {
-          if (!porAluno[r.id_aluno]) porAluno[r.id_aluno] = { ...r, _fasesNotas: [] }
-          const n = mediaAluno(r)
-          if (n > 0) porAluno[r.id_aluno]._fasesNotas.push(n)
-        })
-        return Object.values(porAluno).map((r: any) => ({
-          ...r,
-          _mediaGeral: r._fasesNotas.length ? r._fasesNotas.reduce((a: number, b: number) => a + b, 0) / r._fasesNotas.length : 0
-        })).sort((a: any, b: any) => b._mediaGeral - a._mediaGeral)
-      })()
+    : dados.filter(r => r.ciclo_nome === cicloAtivo).sort((a, b) => mediaAluno(b) - mediaAluno(a))
 
   // Alunos que precisam de atenção: reprovados ou média < 5
   const atencao = cicloData.filter(r =>

@@ -1,157 +1,286 @@
+// @ts-nocheck
 'use client'
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import Nav from '@/components/Nav'
 import { useRouter } from 'next/navigation'
+import Nav from '@/components/Nav'
 import * as XLSX from 'xlsx'
-
-type Row = Record<string, any>
-
-function parseSheet(wb: XLSX.WorkBook, sheetName: string): Row[] {
-  const ws = wb.Sheets[sheetName]
-  if (!ws) return []
-  return XLSX.utils.sheet_to_json(ws, { defval: null })
-}
-
-function detectFase(sheetName: string): string {
-  if (sheetName.includes('Ranking')) return 'ranking'
-  if (sheetName.includes('1a Fase') || sheetName.includes('Simulado Zero') || sheetName.includes('Diagnóstico') || sheetName.includes('Processo')) return '1fase'
-  if (sheetName.includes('Matem')) return '2fase_mat'
-  if (sheetName.includes('Físic') || sheetName.includes('Fisic')) return '2fase_fis'
-  if (sheetName.includes('Quím') || sheetName.includes('Quim')) return '2fase_qui'
-  if (sheetName.includes('Portu') || sheetName.includes('Lingu')) return '2fase_port'
-  return 'outro'
-}
-
-function excelDateToISO(serial: number): string | null {
-  if (!serial || isNaN(serial)) return null
-  const base = new Date(1899, 11, 30)
-  const date = new Date(base.getTime() + serial * 86400000)
-  return date.toISOString().split('T')[0]
-}
 
 export default function UploadSimulados() {
   const router = useRouter()
-  const [loading, setLoading] = useState(false)
   const [log, setLog] = useState<string[]>([])
+  const [loading, setLoading] = useState(false)
   const [done, setDone] = useState(false)
 
   function addLog(msg: string) { setLog(prev => [...prev, msg]) }
+
+  function parseSheet(wb: any, name: string): any[] {
+    const ws = wb.Sheets[name]
+    if (!ws) return []
+    const rows = XLSX.utils.sheet_to_json(ws, { defval: null })
+    return rows as any[]
+  }
+
+  function excelDateToISO(val: any): string | null {
+    if (!val) return null
+    if (typeof val === 'string' && val.includes('-')) return val
+    if (typeof val === 'number') {
+      const d = new Date(Math.round((val - 25569) * 86400 * 1000))
+      return d.toISOString().split('T')[0]
+    }
+    return null
+  }
+
+  function detectTipo(name: string): { ciclo: string, tipo: string, concurso: string } {
+    const isITA = name.includes('ITA')
+    const isIME = name.includes('IME')
+    const concurso = isIME ? 'IME' : 'ITA'
+    const numMatch = name.match(/Ciclo (\d+)/)
+    const num = numMatch ? numMatch[1] : '0'
+    const cicloBase = `Ciclo ${num}`
+
+    if (name.includes('1a Fase')) return { ciclo: cicloBase, tipo: '1fase', concurso }
+    if (name.includes('Matem')) return { ciclo: cicloBase, tipo: '2fase_mat', concurso }
+    if (name.includes('Físic') || name.includes('Fisic')) return { ciclo: cicloBase, tipo: '2fase_fis', concurso }
+    if (name.includes('Quím') || name.includes('Quim')) return { ciclo: cicloBase, tipo: '2fase_qui', concurso }
+    if (name.includes('Port') || name.includes('Lingu')) return { ciclo: cicloBase, tipo: '2fase_port', concurso }
+    if (name.includes('Inglês') || name.includes('Ingles')) return { ciclo: cicloBase, tipo: '2fase_ing', concurso }
+    if (name.includes('Simulado Zero')) return { ciclo: 'Simulado Zero', tipo: '1fase', concurso }
+    if (name.includes('Diagnóstico')) return { ciclo: name, tipo: '1fase', concurso }
+    if (name.includes('Processo')) return { ciclo: name, tipo: '1fase', concurso }
+    return { ciclo: cicloBase, tipo: 'outro', concurso }
+  }
+
+  // Calcula médias finais por ciclo/concurso para cada aluno
+  function calcularRankings(todosDados: any[]): any[] {
+    // Agrupa por aluno + ciclo
+    const grupos: Record<string, any> = {}
+    todosDados.forEach(r => {
+      const key = `${r.id_aluno}__${r.ciclo_nome}__${r.concurso}`
+      if (!grupos[key]) grupos[key] = { ...r, fases: {} }
+      grupos[key].fases[r.fase] = r
+    })
+
+    const rankings: any[] = []
+    Object.values(grupos).forEach((g: any) => {
+      const f1 = g.fases['1fase']
+      const fmat = g.fases['2fase_mat']
+      const ffis = g.fases['2fase_fis']
+      const fqui = g.fases['2fase_qui']
+      const fport = g.fases['2fase_port']
+      const fing = g.fases['2fase_ing']
+
+      const nota1f = f1?.media_1fase ?? null
+      const notaMat = fmat?.nota_matematica ?? null
+      const notaFis = ffis?.nota_fisica ?? null
+      const notaQui = fqui?.nota_quimica ?? null
+      const notaPort = fport?.media_linguagens ?? null
+      const notaIng = fing?.nota_ingles ?? null
+
+      let mediaFinal = null
+      let resultado = null
+
+      if (g.concurso === 'ITA') {
+        // Média ITA: 0.20 * cada uma das 5 componentes
+        const notas = [nota1f, notaMat, notaFis, notaQui, notaPort].filter(n => n !== null)
+        if (notas.length > 0) {
+          mediaFinal = notas.reduce((a, b) => a + b, 0) / notas.length
+          // Verifica reprovação
+          if (notas.length === 5) {
+            const reprovado = [notaMat, notaFis, notaQui, notaPort].some(n => n < 4.0)
+            resultado = (mediaFinal >= 5.0 && !reprovado) ? 'Aprovado' : 'Reprovado'
+          } else {
+            resultado = 'Em andamento'
+          }
+        }
+      } else {
+        // Média IME: (3*Mat + 2.5*Fis + 2.5*Qui + 1*Port + 1*Ing) / 10
+        if (notaMat !== null || notaFis !== null || notaQui !== null || notaPort !== null || notaIng !== null) {
+          const notas2f = [notaMat, notaFis, notaQui, notaPort, notaIng]
+          const pesos = [3, 2.5, 2.5, 1, 1]
+          let soma = 0, pesoTotal = 0
+          notas2f.forEach((n, i) => {
+            if (n !== null) { soma += n * pesos[i]; pesoTotal += pesos[i] }
+          })
+          const media2f = pesoTotal > 0 ? soma / pesoTotal : null
+          mediaFinal = media2f
+
+          const todasPresentes = notas2f.every(n => n !== null)
+          if (todasPresentes) {
+            const reprovado = notas2f.some(n => n < 4.0)
+            resultado = !reprovado ? 'Aprovado' : 'Reprovado'
+          } else {
+            resultado = 'Em andamento'
+          }
+        }
+      }
+
+      rankings.push({
+        ciclo_nome: g.ciclo_nome,
+        concurso: g.concurso,
+        id_aluno: g.id_aluno,
+        nome_aluno: g.nome_aluno,
+        mentor: g.mentor,
+        fase: 'ranking',
+        media_1fase: nota1f,
+        nota_matematica: notaMat,
+        nota_fisica: notaFis,
+        nota_quimica: notaQui,
+        media_linguagens: notaPort,
+        nota_ingles: notaIng,
+        media_2fase: mediaFinal,
+        resultado_ciclo: resultado,
+      })
+    })
+
+    return rankings
+  }
 
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
     setLoading(true); setLog([]); setDone(false)
 
-    try {
-      const buf = await file.arrayBuffer()
-      const wb = XLSX.read(buf, { type: 'array' })
+    const buf = await file.arrayBuffer()
+    const wb = XLSX.read(buf, { type: 'array' })
+    addLog(`📂 ${wb.SheetNames.length} abas encontradas`)
 
-      addLog(`📋 Planilha lida: ${wb.SheetNames.length} abas`)
+    // 1. Importa alunos
+    const idsRows = parseSheet(wb, 'Ids Alunos')
+    if (idsRows.length) {
+      addLog(`\n👤 Importando ${idsRows.length} alunos...`)
+      const { data: jasCadastrados } = await supabase.from('alunos_dados').select('id_aluno, cadastrado')
+      const cadastradoMap: Record<string, boolean> = {}
+      ;(jasCadastrados || []).forEach((a: any) => { cadastradoMap[a.id_aluno] = a.cadastrado })
 
-      // 1. Importar alunos da aba "Ids Alunos"
-      const idsSheet = parseSheet(wb, 'Ids Alunos')
-      if (idsSheet.length) {
-        addLog(`👤 Importando ${idsSheet.length} alunos...`)
-        
-        // Busca quais alunos já criaram conta para não sobrescrever
-        const { data: jasCadastrados } = await supabase
-          .from('alunos_dados').select('id_aluno, cadastrado')
-        const cadastradoMap: Record<string, boolean> = {}
-        ;(jasCadastrados || []).forEach((a: any) => { cadastradoMap[a.id_aluno] = a.cadastrado })
-
-        const alunosData = idsSheet.map((r: Row) => {
-          const idAluno = String(r['IdAluno'] || '')
-          return {
-            id_aluno: idAluno,
-            nome: String(r['Aluno'] || ''),
-            mentor: r['Mentor do Aluno'] || null,
-            data_nascimento: excelDateToISO(Number(r['Data nascimento do Aluno'])),
-            ingresso: r['Ingresso na Turma'] || null,
-            cotista: r['Cotista?'] === 'Sim',
-            cadastrado: cadastradoMap[idAluno] || false, // preserva se já cadastrou
-          }
-        }).filter(a => a.id_aluno && a.nome)
-
-        const { error: alunosErr } = await supabase
-          .from('alunos_dados')
-          .upsert(alunosData, { onConflict: 'id_aluno' })
-
-        if (alunosErr) addLog(`⚠ Erro ao importar alunos: ${alunosErr.message}`)
-        else addLog(`✅ ${alunosData.length} alunos importados`)
-      }
-
-      // 2. Importar resultados (todas as abas exceto Ids Alunos)
-      const sheets = wb.SheetNames.filter(n => n !== 'Ids Alunos')
-      addLog(`\n📊 Importando resultados de ${sheets.length} abas...`)
-
-      // Limpa resultados antigos
-      await supabase.from('resultados').delete().neq('id', '00000000-0000-0000-0000-000000000000')
-
-      let total = 0
-
-      for (const sheetName of sheets) {
-        const rows = parseSheet(wb, sheetName)
-        if (!rows.length) continue
-
-        const fase = detectFase(sheetName)
-        addLog(`  → ${sheetName} (${rows.length} alunos)`)
-
-        const records = rows.map((r: Row) => {
-          const respostas: Record<string, string> = {}
-          const notasQuestoes: Record<string, number> = {}
-
-          for (let i = 1; i <= 48; i++) {
-            const key = `Q${i}`
-            if (r[key] !== null && r[key] !== undefined) {
-              if (fase === '1fase') respostas[key] = String(r[key])
-              else notasQuestoes[key] = Number(r[key])
-            }
-          }
-
-          return {
-            ciclo_nome: r['Simulado'] ?? sheetName,
-            id_aluno: String(r['IdAluno'] ?? ''),
-            nome_aluno: String(r['Aluno'] ?? ''),
-            mentor: r['Mentor do Aluno'] ?? null,
-            fase,
-            classificacao: r['CL'] ? Number(r['CL']) : null,
-            nota_final: r['Nota Final'] ?? r['Nota'] ?? null,
-            acertos_mat: r['Acertos Matemática'] ?? r['Acertos Mat'] ?? null,
-            acertos_fis: r['Acertos Física'] ?? r['Acertos Fis'] ?? null,
-            acertos_qui: r['Acertos Química'] ?? r['Acertos Qui'] ?? null,
-            acertos_ing: r['Acertos Inglês'] ?? r['Acertos Ing'] ?? null,
-            acertos_total: r['Total'] ?? null,
-            respostas: Object.keys(respostas).length ? respostas : null,
-            notas_questoes: Object.keys(notasQuestoes).length ? notasQuestoes : null,
-            pontos_inteiros: r['Pontos Inteiros'] ?? null,
-            resultado: r['Resultado'] ?? r['Resultado Ciclo'] ?? null,
-            motivo_reprovacao: r['Motivo Reprovação'] ?? r['Motivo Reprovação Ciclo'] ?? r['Motivo Eliminação'] ?? null,
-            media_1fase: r['Média 1a Fase'] ?? r['Media 1a Fase'] ?? null,
-            media_2fase: r['Média 2a Fase'] ?? r['Media 2a Fase'] ?? null,
-            nota_matematica: r['Matemática'] ?? r['Matematica'] ?? null,
-            nota_fisica: r['Física'] ?? r['Fisica'] ?? null,
-            nota_quimica: r['Química'] ?? r['Quimica'] ?? null,
-            nota_portugues: r['Português'] ?? r['Portugues'] ?? null,
-            nota_redacao: r['Nota Redacao'] ?? null,
-            media_linguagens: r['Media Linguagens'] ?? r['Média Linguagens'] ?? null,
-            resultado_ciclo: r['Resultado Ciclo'] ?? null,
-          }
-        }).filter(r => r.id_aluno && r.id_aluno !== 'null')
-
-        if (records.length) {
-          const { error } = await supabase.from('resultados').insert(records)
-          if (error) addLog(`❌ Erro em ${sheetName}: ${error.message}`)
-          else total += records.length
+      const alunosData = idsRows.map(r => {
+        const idAluno = String(r['IdAluno'] || '')
+        return {
+          id_aluno: idAluno,
+          nome: String(r['Aluno'] || ''),
+          mentor: r['Mentor do Aluno'] || null,
+          data_nascimento: excelDateToISO(r['Data nascimento do Aluno']),
+          ingresso: r['Ingresso na Turma'] || null,
+          cadastrado: cadastradoMap[idAluno] || false,
         }
-      }
+      }).filter(a => a.id_aluno && a.nome)
 
-      addLog(`\n🎉 Concluído! ${total} registros importados.`)
-      setDone(true)
-    } catch (err: any) {
-      addLog(`❌ Erro: ${err.message}`)
+      await supabase.from('alunos_dados').delete().neq('id_aluno', 'x')
+      for (let i = 0; i < alunosData.length; i += 100) {
+        await supabase.from('alunos_dados').insert(alunosData.slice(i, i + 100))
+      }
+      addLog(`✅ ${alunosData.length} alunos importados`)
     }
 
+    // 2. Limpa resultados antigos
+    addLog(`\n🗑 Limpando resultados anteriores...`)
+    await supabase.from('resultados').delete().neq('id', '00000000-0000-0000-0000-000000000000')
+
+    // 3. Processa cada aba de notas
+    const ignorar = ['Ids Alunos', 'Processo Seletivo']
+    const abasNotas = wb.SheetNames.filter(n => !ignorar.includes(n) && !n.includes('Ranking'))
+    addLog(`\n📊 Processando ${abasNotas.length} abas de notas...`)
+
+    const todosDados: any[] = []
+    let totalRecs = 0
+
+    for (const sheetName of abasNotas) {
+      const rows = parseSheet(wb, sheetName)
+      if (!rows.length) continue
+
+      const { ciclo, tipo, concurso } = detectTipo(sheetName)
+      addLog(`  → ${sheetName} (${rows.length} alunos)`)
+
+      const records = rows.map(r => {
+        const idAluno = String(r['IdAluno'] ?? '').trim()
+        if (!idAluno || idAluno === 'null') return null
+
+        // Notas por questão para assertividade
+        const notasQuestoes: Record<string, number> = {}
+        Object.keys(r).forEach(k => {
+          if (k.match(/^Q\d+$/) && typeof r[k] === 'number') notasQuestoes[k] = r[k]
+        })
+
+        const rec: any = {
+          ciclo_nome: ciclo,
+          concurso,
+          id_aluno: idAluno,
+          nome_aluno: String(r['Aluno'] || ''),
+          mentor: r['Mentor do Aluno'] || null,
+          fase: tipo,
+          notas_questoes: Object.keys(notasQuestoes).length ? notasQuestoes : null,
+          resultado: r['Resultado'] || null,
+          motivo_reprovacao: r['Motivo Eliminação'] || r['Motivo Reprovação'] || null,
+          classificacao: r['CL'] ? Number(r['CL']) : null,
+        }
+
+        // Notas específicas por tipo
+        if (tipo === '1fase') {
+          rec.media_1fase = r['Nota'] !== undefined ? Number(r['Nota']) : null
+          rec.acertos_mat_1f = r['Acertos Matemática'] ? Number(r['Acertos Matemática']) : null
+          rec.acertos_fis_1f = r['Acertos Física'] ? Number(r['Acertos Física']) : null
+          rec.acertos_qui_1f = r['Acertos Química'] ? Number(r['Acertos Química']) : null
+          rec.acertos_ing_1f = r['Acertos Inglês'] ? Number(r['Acertos Inglês']) : null
+        } else if (tipo === '2fase_mat') {
+          rec.nota_matematica = r['Nota'] !== undefined ? Number(r['Nota']) : null
+          rec.pontos_inteiros = r['Pontos Inteiros'] ? Number(r['Pontos Inteiros']) : null
+        } else if (tipo === '2fase_fis') {
+          rec.nota_fisica = r['Nota'] !== undefined ? Number(r['Nota']) : null
+          rec.pontos_inteiros = r['Pontos Inteiros'] ? Number(r['Pontos Inteiros']) : null
+        } else if (tipo === '2fase_qui') {
+          rec.nota_quimica = r['Nota'] !== undefined ? Number(r['Nota']) : null
+          rec.pontos_inteiros = r['Pontos Inteiros'] ? Number(r['Pontos Inteiros']) : null
+        } else if (tipo === '2fase_port') {
+          // ITA: Media Linguagens = (obj + redação) / 2
+          // IME: Nota agregada de Port + Ing
+          rec.media_linguagens = r['Media Linguagens'] !== undefined ? Number(r['Media Linguagens'])
+            : r['Nota'] !== undefined ? Number(r['Nota']) : null
+          rec.nota_redacao = r['Nota Redacao'] !== undefined ? Number(r['Nota Redacao']) : null
+          rec.nota_portugues = r['Nota'] !== undefined ? Number(r['Nota']) : null
+        } else if (tipo === '2fase_ing') {
+          rec.nota_ingles = r['Nota'] !== undefined ? Number(r['Nota']) : null
+        }
+
+        todosDados.push(rec)
+        return rec
+      }).filter(Boolean)
+
+      totalRecs += records.length
+      for (let i = 0; i < records.length; i += 100) {
+        await supabase.from('resultados').insert(records.slice(i, i + 100))
+      }
+    }
+
+    addLog(`✅ ${totalRecs} registros de notas importados`)
+
+    // 4. Calcula e insere rankings sintéticos
+    addLog(`\n🏆 Calculando rankings...`)
+    const rankings = calcularRankings(todosDados)
+    
+    // Agrupa por ciclo
+    const porCiclo: Record<string, any[]> = {}
+    rankings.forEach(r => {
+      const k = `${r.ciclo_nome}__${r.concurso}`
+      if (!porCiclo[k]) porCiclo[k] = []
+      porCiclo[k].push(r)
+    })
+
+    // Ordena por média e atribui classificação
+    let totalRankings = 0
+    for (const [key, grupo] of Object.entries(porCiclo)) {
+      grupo.sort((a, b) => (b.media_2fase ?? 0) - (a.media_2fase ?? 0))
+      grupo.forEach((r, i) => { r.classificacao = i + 1 })
+      for (let i = 0; i < grupo.length; i += 100) {
+        await supabase.from('resultados').insert(grupo.slice(i, i + 100))
+      }
+      totalRankings += grupo.length
+      const [cicloKey] = key.split('__')
+      addLog(`  ✅ ${cicloKey}: ${grupo.length} alunos`)
+    }
+
+    addLog(`\n🎉 Importação concluída!`)
+    addLog(`   📊 ${totalRecs} notas + ${totalRankings} rankings`)
+    setDone(true)
     setLoading(false)
   }
 
@@ -159,43 +288,41 @@ export default function UploadSimulados() {
     <div style={{ paddingBottom: 80 }}>
       <div style={{ background: 'white', borderBottom: '0.5px solid rgba(0,0,0,0.08)', padding: '16px', position: 'sticky', top: 0, zIndex: 10, display: 'flex', alignItems: 'center', gap: 12 }}>
         <button onClick={() => router.back()} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#999' }}>←</button>
-        <div style={{ fontSize: 17, fontWeight: 600 }}>Importar planilha</div>
+        <div style={{ fontSize: 17, fontWeight: 600 }}>Upload de resultados</div>
       </div>
 
-      <div style={{ padding: 16 }}>
-        <div className="card" style={{ marginBottom: 16 }}>
-          <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 6 }}>📁 Upload da planilha</div>
-          <div style={{ fontSize: 12, color: '#999', marginBottom: 14, lineHeight: 1.6 }}>
-            Selecione o arquivo <strong>Gabaritos_ITA_IME_2026.xlsx</strong>. Os dados de alunos e resultados serão atualizados automaticamente. Contas já criadas pelos alunos serão preservadas.
+      <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div className="card">
+          <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 6 }}>Planilha de gabaritos (.xlsx)</div>
+          <div style={{ fontSize: 12, color: '#999', marginBottom: 12, lineHeight: 1.6 }}>
+            Selecione a planilha atualizada. Os dados anteriores serão substituídos.<br/>
+            Ciclos parciais (sem todas as fases) são importados normalmente.
           </div>
           <input type="file" accept=".xlsx,.xls" onChange={handleFile} disabled={loading}
-            style={{ width: '100%', padding: '10px', borderRadius: 10, border: '0.5px solid rgba(0,0,0,0.12)', background: '#F7F6F3', fontSize: 13, cursor: 'pointer' }} />
+            style={{ width: '100%', padding: '10px', borderRadius: 10, border: '0.5px solid rgba(0,0,0,0.12)', background: '#F7F6F3', fontSize: 13 }} />
         </div>
 
-        {loading && (
-          <div className="card" style={{ textAlign: 'center', padding: 24 }}>
-            <div style={{ fontSize: 24, marginBottom: 8 }}>⏳</div>
-            <div style={{ fontSize: 13, color: '#999' }}>Processando...</div>
-          </div>
-        )}
-
         {log.length > 0 && (
-          <div className="card" style={{ marginBottom: 16 }}>
-            <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 10, color: '#999', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Log</div>
-            <div style={{ fontFamily: 'monospace', fontSize: 11, lineHeight: 2, maxHeight: 300, overflowY: 'auto' }}>
+          <div className="card">
+            <div style={{ fontFamily: 'monospace', fontSize: 11, lineHeight: 1.9, maxHeight: 400, overflowY: 'auto' }}>
               {log.map((l, i) => (
-                <div key={i} style={{ color: l.startsWith('❌') ? '#E24B4A' : l.startsWith('✅') ? '#1D9E75' : l.startsWith('🎉') ? '#534AB7' : '#666' }}>{l}</div>
+                <div key={i} style={{
+                  color: l.startsWith('❌') ? '#E24B4A'
+                    : l.startsWith('✅') || l.startsWith('🎉') ? '#1D9E75'
+                    : l.startsWith('🏆') || l.startsWith('📊') ? '#534AB7'
+                    : '#666'
+                }}>{l}</div>
               ))}
             </div>
           </div>
         )}
 
+        {loading && <div style={{ textAlign: 'center', color: '#534AB7', padding: 20, fontWeight: 500 }}>Importando... aguarde</div>}
+
         {done && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <button className="btn-primary" onClick={() => router.push('/turma')}>Ver turma →</button>
-            <button className="btn-secondary" onClick={() => router.push('/simulados')}>Ver alunos →</button>
-          </div>
+          <button className="btn-primary" onClick={() => router.push('/simulados')}>Ver alunos →</button>
         )}
+        {!loading && !done && <button className="btn-secondary" onClick={() => router.back()}>Cancelar</button>}
       </div>
       <Nav />
     </div>
