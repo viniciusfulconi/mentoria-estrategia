@@ -333,20 +333,23 @@ function ViewDia({ data, atividades, onSelect, isAluno, perfil, onDelete }: any)
 // ========== VIEW SEMANA ==========
 function ViewSemana({ dataAtual, atividadesExpandidas, onSelect, onSelectDia }: any) {
   const hoje = new Date()
-  const inicioSemanaLocal = new Date(dataAtual)
-  inicioSemanaLocal.setDate(dataAtual.getDate() - dataAtual.getDay())
-  inicioSemanaLocal.setHours(0, 0, 0, 0)
+  
+  // Calcula início da semana (domingo)
+  const base = new Date(dataAtual)
+  base.setDate(dataAtual.getDate() - dataAtual.getDay())
+  base.setHours(0, 0, 0, 0)
 
-  const dias = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(inicioSemana)
-    d.setDate(inicioSemanaLocal.getDate() + i)
-    return d
-  })
+  const dias: Date[] = []
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(base)
+    d.setDate(base.getDate() + i)
+    dias.push(d)
+  }
 
   const DIAS_CURTO = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
 
-  function atividadesDoDia(data: Date): any[] {
-    return atividadesExpandidas.filter((a: any) => {
+  function atividadesDoDia(data: Date) {
+    return (atividadesExpandidas || []).filter((a: any) => {
       const d = new Date(a.data_inicio)
       return d.getDate() === data.getDate() &&
         d.getMonth() === data.getMonth() &&
@@ -356,7 +359,6 @@ function ViewSemana({ dataAtual, atividadesExpandidas, onSelect, onSelectDia }: 
 
   return (
     <div>
-      {/* Header dos dias */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4, marginBottom: 8 }}>
         {dias.map((d, i) => {
           const isHoje = d.getDate() === hoje.getDate() && d.getMonth() === hoje.getMonth() && d.getFullYear() === hoje.getFullYear()
@@ -368,31 +370,25 @@ function ViewSemana({ dataAtual, atividadesExpandidas, onSelect, onSelectDia }: 
           )
         })}
       </div>
-
-      {/* Grade de atividades */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4 }}>
         {dias.map((d, i) => {
           const ativs = atividadesDoDia(d)
           const isHoje = d.getDate() === hoje.getDate() && d.getMonth() === hoje.getMonth() && d.getFullYear() === hoje.getFullYear()
           return (
-            <div key={i} style={{ minHeight: 120, borderRadius: 8, border: `1px solid ${isHoje ? '#534AB7' : 'rgba(0,0,0,0.06)'}`, padding: 4, background: isHoje ? '#FAFAFE' : 'white' }}>
-              {ativs.length === 0 ? (
-                <div style={{ height: '100%', minHeight: 100 }} />
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                  {ativs.map((a: any) => {
-                    const { bg, text } = corAtividade(a)
-                    return (
-                      <div key={a.id} onClick={() => onSelect(a)} style={{ background: bg, borderRadius: 5, padding: '4px 6px', cursor: 'pointer' }}>
-                        <div style={{ fontSize: 9, color: text, fontWeight: 600, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
-                          {formatHora(a.data_inicio)} {a.titulo}
-                        </div>
-                        {a.materia && <div style={{ fontSize: 8, color: text, opacity: 0.8 }}>{a.materia}</div>}
+            <div key={i} style={{ minHeight: 120, borderRadius: 8, border: '1px solid ' + (isHoje ? '#534AB7' : 'rgba(0,0,0,0.06)'), padding: 4, background: isHoje ? '#FAFAFE' : 'white' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                {ativs.map((a: any) => {
+                  const cores = corAtividade(a)
+                  return (
+                    <div key={a.id} onClick={() => onSelect(a)} style={{ background: cores.bg, borderRadius: 5, padding: '4px 6px', cursor: 'pointer' }}>
+                      <div style={{ fontSize: 9, color: cores.text, fontWeight: 600, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
+                        {formatHora(a.data_inicio)} {a.titulo}
                       </div>
-                    )
-                  })}
-                </div>
-              )}
+                      {a.materia && <div style={{ fontSize: 8, color: cores.text, opacity: 0.8 }}>{a.materia}</div>}
+                    </div>
+                  )
+                })}
+              </div>
             </div>
           )
         })}
@@ -400,6 +396,7 @@ function ViewSemana({ dataAtual, atividadesExpandidas, onSelect, onSelectDia }: 
     </div>
   )
 }
+
 
 // ========== VIEW MÊS ==========
 function ViewMes({ dataAtual, atividadesExpandidas, onSelectDia }: any) {
