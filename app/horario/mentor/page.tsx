@@ -12,6 +12,8 @@ export default function MentorEstudo() {
   const [alunos, setAlunos] = useState<any[]>([])
   const [materias, setMaterias] = useState<string[]>([])
   const [form, setForm] = useState({ aluno_id: '', materia: '', professor: '', descricao: '', data: new Date().toISOString().split('T')[0], hora_inicio: '08:00', hora_fim: '09:00' })
+  const [repeticao, setRepeticao] = useState('nenhuma')
+  const [dataFimRep, setDataFimRep] = useState('')
   const [saving, setSaving] = useState(false)
   const [erro, setErro] = useState('')
 
@@ -27,20 +29,40 @@ export default function MentorEstudo() {
 
   async function salvar() {
     if (!form.aluno_id || !form.materia || !form.data) { setErro('Preencha aluno, matéria e data.'); return }
+    if (repeticao !== 'nenhuma' && !dataFimRep) { setErro('Preencha a data final da repetição.'); return }
     setSaving(true)
-    const dtInicio = new Date(`${form.data}T${form.hora_inicio}`)
-    const dtFim = new Date(`${form.data}T${form.hora_fim}`)
+
     const cor = CORES_MATERIA[form.materia] || '#534AB7'
-    const { error } = await supabase.from('atividades').insert([{
-      tipo: 'estudo', titulo: `Estudo de ${form.materia}`,
-      materia: form.materia, professor: form.professor,
-      descricao: form.descricao, cor,
-      data_inicio: dtInicio.toISOString(), data_fim: dtFim.toISOString(),
-      aluno_id: form.aluno_id,
-      criado_por: 'mentor', criado_por_id: perfil?.id,
-    }])
+    const registros = []
+    const dtBase = new Date(form.data)
+    const dtFimRep = dataFimRep ? new Date(dataFimRep) : dtBase
+    let dtAtual = new Date(dtBase)
+
+    while (dtAtual <= dtFimRep) {
+      const dtInicio = new Date(`${dtAtual.toISOString().split('T')[0]}T${form.hora_inicio}`)
+      const dtFim = new Date(`${dtAtual.toISOString().split('T')[0]}T${form.hora_fim}`)
+      registros.push({
+        tipo: 'estudo', titulo: `Estudo de ${form.materia}`,
+        materia: form.materia, professor: form.professor,
+        descricao: form.descricao, cor,
+        data_inicio: dtInicio.toISOString(), data_fim: dtFim.toISOString(),
+        aluno_id: form.aluno_id,
+        criado_por: 'mentor', criado_por_id: perfil?.id,
+      })
+      if (repeticao === 'nenhuma') break
+      else if (repeticao === 'semanal') dtAtual.setDate(dtAtual.getDate() + 7)
+      else if (repeticao === 'quinzenal') dtAtual.setDate(dtAtual.getDate() + 14)
+      else if (repeticao === 'mensal') dtAtual.setMonth(dtAtual.getMonth() + 1)
+    }
+
+    const { error } = await supabase.from('atividades').insert(registros)
     if (error) { setErro(error.message); setSaving(false) }
-    else { setForm(f => ({ ...f, descricao: '', data: new Date().toISOString().split('T')[0] })); setErro(''); alert('Estudo adicionado!') }
+    else {
+      const msg = registros.length > 1 ? `${registros.length} estudos adicionados!` : 'Estudo adicionado!'
+      setForm(f => ({ ...f, descricao: '', data: new Date().toISOString().split('T')[0] }))
+      setRepeticao('nenhuma'); setDataFimRep(''); setErro('')
+      alert(msg)
+    }
   }
 
   return (
@@ -77,6 +99,42 @@ export default function MentorEstudo() {
         <div><label>Professor (opcional)</label><input value={form.professor} onChange={e => setForm({ ...form, professor: e.target.value })} placeholder="Nome do professor" /></div>
         <div><label>Observações / comentários</label><textarea value={form.descricao} onChange={e => setForm({ ...form, descricao: e.target.value })} placeholder="Instruções para o aluno..." rows={3} style={{ resize: 'vertical' }} /></div>
         <div><label>Data</label><input type="date" value={form.data} onChange={e => setForm({ ...form, data: e.target.value })} /></div>
+
+        {/* Repetição */}
+        <div>
+          <label>Repetição</label>
+          <div style={{ display: 'flex', gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
+            {[
+              { val: 'nenhuma', label: 'Não repetir' },
+              { val: 'semanal', label: 'Semanal' },
+              { val: 'quinzenal', label: 'Quinzenal' },
+              { val: 'mensal', label: 'Mensal' },
+            ].map(op => (
+              <button key={op.val} onClick={() => setRepeticao(op.val)} style={{
+                padding: '6px 14px', borderRadius: 20, fontSize: 12,
+                border: '0.5px solid rgba(0,0,0,0.12)',
+                background: repeticao === op.val ? '#534AB7' : 'transparent',
+                color: repeticao === op.val ? 'white' : '#666',
+                cursor: 'pointer', fontFamily: 'DM Sans,sans-serif'
+              }}>{op.label}</button>
+            ))}
+          </div>
+        </div>
+
+        {repeticao !== 'nenhuma' && (
+          <div>
+            <label>Repetir até</label>
+            <input type="date" value={dataFimRep} onChange={e => setDataFimRep(e.target.value)} min={form.data} />
+            <div style={{ fontSize: 11, color: '#999', marginTop: 4 }}>
+              {dataFimRep && form.data && (() => {
+                const diff = Math.floor((new Date(dataFimRep).getTime() - new Date(form.data).getTime()) / 86400000)
+                const saltos = repeticao === 'semanal' ? 7 : repeticao === 'quinzenal' ? 14 : 30
+                const count = Math.floor(diff / saltos) + 1
+                return `Serão criados ${count} registro${count !== 1 ? 's' : ''}`
+              })()}
+            </div>
+          </div>
+        )}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
           <div><label>Início</label><input type="time" value={form.hora_inicio} onChange={e => setForm({ ...form, hora_inicio: e.target.value })} /></div>
           <div><label>Fim</label><input type="time" value={form.hora_fim} onChange={e => setForm({ ...form, hora_fim: e.target.value })} /></div>

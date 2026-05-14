@@ -11,20 +11,37 @@ export default function NovaAtividade() {
   const { perfil } = useAuth()
   const router = useRouter()
   const [form, setForm] = useState({ titulo: '', descricao: '', data: new Date().toISOString().split('T')[0], hora_inicio: '08:00', hora_fim: '09:00', cor: CORES_PESSOAL[0] })
+  const [repeticao, setRepeticao] = useState('nenhuma')
+  const [dataFimRep, setDataFimRep] = useState('')
   const [saving, setSaving] = useState(false)
   const [erro, setErro] = useState('')
 
   async function salvar() {
     if (!form.titulo || !form.data) { setErro('Preencha título e data.'); return }
+    if (repeticao !== 'nenhuma' && !dataFimRep) { setErro('Preencha a data final da repetição.'); return }
     setSaving(true)
-    const dtInicio = new Date(`${form.data}T${form.hora_inicio}`)
-    const dtFim = new Date(`${form.data}T${form.hora_fim}`)
-    const { error } = await supabase.from('atividades').insert([{
-      tipo: 'pessoal', titulo: form.titulo, descricao: form.descricao,
-      data_inicio: dtInicio.toISOString(), data_fim: dtFim.toISOString(),
-      cor: form.cor, aluno_id: perfil?.aluno_id,
-      criado_por: 'aluno', criado_por_id: perfil?.id,
-    }])
+
+    const registros = []
+    const dtBase = new Date(form.data)
+    const dtFimRep = dataFimRep ? new Date(dataFimRep) : dtBase
+
+    let dtAtual = new Date(dtBase)
+    while (dtAtual <= dtFimRep) {
+      const dtInicio = new Date(`${dtAtual.toISOString().split('T')[0]}T${form.hora_inicio}`)
+      const dtFim = new Date(`${dtAtual.toISOString().split('T')[0]}T${form.hora_fim}`)
+      registros.push({
+        tipo: 'pessoal', titulo: form.titulo, descricao: form.descricao,
+        data_inicio: dtInicio.toISOString(), data_fim: dtFim.toISOString(),
+        cor: form.cor, aluno_id: perfil?.aluno_id,
+        criado_por: 'aluno', criado_por_id: perfil?.id,
+      })
+      if (repeticao === 'nenhuma') break
+      else if (repeticao === 'semanal') dtAtual.setDate(dtAtual.getDate() + 7)
+      else if (repeticao === 'quinzenal') dtAtual.setDate(dtAtual.getDate() + 14)
+      else if (repeticao === 'mensal') dtAtual.setMonth(dtAtual.getMonth() + 1)
+    }
+
+    const { error } = await supabase.from('atividades').insert(registros)
     if (error) { setErro(error.message); setSaving(false) }
     else router.push('/horario')
   }
