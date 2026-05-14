@@ -23,8 +23,20 @@ export default function Turma() {
       })
   }, [])
 
+  function mediaAluno(r: any): number {
+    const notas = [
+      r.media_1fase,
+      r.nota_matematica,
+      r.nota_fisica,
+      r.nota_quimica,
+      r.media_linguagens,
+    ].map(v => v !== null && v !== undefined ? Number(v) : null).filter(v => v !== null) as number[]
+    if (!notas.length) return 0
+    return notas.reduce((a, b) => a + b, 0) / notas.length
+  }
+
   const cicloData = dados.filter(r => r.ciclo_nome === cicloAtivo)
-    .sort((a, b) => (a.classificacao || 99) - (b.classificacao || 99))
+    .sort((a, b) => mediaAluno(b) - mediaAluno(a))
 
   // Alunos que precisam de atenção: reprovados ou média < 5
   const atencao = cicloData.filter(r =>
