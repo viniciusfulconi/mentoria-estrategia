@@ -529,11 +529,14 @@ export default function AlunoPage() {
 
 
 function GraficoQuestoes({ dados, turmaQuestoes, cicloAtivo, fase, titulo, corAluno }: any) {
+  // cicloAtivo pode ser "Ciclo 1" ou "Ranking Ciclo 1" — extrai o número
+  const cicloNum = String(cicloAtivo || '').match(/\d+/)?.[0] || ''
+  if (!cicloNum) return null
+
   // Pega dados do aluno para essa fase/ciclo
-  const regAluno = dados.find((r: any) => {
-    const cicloNum = cicloAtivo?.match(/\d+/)?.[0] || ''
-    return r.ciclo_nome?.includes(cicloNum) && r.fase === fase
-  })
+  const regAluno = dados.find((r: any) =>
+    String(r.ciclo_nome || '').includes(`Ciclo ${cicloNum}`) && r.fase === fase
+  )
   if (!regAluno?.notas_questoes) return null
 
   const questoesAluno = regAluno.notas_questoes as Record<string, number>
@@ -546,9 +549,8 @@ function GraficoQuestoes({ dados, turmaQuestoes, cicloAtivo, fase, titulo, corAl
   if (!questoes.length) return null
 
   // Calcula média da turma por questão
-  const cicloNum = cicloAtivo?.match(/\d+/)?.[0] || ''
   const registrosTurma = turmaQuestoes.filter((r: any) =>
-    r.ciclo_nome?.includes(cicloNum) && r.fase === fase && r.notas_questoes
+    String(r.ciclo_nome || '').includes(`Ciclo ${cicloNum}`) && r.fase === fase && r.notas_questoes
   )
 
   const mediaTurma: Record<string, number> = {}
