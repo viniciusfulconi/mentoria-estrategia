@@ -47,6 +47,7 @@ export default function AlunoPage() {
   const [topicos, setTopicos] = useState<any[]>([])
   const [progressos, setProgressos] = useState<any[]>([])
   const [todos, setTodos] = useState<any[]>([])
+  const [turmaQuestoes, setTurmaQuestoes] = useState<any[]>([])
   const [cicloAtivo, setCicloAtivo] = useState<string | null>(null)
   const [aba, setAba] = useState<'geral' | 'simulados' | 'listas'>('geral')
   const [loading, setLoading] = useState(true)
@@ -67,6 +68,7 @@ export default function AlunoPage() {
       { data: ts },
       { data: ps },
       { data: todosRanking },
+      { data: turmaQ },
     ] = await Promise.all([
       supabase.from('resultados').select('*').eq('id_aluno', targetId).order('ciclo_nome'),
       supabase.from('perfis').select('*').eq('aluno_id', targetId).single(),
@@ -74,6 +76,7 @@ export default function AlunoPage() {
       supabase.from('topicos').select('*'),
       supabase.from('progresso_topicos').select('*').eq('aluno_id', targetId),
       supabase.from('resultados').select('id_aluno, nome_aluno, nota_matematica, nota_fisica, nota_quimica, media_linguagens, media_1fase, media_2fase').eq('fase', 'ranking'),
+      supabase.from('resultados').select('id_aluno, ciclo_nome, fase, notas_questoes').neq('fase', 'ranking'),
     ])
 
     setDados(resultados || [])
@@ -82,6 +85,7 @@ export default function AlunoPage() {
     setTopicos(ts || [])
     setProgressos(ps || [])
     setTodos(todosRanking || [])
+    setTurmaQuestoes(turmaQ || [])
 
     const rankings = (resultados || []).filter(r => r.fase === 'ranking')
       .sort((a, b) => (a.ciclo_nome || '').localeCompare(b.ciclo_nome || ''))
@@ -519,6 +523,88 @@ export default function AlunoPage() {
         )}
       </div>
       <Nav />
+    </div>
+  )
+}
+
+
+function GraficoQuestoes({ dados, turmaQuestoes, cicloAtivo, fase, titulo, corAluno }: any) {
+  // Pega dados do aluno para essa fase/ciclo
+  const regAluno = dados.find((r: any) => {
+    const cicloNum = cicloAtivo?.match(/\d+/)?.[0] || ''
+    return r.ciclo_nome?.includes(cicloNum) && r.fase === fase
+  })
+  if (!regAluno?.notas_questoes) return null
+
+  const questoesAluno = regAluno.notas_questoes as Record<string, number>
+  const questoes = Object.keys(questoesAluno).sort((a, b) => {
+    const na = parseInt(a.replace('Q', ''))
+    const nb = parseInt(b.replace('Q', ''))
+    return na - nb
+  })
+
+  if (!questoes.length) return null
+
+  // Calcula média da turma por questão
+  const cicloNum = cicloAtivo?.match(/\d+/)?.[0] || ''
+  const registrosTurma = turmaQuestoes.filter((r: any) =>
+    r.ciclo_nome?.includes(cicloNum) && r.fase === fase && r.notas_questoes
+  )
+
+  const mediaTurma: Record<string, number> = {}
+  questoes.forEach(q => {
+    const vals = registrosTurma
+      .map((r: any) => r.notas_questoes?.[q])
+      .filter((v: any) => v !== null && v !== undefined)
+    mediaTurma[q] = vals.length ? vals.reduce((a: number, b: number) => a + b, 0) / vals.length : 0
+  })
+
+  const barW = Math.max(8, Math.min(20, Math.floor(320 / questoes.length)))
+  const gap = 2
+  const totalW = questoes.length * (barW * 2 + gap + 4)
+  const h = 120
+  const padB = 20
+
+  return (
+    <div style={{ marginBottom: 16 }}>
+      <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 8 }}>{titulo}</div>
+      <div style={{ display: 'flex', gap: 12, fontSize: 10, color: '#666', marginBottom: 6 }}>
+        <span><span style={{ display: 'inline-block', width: 10, height: 10, background: corAluno, borderRadius: 2, marginRight: 4 }} />Aluno</span>
+        <span><span style={{ display: 'inline-block', width: 10, height: 10, background: '#D0D0D0', borderRadius: 2, marginRight: 4 }} />Turma</span>
+      </div>
+      <div style={{ overflowX: 'auto', paddingBottom: 4 }}>
+        <svg viewBox={`0 0 ${Math.max(totalW, 300)} ${h + padB}`} width={Math.max(totalW, 300)} height={h + padB} style={{ display: 'block' }}>
+          {/* Linhas de referência */}
+          {[0.25, 0.5, 0.75, 1.0].map(v => (
+            <g key={v}>
+              <line x1="0" y1={h - v * h} x2={Math.max(totalW, 300)} y2={h - v * h} stroke="rgba(0,0,0,0.06)" strokeWidth="1" />
+              <text x="2" y={h - v * h - 2} fontSize="7" fill="#bbb">{(v * 100).toFixed(0)}%</text>
+            </g>
+          ))}
+
+          {questoes.map((q, i) => {
+            const vAluno = questoesAluno[q] ?? 0
+            const vTurma = mediaTurma[q] ?? 0
+            const x = i * (barW * 2 + gap + 4) + 2
+            const hAluno = vAluno * h
+            const hTurma = vTurma * h
+            const corBarra = vAluno >= 0.9 ? '#1D9E75' : vAluno >= 0.5 ? '#EF9F27' : '#E24B4A'
+
+            return (
+              <g key={q}>
+                {/* Barra turma */}
+                <rect x={x} y={h - hTurma} width={barW} height={hTurma} fill="#D0D0D0" rx="2" />
+                {/* Barra aluno */}
+                <rect x={x + barW + gap} y={h - hAluno} width={barW} height={hAluno} fill={corBarra} rx="2" />
+                {/* Label questão */}
+                <text x={x + barW} y={h + padB - 4} textAnchor="middle" fontSize="7" fill="#999">
+                  {q.replace('Q', '')}
+                </text>
+              </g>
+            )
+          })}
+        </svg>
+      </div>
     </div>
   )
 }
