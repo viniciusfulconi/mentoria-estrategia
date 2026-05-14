@@ -19,11 +19,13 @@ export default function Turma() {
         const cs = [...new Set(d.map(r => r.ciclo_nome))].sort()
         setCiclos(cs)
         if (cs.length) setCicloAtivo(cs[cs.length - 1])
+        // 'geral' é adicionado pelo componente
         setLoading(false)
       })
   }, [])
 
   function mediaAluno(r: any): number {
+    if (r._mediaGeral !== undefined) return r._mediaGeral
     const notas = [
       r.media_1fase,
       r.nota_matematica,
@@ -35,8 +37,21 @@ export default function Turma() {
     return notas.reduce((a, b) => a + b, 0) / notas.length
   }
 
-  const cicloData = dados.filter(r => r.ciclo_nome === cicloAtivo)
-    .sort((a, b) => mediaAluno(b) - mediaAluno(a))
+  // Para o ranking geral: média de todos os ciclos por aluno
+  const alunosGeralMap: Record<string, any> = {}
+  dados.forEach(r => {
+    if (!alunosGeralMap[r.id_aluno]) alunosGeralMap[r.id_aluno] = { ...r, _todasNotas: [] }
+    const n = mediaAluno(r)
+    if (n > 0) alunosGeralMap[r.id_aluno]._todasNotas.push(n)
+  })
+  const alunosGeral = Object.values(alunosGeralMap).map((r: any) => ({
+    ...r,
+    _mediaGeral: r._todasNotas.length ? r._todasNotas.reduce((a: number, b: number) => a + b, 0) / r._todasNotas.length : 0
+  })).sort((a: any, b: any) => b._mediaGeral - a._mediaGeral)
+
+  const cicloData = cicloAtivo === 'geral'
+    ? alunosGeral
+    : dados.filter(r => r.ciclo_nome === cicloAtivo).sort((a, b) => mediaAluno(b) - mediaAluno(a))
 
   // Alunos que precisam de atenção: reprovados ou média < 5
   const atencao = cicloData.filter(r =>
@@ -51,20 +66,34 @@ export default function Turma() {
       .sort((a, b) => Number(b[campo]) - Number(a[campo])).slice(0, 3)
   }
 
-  // Por mentor
+  // Por mentor — usa TODOS os ciclos para média geral
   const porMentor: Record<string, any[]> = {}
-  cicloData.forEach(r => {
+  // Agrupa alunos únicos com média de todos os ciclos
+  const alunosUnicos: Record<string, any> = {}
+  dados.forEach(r => {
+    if (!alunosUnicos[r.id_aluno]) {
+      alunosUnicos[r.id_aluno] = { ...r, _notas: [] }
+    }
+    const nota = mediaAluno(r)
+    if (nota > 0) alunosUnicos[r.id_aluno]._notas.push(nota)
+  })
+  Object.values(alunosUnicos).forEach((r: any) => {
+    r._mediaGeral = r._notas.length ? r._notas.reduce((a: number, b: number) => a + b, 0) / r._notas.length : 0
     const m = r.mentor || 'Sem mentor'
     if (!porMentor[m]) porMentor[m] = []
-    porMentor[m].push(r)
+    // Só adiciona se ainda não está (evita duplicatas)
+    if (!porMentor[m].find((x: any) => x.id_aluno === r.id_aluno)) {
+      porMentor[m].push(r)
+    }
+  })
+  // Ordena alunos dentro de cada mentor por média geral
+  Object.keys(porMentor).forEach(m => {
+    porMentor[m].sort((a: any, b: any) => b._mediaGeral - a._mediaGeral)
   })
 
   function mediaMentor(alunos: any[]) {
-    const vals = alunos.map(r => {
-      if (r.media_2fase !== null) return (Number(r.media_1fase || 0) + Number(r.media_2fase || 0)) / 2
-      return Number(r.media_1fase || 0)
-    })
-    return vals.reduce((a, b) => a + b, 0) / vals.length
+    const vals = alunos.map((r: any) => r._mediaGeral).filter((v: number) => v > 0)
+    return vals.length ? vals.reduce((a: number, b: number) => a + b, 0) / vals.length : 0
   }
 
   function corNota(n: number) {
@@ -87,6 +116,12 @@ export default function Turma() {
 
       {/* Seletor ciclo */}
       <div style={{ display: 'flex', gap: 6, overflowX: 'auto', padding: '10px 16px', background: 'white', borderBottom: '0.5px solid rgba(0,0,0,0.06)' }}>
+        <button onClick={() => setCicloAtivo('geral')} style={{
+          padding: '5px 12px', borderRadius: 20, fontSize: 11, border: '0.5px solid rgba(0,0,0,0.12)',
+          background: cicloAtivo === 'geral' ? '#1a1a1a' : 'transparent',
+          color: cicloAtivo === 'geral' ? 'white' : '#666',
+          cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'DM Sans,sans-serif'
+        }}>Geral</button>
         {ciclos.map(c => (
           <button key={c} onClick={() => setCicloAtivo(c)} style={{
             padding: '5px 12px', borderRadius: 20, fontSize: 11, border: '0.5px solid rgba(0,0,0,0.12)',
@@ -199,7 +234,7 @@ export default function Turma() {
               .sort((a, b) => mediaMentor(b[1]) - mediaMentor(a[1]))
               .map(([mentor, alunos]) => {
                 const media = mediaMentor(alunos)
-                const reprovados = alunos.filter(a => a.resultado_ciclo === 'Reprovado').length
+                const reprovados = dados.filter(r => alunos.some((a: any) => a.id_aluno === r.id_aluno) && r.resultado_ciclo === 'Reprovado').length
                 return (
                   <div key={mentor} className="card" style={{ marginBottom: 12 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
@@ -212,8 +247,8 @@ export default function Turma() {
                         {reprovados > 0 && <div style={{ fontSize: 10, color: '#E24B4A' }}>⚠ {reprovados} reprov.</div>}
                       </div>
                     </div>
-                    {alunos.sort((a, b) => (a.classificacao || 99) - (b.classificacao || 99)).map((a, i) => {
-                      const m = a.media_2fase !== null ? (Number(a.media_1fase || 0) + Number(a.media_2fase || 0)) / 2 : Number(a.media_1fase || 0)
+                    {alunos.map((a: any, i: number) => {
+                      const m = a._mediaGeral || 0
                       return (
                         <Link key={a.id} href={`/aluno/${a.id_aluno}`} style={{ textDecoration: 'none' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 0', borderTop: i === 0 ? '0.5px solid rgba(0,0,0,0.06)' : 'none', borderBottom: '0.5px solid rgba(0,0,0,0.06)' }}>
