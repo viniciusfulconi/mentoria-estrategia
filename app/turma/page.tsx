@@ -251,11 +251,11 @@ export default function Turma() {
                       </div>
                     </div>
                     {alunos.map((a: any, i: number) => {
-                      const m = a._mediaGeral || 0
+                      const m = cicloAtivo === 'geral' ? (a._mediaGeral || 0) : mediaAluno(a)
                       return (
                         <Link key={a.id} href={`/aluno/${a.id_aluno}`} style={{ textDecoration: 'none' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 0', borderTop: i === 0 ? '0.5px solid rgba(0,0,0,0.06)' : 'none', borderBottom: '0.5px solid rgba(0,0,0,0.06)' }}>
-                            <span style={{ fontSize: 11, color: '#999', minWidth: 20 }}>#{a.classificacao}</span>
+                            <span style={{ fontSize: 11, color: '#999', minWidth: 20 }}>#{cicloAtivo === 'geral' ? (i + 1) : (a.classificacao || i + 1)}</span>
                             <span style={{ flex: 1, fontSize: 12 }}>{a.nome_aluno}</span>
                             <span style={{ fontSize: 9, padding: '1px 5px', borderRadius: 6, background: a.resultado_ciclo === 'Aprovado' ? '#EAF3DE' : '#FCEBEB', color: a.resultado_ciclo === 'Aprovado' ? '#27500A' : '#791F1F' }}>
                               {a.resultado_ciclo === 'Aprovado' ? '✓' : '✗'}
