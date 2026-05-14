@@ -151,15 +151,18 @@ export default function Turma() {
           <>
             {/* RANKING */}
             {aba === 'ranking' && cicloData.map((r, i) => {
-              const media = r.media_2fase !== null
-                ? (Number(r.media_1fase || 0) + Number(r.media_2fase || 0)) / 2
-                : Number(r.media_1fase || 0)
-              const cor = r.resultado_ciclo === 'Aprovado' ? '#1D9E75' : '#E24B4A'
+              const media = cicloAtivo === 'geral'
+                ? (r._mediaGeral || 0)
+                : mediaAluno(r)
+              const cor = cicloAtivo === 'geral'
+                ? (media >= 5 ? '#1D9E75' : '#E24B4A')
+                : (r.resultado_ciclo === 'Aprovado' ? '#1D9E75' : '#E24B4A')
+              const posicao = cicloAtivo === 'geral' ? i + 1 : (r.classificacao || i + 1)
               return (
-                <Link key={r.id} href={`/aluno/${r.id_aluno}`} style={{ textDecoration: 'none' }}>
+                <Link key={r.id_aluno} href={`/aluno/${r.id_aluno}`} style={{ textDecoration: 'none' }}>
                   <div className="card" style={{ marginBottom: 8, display: 'flex', alignItems: 'center', gap: 12 }}>
                     <div style={{ width: 28, height: 28, borderRadius: '50%', background: i < 3 ? '#EEEDFE' : '#F1EFE8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 600, color: i < 3 ? '#534AB7' : '#888', flexShrink: 0 }}>
-                      {r.classificacao || i + 1}
+                      {posicao}
                     </div>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 13, fontWeight: 500, color: '#1a1a1a' }}>{r.nome_aluno}</div>
