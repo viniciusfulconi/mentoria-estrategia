@@ -25,11 +25,29 @@ export default function Atendimentos() {
   }
 
   const mentores = [...new Set(dados.map(d => d.mentor))].sort()
-  const meses = [...new Set(dados.map(d => d.mes).filter(Boolean))].sort()
+  // Gera meses únicos a partir da data do atendimento (formato: MM/YYYY)
+  const mesesUnicos = [...new Set(dados.map(d => {
+    if (!d.data_atendimento) return null
+    const dt = new Date(d.data_atendimento)
+    return `${String(dt.getMonth() + 1).padStart(2, '0')}/${dt.getFullYear()}`
+  }).filter(Boolean))].sort() as string[]
+  const meses = mesesUnicos
+
+  function mesLabel(m: string) {
+    const [mm, yyyy] = m.split('/')
+    const nomes = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
+    return `${nomes[Number(mm) - 1]} ${yyyy}`
+  }
+
+  function mesDaData(data: string) {
+    if (!data) return ''
+    const dt = new Date(data)
+    return `${String(dt.getMonth() + 1).padStart(2, '0')}/${dt.getFullYear()}`
+  }
 
   const filtrados = dados.filter(d => {
     if (filtroMentor !== 'todos' && d.mentor !== filtroMentor) return false
-    if (filtroMes !== 'todos' && d.mes !== filtroMes) return false
+    if (filtroMes !== 'todos' && mesDaData(d.data_atendimento) !== filtroMes) return false
     return true
   })
 
@@ -75,7 +93,7 @@ export default function Atendimentos() {
           <select value={filtroMes} onChange={e => setFiltroMes(e.target.value)}
             style={{ fontSize: 11, padding: '4px 8px', borderRadius: 8, border: '0.5px solid rgba(0,0,0,0.12)', background: '#F7F6F3', fontFamily: 'DM Sans,sans-serif' }}>
             <option value="todos">Todos os meses</option>
-            {meses.map(m => <option key={m} value={m}>{m}</option>)}
+            {meses.map(m => <option key={m} value={m}>{mesLabel(m)}</option>)}
           </select>
         </div>
 
