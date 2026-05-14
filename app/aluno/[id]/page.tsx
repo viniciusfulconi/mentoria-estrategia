@@ -83,7 +83,41 @@ export default function AlunoPage() {
     setProgressos(ps || [])
     setTodos(todosRanking || [])
 
-    const rankings = (resultados || []).filter(r => r.fase === 'ranking')
+    // Inclui ciclos com ranking E ciclos parciais (sem aba de ranking)
+    const temRanking = (resultados || []).filter(r => r.fase === 'ranking')
+    
+    // Ciclos sem ranking — agrupa por ciclo_nome base
+    const ciclosBase = [...new Set((resultados || []).map(r => {
+      const m = r.ciclo_nome?.match(/Ciclo \d+/)
+      return m ? m[0] : null
+    }).filter(Boolean))]
+    
+    const ciclosSemRanking = ciclosBase.filter(c => {
+      const num = c.replace('Ciclo ', '').trim()
+      return !temRanking.some(r => r.ciclo_nome?.includes(num))
+    })
+    
+    // Cria entradas sintéticas de ranking para ciclos parciais
+    const syntheticRankings = ciclosSemRanking.map(c => {
+      const fasesDoC = (resultados || []).filter(r => r.ciclo_nome?.includes(c))
+      if (!fasesDoC.length) return null
+      const base = fasesDoC[0]
+      return {
+        ...base,
+        ciclo_nome: c,
+        fase: 'ranking',
+        media_1fase: fasesDoC.find(r => r.fase === '1fase')?.media_1fase ?? null,
+        nota_matematica: fasesDoC.find(r => r.fase === '2fase_mat')?.nota_matematica ?? null,
+        nota_fisica: fasesDoC.find(r => r.fase === '2fase_fis')?.nota_fisica ?? null,
+        nota_quimica: fasesDoC.find(r => r.fase === '2fase_qui')?.nota_quimica ?? null,
+        media_linguagens: fasesDoC.find(r => r.fase === '2fase_port')?.media_linguagens ?? null,
+        media_2fase: null,
+        resultado_ciclo: 'Em andamento',
+      }
+    }).filter(Boolean)
+    
+    const rankings = [...temRanking, ...syntheticRankings].sort((a, b) => 
+      (a.ciclo_nome || '').localeCompare(b.ciclo_nome || ''))
     if (rankings.length) setCicloAtivo(rankings[rankings.length - 1].ciclo_nome)
     setLoading(false)
   }

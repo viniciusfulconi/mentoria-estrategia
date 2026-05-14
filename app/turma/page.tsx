@@ -17,32 +17,30 @@ export default function Turma() {
       .then(({ data }) => {
         const d = data || []
         setDados(d)
-        // Pega ciclos únicos que têm fase 'ranking' OU qualquer dado
-        // Usa prefixo "Ciclo X" para agrupar
-        const todosCiclos = [...new Set(d.map((r: any) => {
-          // Normaliza o nome do ciclo removendo a fase
-          const nome = r.ciclo_nome || ''
-          const match = nome.match(/Ciclo \d+/)
-          return match ? match[0] : nome
-        }))].filter(Boolean).sort() as string[]
 
-        // Gera nomes de ranking para cada ciclo
-        const ciclosRanking = todosCiclos.map(c => {
-          const rankingExiste = d.some((r: any) => r.ciclo_nome === `Ranking ${c}` || r.fase === 'ranking' && r.ciclo_nome?.includes(c.replace('Ciclo ', '')))
-          return rankingExiste ? `Ranking ${c}` : c
-        })
+        // Ciclos com ranking
+        const comRanking = [...new Set(
+          d.filter((r: any) => r.fase === 'ranking').map((r: any) => r.ciclo_nome)
+        )].sort() as string[]
 
-        // Usa os ciclos reais de ranking quando existem, senão usa o ciclo direto
-        const cs = [...new Set(d.filter((r: any) => r.fase === 'ranking').map((r: any) => r.ciclo_nome))].sort() as string[]
-        // Adiciona ciclos sem ranking
-        todosCiclos.forEach(c => {
-          const num = c.replace('Ciclo ', '')
-          const temRanking = cs.some(r => r.includes(num))
-          if (!temRanking) cs.push(c)
+        // Adiciona ciclos parciais (sem ranking)
+        const ciclosBase = [...new Set(
+          d.map((r: any) => {
+            const n = String(r.ciclo_nome || '')
+            const m = n.match(/Ciclo [0-9]+/)
+            return m ? m[0] : null
+          }).filter(Boolean)
+        )] as string[]
+
+        ciclosBase.forEach((c: string) => {
+          const num = c.replace('Ciclo ', '').trim()
+          const jatem = comRanking.some((r: string) => r.includes(num))
+          if (!jatem) comRanking.push(c)
         })
-        cs.sort()
-        setCiclos(cs)
-        if (cs.length) setCicloAtivo(cs[cs.length - 1])
+        comRanking.sort()
+
+        setCiclos(comRanking)
+        if (comRanking.length) setCicloAtivo(comRanking[comRanking.length - 1])
         setLoading(false)
       })
   }, [])
