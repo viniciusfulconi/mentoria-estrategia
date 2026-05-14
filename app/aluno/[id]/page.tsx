@@ -531,15 +531,15 @@ export default function AlunoPage() {
 function GraficoQuestoes({ dados, turmaQuestoes, cicloAtivo, fase, titulo, corAluno }: any) {
   // cicloAtivo pode ser "Ciclo 1" ou "Ranking Ciclo 1" — extrai o número
   const cicloNum = String(cicloAtivo || '').match(/\d+/)?.[0] || ''
-  if (!cicloNum) { console.log('GQ: sem cicloNum', cicloAtivo); return null }
+  if (!cicloNum) return null
 
   // Pega dados do aluno para essa fase/ciclo
-  const regAluno = dados.find((r: any) =>
-    String(r.ciclo_nome || '').includes(`Ciclo ${cicloNum}`) && r.fase === fase
-  )
-  console.log('GQ debug:', { cicloAtivo, cicloNum, fase, 
-    dadosFases: dados.map((r: any) => ({cn: r.ciclo_nome, f: r.fase, temNQ: !!r.notas_questoes})),
-    regAluno: regAluno ? {cn: regAluno.ciclo_nome, f: regAluno.fase, nq: regAluno.notas_questoes} : null
+  // dados contém registros de todas as fases do aluno
+  // cicloAtivo pode ser "Ranking Ciclo 1" ou "Ciclo 1"
+  const regAluno = dados.find((r: any) => {
+    const cn = String(r.ciclo_nome || '')
+    const num = cn.match(/\d+/)?.[0] || ''
+    return num === cicloNum && r.fase === fase
   })
   if (!regAluno?.notas_questoes) return null
 
@@ -553,9 +553,11 @@ function GraficoQuestoes({ dados, turmaQuestoes, cicloAtivo, fase, titulo, corAl
   if (!questoes.length) return null
 
   // Calcula média da turma por questão
-  const registrosTurma = turmaQuestoes.filter((r: any) =>
-    String(r.ciclo_nome || '').includes(`Ciclo ${cicloNum}`) && r.fase === fase && r.notas_questoes
-  )
+  const registrosTurma = turmaQuestoes.filter((r: any) => {
+    const cn = String(r.ciclo_nome || '')
+    const num = cn.match(/\d+/)?.[0] || ''
+    return num === cicloNum && r.fase === fase && r.notas_questoes
+  })
 
   const mediaTurma: Record<string, number> = {}
   questoes.forEach(q => {
