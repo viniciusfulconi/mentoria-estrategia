@@ -244,33 +244,48 @@ export default function Horario() {
 
       {/* Modal da atividade */}
       {atividadeSelecionada && (
-        <div onClick={() => setAtividadeSelecionada(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 50, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: 'white', borderRadius: '16px 16px 0 0', width: '100%', maxWidth: 480, padding: '20px 20px 40px' }}>
-            <div style={{ width: 36, height: 4, background: '#E0E0E0', borderRadius: 2, margin: '0 auto 16px' }} />
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
-              <div style={{ width: 14, height: 14, borderRadius: 3, background: corAtividade(atividadeSelecionada).bg, flexShrink: 0 }} />
-              <div style={{ fontSize: 16, fontWeight: 600 }}>{atividadeSelecionada.titulo}</div>
+        <div onClick={() => setAtividadeSelecionada(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 16px' }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: 'white', borderRadius: 20, width: '100%', maxWidth: 420, padding: '24px 20px 20px', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
+            {/* Header colorido */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+              <div style={{ width: 16, height: 16, borderRadius: 4, background: corAtividade(atividadeSelecionada).bg, flexShrink: 0 }} />
+              <div style={{ fontSize: 16, fontWeight: 700, flex: 1 }}>{atividadeSelecionada.titulo}</div>
             </div>
-            {atividadeSelecionada.materia && <div style={{ fontSize: 13, color: '#666', marginBottom: 6 }}>📚 {atividadeSelecionada.materia}</div>}
-            {atividadeSelecionada.professor && <div style={{ fontSize: 13, color: '#666', marginBottom: 6 }}>👤 {atividadeSelecionada.professor}</div>}
+            {atividadeSelecionada.materia && <div style={{ fontSize: 13, color: '#666', marginBottom: 8 }}>📚 {atividadeSelecionada.materia}</div>}
+            {atividadeSelecionada.professor && <div style={{ fontSize: 13, color: '#666', marginBottom: 8 }}>👤 {atividadeSelecionada.professor}</div>}
             {atividadeSelecionada.data_inicio && (
-              <div style={{ fontSize: 13, color: '#666', marginBottom: 6 }}>
+              <div style={{ fontSize: 13, color: '#666', marginBottom: 8 }}>
                 🕐 {formatHora(atividadeSelecionada.data_inicio)}{atividadeSelecionada.data_fim ? ` – ${formatHora(atividadeSelecionada.data_fim)}` : ''}
               </div>
             )}
             {atividadeSelecionada.descricao && (
-              <div style={{ fontSize: 13, color: '#444', marginTop: 12, padding: '10px', background: '#F7F6F3', borderRadius: 10, lineHeight: 1.6 }}>
+              <div style={{ fontSize: 13, color: '#444', marginTop: 8, padding: '10px', background: '#F7F6F3', borderRadius: 10, lineHeight: 1.6 }}>
                 {atividadeSelecionada.descricao}
               </div>
             )}
             {atividadeSelecionada.link && (
-              <a href={atividadeSelecionada.link} target="_blank" rel="noopener noreferrer" style={{ display: 'block', marginTop: 12, color: '#534AB7', fontSize: 13, textDecoration: 'none' }}>
+              <a href={atividadeSelecionada.link} target="_blank" rel="noopener noreferrer" style={{ display: 'block', marginTop: 10, color: '#534AB7', fontSize: 13, textDecoration: 'none' }}>
                 🔗 Abrir link
               </a>
             )}
-            <button onClick={() => setAtividadeSelecionada(null)} style={{ width: '100%', marginTop: 16, padding: 10, borderRadius: 10, border: 'none', background: '#F1EFE8', color: '#666', fontSize: 14, cursor: 'pointer', fontFamily: 'DM Sans,sans-serif' }}>
-              Fechar
-            </button>
+            <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+              {/* Botão apagar — só para quem criou ou coordenador */}
+              {(perfil?.papel === 'coordenador' || atividadeSelecionada.criado_por === 'aluno') && (
+                <button onClick={async () => {
+                  if (!confirm('Apagar esta atividade?')) return
+                  // Para recorrentes, pergunta se apaga só esta ou todas
+                  const id = atividadeSelecionada.id?.split('_')[0]
+                  await supabase.from('atividades').delete().eq('id', id)
+                  setAtividades(prev => prev.filter(a => a.id !== id))
+                  setAtividadeSelecionada(null)
+                }} style={{ flex: 1, padding: 10, borderRadius: 10, border: '1px solid #E24B4A', background: 'white', color: '#E24B4A', fontSize: 13, cursor: 'pointer', fontFamily: 'DM Sans,sans-serif', fontWeight: 500 }}>
+                  🗑 Apagar
+                </button>
+              )}
+              <button onClick={() => setAtividadeSelecionada(null)} style={{ flex: 1, padding: 10, borderRadius: 10, border: 'none', background: '#F1EFE8', color: '#666', fontSize: 13, cursor: 'pointer', fontFamily: 'DM Sans,sans-serif' }}>
+                Fechar
+              </button>
+            </div>
           </div>
         </div>
       )}
