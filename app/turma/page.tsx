@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import Nav from '@/components/Nav'
+import PageLoader from '@/components/PageLoader'
 import Link from 'next/link'
 
 export default function Turma() {
