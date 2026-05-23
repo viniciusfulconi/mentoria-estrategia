@@ -4,17 +4,39 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
 // ─── REST direto — evita lock do cliente JS ───────────────────────────────────
+
 function getAccessToken(): string | null {
   if (typeof window === 'undefined') return null
   try {
     const ref = supabaseUrl.replace('https://', '').replace('.supabase.co', '')
     const raw = localStorage.getItem(`sb-${ref}-auth-token`)
-    return raw ? JSON.parse(raw).access_token : null
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    if (parsed.expires_at && parsed.expires_at < Math.floor(Date.now() / 1000)) return null
+    return parsed.access_token ?? null
   } catch { return null }
 }
 
+// Versão que lança erro — usar em mutations onde sessão é obrigatória
+export function getToken(): string {
+  const token = getAccessToken()
+  if (!token) throw new Error('Sessão expirada. Faça login novamente.')
+  return token
+}
+
+function restHeaders(token: string | null, extra: Record<string, string> = {}): Record<string, string> {
+  return {
+    apikey: supabaseAnonKey,
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...extra,
+  }
+}
+
+type MutResult = { error: string | null }
 type QueryResult<T> = { data: T | null; error: string | null }
 
+// SELECT
 export async function dbQuery<T = any>(
   table: string,
   params: Record<string, string> = {},
@@ -24,10 +46,7 @@ export async function dbQuery<T = any>(
   const qs = new URLSearchParams({ select, ...params }).toString()
   try {
     const resp = await fetch(`${supabaseUrl}/rest/v1/${table}?${qs}`, {
-      headers: {
-        apikey: supabaseAnonKey,
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
+      headers: restHeaders(token),
     })
     if (!resp.ok) return { data: null, error: await resp.text() }
     return { data: await resp.json(), error: null }
@@ -35,6 +54,88 @@ export async function dbQuery<T = any>(
     return { data: null, error: e.message }
   }
 }
+
+// INSERT — returning=true devolve os registros criados
+export async function dbInsert<T = any>(
+  table: string,
+  rows: Record<string, any> | Record<string, any>[],
+  returning = false
+): Promise<QueryResult<T[]>> {
+  const token = getAccessToken()
+  try {
+    const resp = await fetch(`${supabaseUrl}/rest/v1/${table}`, {
+      method: 'POST',
+      headers: restHeaders(token, { Prefer: returning ? 'return=representation' : 'return=minimal' }),
+      body: JSON.stringify(rows),
+    })
+    if (!resp.ok) return { data: null, error: await resp.text() }
+    const data = returning ? await resp.json() : null
+    return { data, error: null }
+  } catch (e: any) {
+    return { data: null, error: e.message }
+  }
+}
+
+// UPSERT (INSERT … ON CONFLICT DO UPDATE)
+export async function dbUpsert(
+  table: string,
+  rows: Record<string, any> | Record<string, any>[],
+  onConflict: string
+): Promise<MutResult> {
+  const token = getAccessToken()
+  try {
+    const resp = await fetch(`${supabaseUrl}/rest/v1/${table}?on_conflict=${onConflict}`, {
+      method: 'POST',
+      headers: restHeaders(token, { Prefer: 'return=minimal,resolution=merge-duplicates' }),
+      body: JSON.stringify(rows),
+    })
+    if (!resp.ok) return { error: await resp.text() }
+    return { error: null }
+  } catch (e: any) {
+    return { error: e.message }
+  }
+}
+
+// UPDATE — filter usa sintaxe PostgREST: { col: 'eq.valor' }
+export async function dbUpdate(
+  table: string,
+  filter: Record<string, string>,
+  data: Record<string, any>
+): Promise<MutResult> {
+  const token = getAccessToken()
+  const qs = new URLSearchParams(filter).toString()
+  try {
+    const resp = await fetch(`${supabaseUrl}/rest/v1/${table}?${qs}`, {
+      method: 'PATCH',
+      headers: restHeaders(token, { Prefer: 'return=minimal' }),
+      body: JSON.stringify(data),
+    })
+    if (!resp.ok) return { error: await resp.text() }
+    return { error: null }
+  } catch (e: any) {
+    return { error: e.message }
+  }
+}
+
+// DELETE — filter usa sintaxe PostgREST: { col: 'eq.valor' }
+export async function dbDelete(
+  table: string,
+  filter: Record<string, string>
+): Promise<MutResult> {
+  const token = getAccessToken()
+  const qs = new URLSearchParams(filter).toString()
+  try {
+    const resp = await fetch(`${supabaseUrl}/rest/v1/${table}?${qs}`, {
+      method: 'DELETE',
+      headers: restHeaders(token, { Prefer: 'return=minimal' }),
+    })
+    if (!resp.ok) return { error: await resp.text() }
+    return { error: null }
+  } catch (e: any) {
+    return { error: e.message }
+  }
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
