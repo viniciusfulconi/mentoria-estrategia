@@ -86,7 +86,7 @@ export default function UploadAtendimentos() {
     for (let i = 0; i < records.length; i += 100) {
       const lote = records.slice(i, i + 100)
       const { error } = await dbInsert('atendimentos_mentoria', lote)
-      if (error) { addLog(`❌ Erro no lote ${i/100 + 1}: ${error.message}`); break }
+      if (error) { addLog(`❌ Erro no lote ${i/100 + 1}: ${error}`); break }
       addLog(`  ✅ Lote ${Math.floor(i/100) + 1}/${Math.ceil(records.length/100)} importado`)
     }
 

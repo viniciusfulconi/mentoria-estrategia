@@ -62,7 +62,7 @@ export default function NovaLista() {
       data: form.data,
     }])
 
-    if (error) { setErro(error.message); setSaving(false) }
+    if (error) { setErro(error); setSaving(false) }
     else router.back()
   }
 

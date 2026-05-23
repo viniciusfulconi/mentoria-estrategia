@@ -42,7 +42,7 @@ export default function NovaAtividade() {
     }
 
     const { error } = await dbInsert('atividades', registros)
-    if (error) { setErro(error.message); setSaving(false) }
+    if (error) { setErro(error); setSaving(false) }
     else router.push('/horario')
   }
 

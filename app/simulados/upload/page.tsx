@@ -1,17 +1,8 @@
-// @ts-nocheck
 'use client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Nav from '@/components/Nav'
-import * as XLSX from 'xlsx'
-
-// Helpers REST diretos — evitam lock do cliente JS
-function getToken(): string {
-  const ref = process.env.NEXT_PUBLIC_SUPABASE_URL!.replace('https://', '').replace('.supabase.co', '')
-  const raw = localStorage.getItem(`sb-${ref}-auth-token`)
-  if (!raw) throw new Error('Sessão expirada. Faça login novamente.')
-  return JSON.parse(raw).access_token
-}
+import { getToken } from '@/lib/supabase'
 
 async function dbSelect(table: string, cols = '*'): Promise<any[]> {
   const token = getToken()
@@ -97,7 +88,7 @@ export default function UploadSimulados() {
 
   function addLog(msg: string) { setLog(prev => [...prev, msg]) }
 
-  function parseSheet(wb: any, name: string): any[] {
+  function parseSheet(XLSX: any, wb: any, name: string): any[] {
     const ws = wb.Sheets[name]
     if (!ws) return []
     const rows = XLSX.utils.sheet_to_json(ws, { defval: null })
@@ -218,9 +209,9 @@ export default function UploadSimulados() {
     return rankings
   }
 
-  function parsearPlanilha(wb: any): PreviewData {
+  function parsearPlanilha(XLSX: any, wb: any): PreviewData {
     const ignorar = ['Ids Alunos', 'Processo Seletivo']
-    const idsRows = parseSheet(wb, 'Ids Alunos')
+    const idsRows = parseSheet(XLSX, wb, 'Ids Alunos')
 
     const nomeParaId: Record<string, string> = {}
     idsRows.forEach((r: any) => {
@@ -241,7 +232,7 @@ export default function UploadSimulados() {
       }
     }).filter(a => a.id_aluno && a.nome)
 
-    const abasNotas = wb.SheetNames.filter(n =>
+    const abasNotas = wb.SheetNames.filter((n: string) =>
       !ignorar.includes(n) &&
       !n.includes('Ranking') &&
       !n.includes('Simulado Zero') &&
@@ -255,7 +246,7 @@ export default function UploadSimulados() {
     const abasResumo: PreviewData['abas'] = []
 
     for (const sheetName of abasNotas) {
-      const rows = parseSheet(wb, sheetName)
+      const rows = parseSheet(XLSX, wb, sheetName)
       if (!rows.length) continue
 
       const { ciclo, tipo, concurso } = detectTipo(sheetName)
@@ -326,8 +317,9 @@ export default function UploadSimulados() {
     setEtapa('parsing'); setLog([]); setDone(false); setPreview(null)
 
     const buf = await file.arrayBuffer()
+    const XLSX = await import('xlsx')
     const wb = XLSX.read(buf, { type: 'array' })
-    const dados = parsearPlanilha(wb)
+    const dados = parsearPlanilha(XLSX, wb)
     setPreview(dados)
     setEtapa('preview')
   }

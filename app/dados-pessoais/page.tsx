@@ -61,7 +61,7 @@ export default function DadosPessoais() {
       foto_url: fotoUrl,
     })
 
-    if (error) setMsg('Erro ao salvar: ' + error.message)
+    if (error) setMsg('Erro ao salvar: ' + error)
     else setMsg('✅ Dados salvos com sucesso!')
     setSaving(false)
   }

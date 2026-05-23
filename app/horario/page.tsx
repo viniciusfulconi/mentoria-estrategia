@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client'
 import { useEffect, useState, useCallback } from 'react'
 import { dbQuery, dbDelete } from '@/lib/supabase'
@@ -61,7 +60,7 @@ export default function Horario() {
 
   // Atividades do dia selecionado
   function atividadesDoDia(data: Date): any[] {
-    return atividadesExpandidas.filter(a => {
+    return atividadesExpandidas.filter((a: any) => {
       const d = new Date(a.data_inicio)
       return d.getDate() === data.getDate() && d.getMonth() === data.getMonth() && d.getFullYear() === data.getFullYear()
     })
@@ -299,12 +298,12 @@ function ViewDia({ data, atividades, onSelect, isAluno, perfil, onDelete }: any)
       ) : (
         <div style={{ position: 'relative' }}>
           {horas.map(h => {
-            const atividadesHora = atividades.filter(a => new Date(a.data_inicio).getHours() === h)
+            const atividadesHora = atividades.filter((a: any) => new Date(a.data_inicio).getHours() === h)
             return (
               <div key={h} style={{ display: 'flex', gap: 10, minHeight: 50, borderTop: '0.5px solid rgba(0,0,0,0.06)', paddingTop: 4, paddingBottom: 4 }}>
                 <div style={{ width: 36, fontSize: 10, color: '#bbb', flexShrink: 0, paddingTop: 2 }}>{String(h).padStart(2,'0')}:00</div>
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
-                  {atividadesHora.map(a => {
+                  {atividadesHora.map((a: any) => {
                     const { bg, text } = corAtividade(a)
                     const canDelete = isAluno && a.criado_por === 'aluno'
                     return (
@@ -416,7 +415,7 @@ function ViewMes({ dataAtual, atividadesExpandidas, onSelectDia }: any) {
   )
 
   function atividadesDia(dia: number) {
-    return atividadesExpandidas.filter(a => {
+    return atividadesExpandidas.filter((a: any) => {
       const d = new Date(a.data_inicio)
       return d.getDate() === dia && d.getMonth() === mes && d.getFullYear() === ano
     })
@@ -471,7 +470,7 @@ function ViewAno({ ano, atividadesExpandidas, onSelectMes }: any) {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
       {MESES_CURTO.map((m, mi) => {
-        const atividsMes = atividadesExpandidas.filter(a => {
+        const atividsMes = atividadesExpandidas.filter((a: any) => {
           const d = new Date(a.data_inicio)
           return d.getMonth() === mi && d.getFullYear() === ano
         })

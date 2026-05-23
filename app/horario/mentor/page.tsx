@@ -56,7 +56,7 @@ export default function MentorEstudo() {
     }
 
     const { error } = await dbInsert('atividades', registros)
-    if (error) { setErro(error.message); setSaving(false) }
+    if (error) { setErro(error); setSaving(false) }
     else {
       const msg = registros.length > 1 ? `${registros.length} estudos adicionados!` : 'Estudo adicionado!'
       setForm(f => ({ ...f, descricao: '', data: new Date().toISOString().split('T')[0] }))

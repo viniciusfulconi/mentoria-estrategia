@@ -49,7 +49,7 @@ export default function Cadastro() {
       aluno_id: form.papel === 'aluno' ? form.aluno_id : null,
     }])
 
-    if (perfilErr) { setErro(perfilErr.message); setLoading(false); return }
+    if (perfilErr) { setErro(perfilErr); setLoading(false); return }
     router.push('/aguardando')
   }
 

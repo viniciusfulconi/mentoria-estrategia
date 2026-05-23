@@ -1,9 +1,8 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { supabase, dbQuery, dbInsert, dbUpdate } from '@/lib/supabase'
+import { supabase, dbQuery, dbInsert, dbUpdate, dbDelete } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Nav from '@/components/Nav'
-import * as XLSX from 'xlsx'
 
 export default function NovoCronograma() {
   const router = useRouter()
@@ -37,10 +36,11 @@ export default function NovoCronograma() {
     setLogoPreview(URL.createObjectURL(f))
   }
 
-  function handlePlanilha(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handlePlanilha(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0]
     if (!f) return
     setPlanilha(f)
+    const XLSX = await import('xlsx')
     const reader = new FileReader()
     reader.onload = (ev) => {
       const wb = XLSX.read(ev.target?.result, { type: 'array' })
@@ -86,7 +86,7 @@ export default function NovoCronograma() {
     if (!concursoId) {
       addLog('📋 Criando concurso...')
       const { data, error } = await dbInsert<any>('concursos', [{ nome, logo_url: logoUrl }], true)
-      if (error) { addLog(`❌ ${error.message}`); setSaving(false); return }
+      if (error) { addLog(`❌ ${error}`); setSaving(false); return }
       concursoId = (data as any)?.[0]?.id
     } else {
       await dbUpdate('concursos', { id: `eq.${concursoId}` }, { nome, logo_url: logoUrl })
@@ -108,7 +108,7 @@ export default function NovoCronograma() {
       }))
 
       const { error: topErr } = await dbInsert('topicos', records)
-      if (topErr) { addLog(`❌ Erro tópicos: ${topErr.message}`) }
+      if (topErr) { addLog(`❌ Erro tópicos: ${topErr}`) }
       else addLog(`✅ ${records.length} tópicos importados!`)
     }
 

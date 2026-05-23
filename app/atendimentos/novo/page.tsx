@@ -36,7 +36,7 @@ export default function NovoAtendimento() {
       const ms = [...new Set((ats || []).map(a => a.mentor))].sort() as string[]
       setMentores(ms)
     })
-    if (perfil?.mentor_nome) setForm(f => ({ ...f, mentor: perfil.mentor_nome }))
+    if (perfil?.mentor_nome) setForm(f => ({ ...f, mentor: perfil.mentor_nome || '' }))
   }, [perfil])
 
   const alunosFiltrados = form.mentor
@@ -80,7 +80,7 @@ export default function NovoAtendimento() {
       mes, ano,
     }])
 
-    if (error) { setErro(error.message); setSaving(false) }
+    if (error) { setErro(error); setSaving(false) }
     else router.push('/atendimentos')
   }
 

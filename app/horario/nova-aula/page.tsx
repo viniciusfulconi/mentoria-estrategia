@@ -56,7 +56,7 @@ export default function NovaAula() {
         recorrencia_fim: form.recorrencia_fim,
         turma_id: form.turma_id, criado_por: 'coordenador', criado_por_id: perfil?.id,
       }])
-      if (error) { setErro(error.message); setSaving(false); return }
+      if (error) { setErro(error); setSaving(false); return }
     } else {
       // Quinzenal ou mensal — cria registros individuais
       const registros = []
@@ -80,7 +80,7 @@ export default function NovaAula() {
         else dtAtual.setMonth(dtAtual.getMonth() + 1)
       }
       const { error } = await dbInsert('atividades', registros)
-      if (error) { setErro(error.message); setSaving(false); return }
+      if (error) { setErro(error); setSaving(false); return }
     }
 
     router.push('/horario')

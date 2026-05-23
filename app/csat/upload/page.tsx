@@ -3,7 +3,6 @@ import { useState } from 'react'
 import { dbInsert } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Nav from '@/components/Nav'
-import * as XLSX from 'xlsx'
 
 const COL_MAP = {
   aluno: 'Qual é seu nome completo?',
@@ -31,10 +30,11 @@ export default function UploadCSAT() {
 
   function addLog(msg: string) { setLog(prev => [...prev, msg]) }
 
-  function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0]
     if (!f) return
     setFile(f)
+    const XLSX = await import('xlsx')
     const reader = new FileReader()
     reader.onload = (ev) => {
       const wb = XLSX.read(ev.target?.result, { type: 'array' })
@@ -76,7 +76,7 @@ export default function UploadCSAT() {
     // Cria pesquisa
     addLog('📋 Criando pesquisa...')
     const { data: pesquisaArr, error: pErr } = await dbInsert<any>('pesquisas_csat', [{ nome: nomePesquisa, data: dataPesquisa }], true)
-    if (pErr) { addLog(`❌ ${pErr.message}`); setSaving(false); return }
+    if (pErr) { addLog(`❌ ${pErr}`); setSaving(false); return }
     const pesquisa = (pesquisaArr as any)?.[0]
 
     addLog(`✅ Pesquisa "${nomePesquisa}" criada!`)
@@ -99,7 +99,7 @@ export default function UploadCSAT() {
     }))
 
     const { error: rErr } = await dbInsert('respostas_csat', records)
-    if (rErr) { addLog(`❌ ${rErr.message}`); setSaving(false); return }
+    if (rErr) { addLog(`❌ ${rErr}`); setSaving(false); return }
 
     addLog(`✅ ${records.length} respostas importadas!`)
     addLog('🎉 Pesquisa importada com sucesso!')

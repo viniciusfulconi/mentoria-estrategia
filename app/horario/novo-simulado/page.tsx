@@ -39,7 +39,7 @@ export default function NovoSimulado() {
       data_inicio: dtInicio.toISOString(), data_fim: dtFim.toISOString(),
       criado_por: 'coordenador', criado_por_id: perfil?.id,
     }])
-    if (error) { setErro(error.message); setSaving(false) }
+    if (error) { setErro(error); setSaving(false) }
     else router.push('/horario')
   }
 
