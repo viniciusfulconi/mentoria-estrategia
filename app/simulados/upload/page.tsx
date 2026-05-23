@@ -55,6 +55,37 @@ type PreviewData = {
   todosDados: any[]
 }
 
+// Normaliza cada registro para ter todas as colunas — PGRST102 exige chaves idênticas em batch inserts
+function normResultado(r: any) {
+  return {
+    id_aluno: r.id_aluno ?? null,
+    nome_aluno: r.nome_aluno ?? null,
+    mentor: r.mentor ?? null,
+    ciclo_nome: r.ciclo_nome ?? null,
+    concurso: r.concurso ?? null,
+    fase: r.fase ?? null,
+    media_1fase: r.media_1fase ?? null,
+    acertos_mat_1f: r.acertos_mat_1f ?? null,
+    acertos_fis_1f: r.acertos_fis_1f ?? null,
+    acertos_qui_1f: r.acertos_qui_1f ?? null,
+    acertos_ing_1f: r.acertos_ing_1f ?? null,
+    nota_matematica: r.nota_matematica ?? null,
+    nota_fisica: r.nota_fisica ?? null,
+    nota_quimica: r.nota_quimica ?? null,
+    media_linguagens: r.media_linguagens ?? null,
+    nota_redacao: r.nota_redacao ?? null,
+    nota_portugues: r.nota_portugues ?? null,
+    nota_ingles: r.nota_ingles ?? null,
+    media_2fase: r.media_2fase ?? null,
+    pontos_inteiros: r.pontos_inteiros ?? null,
+    resultado: r.resultado ?? null,
+    resultado_ciclo: r.resultado_ciclo ?? null,
+    motivo_reprovacao: r.motivo_reprovacao ?? null,
+    classificacao: r.classificacao ?? null,
+    notas_questoes: r.notas_questoes ?? null,
+  }
+}
+
 export default function UploadSimulados() {
   const router = useRouter()
   const [log, setLog] = useState<string[]>([])
@@ -328,9 +359,10 @@ export default function UploadSimulados() {
       await dbDelete('resultados', 'id=neq.00000000-0000-0000-0000-000000000000')
 
       addLog(`📊 Importando ${preview.registros.length} registros...`)
-      for (let i = 0; i < preview.registros.length; i += 100) {
-        await dbInsert('resultados', preview.registros.slice(i, i + 100))
-        addLog(`   ↳ ${Math.min(i + 100, preview.registros.length)}/${preview.registros.length} registros`)
+      const registrosNorm = preview.registros.map(normResultado)
+      for (let i = 0; i < registrosNorm.length; i += 100) {
+        await dbInsert('resultados', registrosNorm.slice(i, i + 100))
+        addLog(`   ↳ ${Math.min(i + 100, registrosNorm.length)}/${registrosNorm.length} registros`)
       }
 
       // 3. Rankings
@@ -347,7 +379,7 @@ export default function UploadSimulados() {
         grupo.sort((a, b) => (b.media_2fase ?? 0) - (a.media_2fase ?? 0))
         grupo.forEach((r, i) => { r.classificacao = i + 1 })
         for (let i = 0; i < grupo.length; i += 100) {
-          await dbInsert('resultados', grupo.slice(i, i + 100))
+          await dbInsert('resultados', grupo.slice(i, i + 100).map(normResultado))
         }
         totalRankings += grupo.length
         addLog(`  ✅ ${key.split('__')[0]}: ${grupo.length} alunos`)
