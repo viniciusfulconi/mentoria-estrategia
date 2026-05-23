@@ -21,8 +21,27 @@ type AuthCtx = {
 
 const AuthContext = createContext<AuthCtx>({ perfil: null, loading: true, signOut: () => {} })
 
-const PUBLIC_ROUTES = ['/login', '/cadastro', '/aguardando']
-const TIMEOUT_MS = 8000
+const PUBLIC_ROUTES = ['/login', '/cadastro', '/aguardando', '/reset-password']
+// Rotas onde usuários autenticados NÃO devem ser redirecionados para o dashboard
+const NO_REDIRECT_FROM = ['/reset-password']
+const TIMEOUT_MS = 25000
+
+// Lê sessão direto do localStorage — evita lock/hang do cliente JS
+function getSessionFromStorage(): { access_token: string; user: { id: string } } | null {
+  try {
+    if (typeof window === 'undefined') return null
+    const ref = process.env.NEXT_PUBLIC_SUPABASE_URL!.replace('https://', '').replace('.supabase.co', '')
+    const raw = localStorage.getItem(`sb-${ref}-auth-token`)
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    if (!parsed?.access_token) return null
+    // Ignora tokens expirados
+    if (parsed.expires_at && parsed.expires_at < Math.floor(Date.now() / 1000)) return null
+    return parsed
+  } catch {
+    return null
+  }
+}
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [perfil, setPerfil] = useState<Perfil | null>(null)
@@ -32,44 +51,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  // Inicialização da sessão — roda uma única vez
   useEffect(() => {
-    // Timeout de segurança — se demorar mais de 8s, sai do loading
-    timerRef.current = setTimeout(() => {
-      setLoading(false)
-      setTimeoutError(true)
-    }, TIMEOUT_MS)
+    // Timeout só faz sentido em rotas protegidas onde o usuário precisa estar autenticado
+    if (!PUBLIC_ROUTES.includes(pathname)) {
+      timerRef.current = setTimeout(() => {
+        setLoading(false)
+        setTimeoutError(true)
+      }, TIMEOUT_MS)
+    }
 
     async function init() {
       try {
-        const { data: { session } } = await supabase.auth.getSession()
+        // Lê sessão direto do localStorage para evitar lock do cliente JS
+        const session = getSessionFromStorage()
+        if (!session?.access_token) return
 
-        if (!session) {
-          if (!PUBLIC_ROUTES.includes(pathname)) router.push('/login')
-          return
-        }
-
-        const { data: perfilData, error } = await supabase
-          .from('perfis')
-          .select('*')
-          .eq('id', session.user.id)
-          .single()
-
-        if (error || !perfilData) {
-          if (!PUBLIC_ROUTES.includes(pathname)) router.push('/login')
-          return
-        }
-
-        setPerfil(perfilData)
-
-        if (PUBLIC_ROUTES.includes(pathname)) {
-          if (perfilData.status === 'pendente') router.push('/aguardando')
-          else if (perfilData.papel === 'coordenador') router.push('/')
-          else if (perfilData.papel === 'mentor') router.push('/mentor')
-          else if (perfilData.papel === 'aluno') router.push('/meu-perfil')
+        // Busca perfil via REST com timeout explícito — evita hang do cliente JS
+        const ctrl = new AbortController()
+        const tid = setTimeout(() => ctrl.abort(), 22000)
+        try {
+          const resp = await fetch(
+            `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/perfis?id=eq.${session.user.id}&select=*`,
+            {
+              headers: {
+                'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+                'Authorization': `Bearer ${session.access_token}`,
+              },
+              signal: ctrl.signal,
+            }
+          )
+          if (resp.ok) {
+            const data = await resp.json()
+            if (Array.isArray(data) && data.length > 0) setPerfil(data[0])
+          }
+        } finally {
+          clearTimeout(tid)
         }
       } catch (e) {
         console.error('Auth error:', e)
-        if (!PUBLIC_ROUTES.includes(pathname)) router.push('/login')
       } finally {
         if (timerRef.current) clearTimeout(timerRef.current)
         setLoading(false)
@@ -81,24 +101,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        if (event === 'SIGNED_OUT') {
+        if (event === 'PASSWORD_RECOVERY') {
+          return
+        } else if (event === 'SIGNED_OUT') {
           setPerfil(null)
-          router.push('/login')
-        } else if (event === 'SIGNED_IN' && session) {
-          const { data } = await supabase
-            .from('perfis')
-            .select('*')
-            .eq('id', session.user.id)
-            .single()
-          if (data) {
-            setPerfil(data)
-            if (PUBLIC_ROUTES.includes(pathname)) {
-              if (data.papel === 'coordenador') router.push('/')
-              else if (data.papel === 'mentor') router.push('/mentor')
-              else if (data.papel === 'aluno') router.push('/meu-perfil')
-              else router.push('/aguardando')
-            }
-          }
         }
       }
     )
@@ -107,7 +113,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       subscription.unsubscribe()
       if (timerRef.current) clearTimeout(timerRef.current)
     }
-  }, [pathname])
+  }, [])
+
+  // Lógica de redirect — roda quando perfil, loading ou rota mudam
+  useEffect(() => {
+    if (loading) return
+
+    if (!perfil) {
+      if (!PUBLIC_ROUTES.includes(pathname)) router.push('/login')
+      return
+    }
+
+    if (perfil.status === 'pendente' && pathname !== '/aguardando') {
+      router.push('/aguardando')
+      return
+    }
+
+    if (PUBLIC_ROUTES.includes(pathname) && !NO_REDIRECT_FROM.includes(pathname) && perfil.status !== 'pendente') {
+      if (perfil.papel === 'coordenador') router.push('/')
+      else if (perfil.papel === 'mentor') router.push('/mentor')
+      else if (perfil.papel === 'aluno') router.push('/meu-perfil')
+    }
+  }, [perfil, loading, pathname])
 
   async function signOut() {
     await supabase.auth.signOut()
@@ -115,8 +142,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     router.push('/login')
   }
 
-  // Tela de timeout — botão para tentar novamente
-  if (timeoutError) {
+  // Tela de timeout — botão para tentar novamente (não mostrar em rotas de auth especiais)
+  if (timeoutError && !NO_REDIRECT_FROM.includes(pathname)) {
     return (
       <div style={{
         minHeight: '100vh', display: 'flex', flexDirection: 'column',
