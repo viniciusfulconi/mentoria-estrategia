@@ -347,9 +347,10 @@ export default function UploadSimulados() {
         addLog(`✅ ${preview.alunosData.length} alunos importados`)
       }
 
-      // 2. Limpa e reinsere resultados
-      addLog(`🗑 Limpando resultados anteriores...`)
-      await dbDelete('resultados', 'id=neq.00000000-0000-0000-0000-000000000000')
+      // 2. Limpa e reinsere resultados apenas para os ciclos importados
+      const ciclosNovos = [...new Set(preview.todosDados.map(r => r.ciclo_nome))]
+      addLog(`🗑 Limpando ${ciclosNovos.length} ciclo(s) importado(s)...`)
+      await dbDelete('resultados', `ciclo_nome=in.(${ciclosNovos.join(',')})`)
 
       addLog(`📊 Importando ${preview.registros.length} registros...`)
       const registrosNorm = preview.registros.map(normResultado)
