@@ -264,54 +264,68 @@ export default function UploadSimulados() {
     setEtapa('saving'); setLog([])
     const addLog = (msg: string) => setLog(prev => [...prev, msg])
 
-    addLog(`📂 Iniciando importação...`)
+    try {
+      addLog(`📂 Iniciando importação...`)
 
-    // 1. Atualiza alunos
-    if (preview.alunosData.length) {
-      const { data: jasCadastrados } = await supabase.from('alunos_dados').select('id_aluno, cadastrado')
-      const cadastradoMap: Record<string, boolean> = {}
-      ;(jasCadastrados || []).forEach((a: any) => { cadastradoMap[a.id_aluno] = a.cadastrado })
-      preview.alunosData.forEach(a => { a.cadastrado = cadastradoMap[a.id_aluno] || false })
+      // 1. Atualiza alunos
+      if (preview.alunosData.length) {
+        addLog(`👥 Atualizando ${preview.alunosData.length} alunos...`)
+        const { data: jasCadastrados, error: selErr } = await supabase.from('alunos_dados').select('id_aluno, cadastrado')
+        if (selErr) throw new Error(`Erro ao ler alunos: ${selErr.message}`)
+        const cadastradoMap: Record<string, boolean> = {}
+        ;(jasCadastrados || []).forEach((a: any) => { cadastradoMap[a.id_aluno] = a.cadastrado })
+        preview.alunosData.forEach(a => { a.cadastrado = cadastradoMap[a.id_aluno] || false })
 
-      await supabase.from('alunos_dados').delete().neq('id_aluno', 'x')
-      for (let i = 0; i < preview.alunosData.length; i += 100) {
-        await supabase.from('alunos_dados').insert(preview.alunosData.slice(i, i + 100))
+        const { error: delErr } = await supabase.from('alunos_dados').delete().neq('id_aluno', 'x')
+        if (delErr) throw new Error(`Erro ao limpar alunos: ${delErr.message}`)
+        for (let i = 0; i < preview.alunosData.length; i += 100) {
+          const { error: insErr } = await supabase.from('alunos_dados').insert(preview.alunosData.slice(i, i + 100))
+          if (insErr) throw new Error(`Erro ao inserir alunos (lote ${i}): ${insErr.message}`)
+        }
+        addLog(`✅ ${preview.alunosData.length} alunos importados`)
       }
-      addLog(`✅ ${preview.alunosData.length} alunos importados`)
-    }
 
-    // 2. Limpa e reinsere resultados
-    addLog(`🗑 Limpando resultados anteriores...`)
-    await supabase.from('resultados').delete().neq('id', '00000000-0000-0000-0000-000000000000')
+      // 2. Limpa e reinsere resultados
+      addLog(`🗑 Limpando resultados anteriores...`)
+      const { error: delResErr } = await supabase.from('resultados').delete().neq('id', '00000000-0000-0000-0000-000000000000')
+      if (delResErr) throw new Error(`Erro ao limpar resultados: ${delResErr.message}`)
 
-    addLog(`📊 Importando ${preview.registros.length} registros...`)
-    for (let i = 0; i < preview.registros.length; i += 100) {
-      await supabase.from('resultados').insert(preview.registros.slice(i, i + 100))
-    }
-
-    // 3. Rankings
-    addLog(`🏆 Calculando rankings...`)
-    const rankings = calcularRankings(preview.todosDados)
-    const porCiclo: Record<string, any[]> = {}
-    rankings.forEach(r => {
-      const k = `${r.ciclo_nome}__${r.concurso}`
-      if (!porCiclo[k]) porCiclo[k] = []
-      porCiclo[k].push(r)
-    })
-    let totalRankings = 0
-    for (const [key, grupo] of Object.entries(porCiclo)) {
-      grupo.sort((a, b) => (b.media_2fase ?? 0) - (a.media_2fase ?? 0))
-      grupo.forEach((r, i) => { r.classificacao = i + 1 })
-      for (let i = 0; i < grupo.length; i += 100) {
-        await supabase.from('resultados').insert(grupo.slice(i, i + 100))
+      addLog(`📊 Importando ${preview.registros.length} registros...`)
+      for (let i = 0; i < preview.registros.length; i += 100) {
+        const { error: insErr } = await supabase.from('resultados').insert(preview.registros.slice(i, i + 100))
+        if (insErr) throw new Error(`Erro ao inserir resultados (lote ${i}): ${insErr.message}`)
+        addLog(`   ↳ ${Math.min(i + 100, preview.registros.length)}/${preview.registros.length} registros`)
       }
-      totalRankings += grupo.length
-      addLog(`  ✅ ${key.split('__')[0]}: ${grupo.length} alunos`)
-    }
 
-    addLog(`\n🎉 Importação concluída!`)
-    addLog(`   📊 ${preview.registros.length} notas + ${totalRankings} rankings`)
-    setEtapa('done'); setDone(true)
+      // 3. Rankings
+      addLog(`🏆 Calculando rankings...`)
+      const rankings = calcularRankings(preview.todosDados)
+      const porCiclo: Record<string, any[]> = {}
+      rankings.forEach(r => {
+        const k = `${r.ciclo_nome}__${r.concurso}`
+        if (!porCiclo[k]) porCiclo[k] = []
+        porCiclo[k].push(r)
+      })
+      let totalRankings = 0
+      for (const [key, grupo] of Object.entries(porCiclo)) {
+        grupo.sort((a, b) => (b.media_2fase ?? 0) - (a.media_2fase ?? 0))
+        grupo.forEach((r, i) => { r.classificacao = i + 1 })
+        for (let i = 0; i < grupo.length; i += 100) {
+          const { error: insErr } = await supabase.from('resultados').insert(grupo.slice(i, i + 100))
+          if (insErr) throw new Error(`Erro ao inserir ranking ${key}: ${insErr.message}`)
+        }
+        totalRankings += grupo.length
+        addLog(`  ✅ ${key.split('__')[0]}: ${grupo.length} alunos`)
+      }
+
+      addLog(`\n🎉 Importação concluída!`)
+      addLog(`   📊 ${preview.registros.length} notas + ${totalRankings} rankings`)
+      setEtapa('done'); setDone(true)
+    } catch (e: any) {
+      addLog(`\n❌ Erro: ${e.message}`)
+      addLog(`Tente novamente. Se persistir, verifique o banco de dados.`)
+      setEtapa('preview')
+    }
   }
 
   const TIPO_LABEL: Record<string, string> = {

@@ -8,14 +8,12 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   global: {
     fetch: (url, options = {}) => {
       const urlStr = url instanceof Request ? url.url : String(url)
-      if (urlStr.includes('/auth/v1/')) {
-        // Timeout de 10s em requests de auth — evita lock infinito no cliente JS
-        const ctrl = new AbortController()
-        const tid = setTimeout(() => ctrl.abort(), 10000)
-        return fetch(url, { ...options, signal: options.signal ?? ctrl.signal })
-          .finally(() => clearTimeout(tid))
-      }
-      return fetch(url, { ...options, keepalive: true })
+      const isAuth = urlStr.includes('/auth/v1/')
+      // Timeout em todas as requests: 10s para auth, 30s para dados
+      const ctrl = new AbortController()
+      const tid = setTimeout(() => ctrl.abort(), isAuth ? 10000 : 30000)
+      return fetch(url, { ...options, signal: options.signal ?? ctrl.signal, keepalive: !isAuth })
+        .finally(() => clearTimeout(tid))
     },
   },
 })
