@@ -1,10 +1,50 @@
 // @ts-nocheck
 'use client'
 import { useState } from 'react'
-import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Nav from '@/components/Nav'
 import * as XLSX from 'xlsx'
+
+// Helpers REST diretos — evitam lock do cliente JS
+function getToken(): string {
+  const ref = process.env.NEXT_PUBLIC_SUPABASE_URL!.replace('https://', '').replace('.supabase.co', '')
+  const raw = localStorage.getItem(`sb-${ref}-auth-token`)
+  if (!raw) throw new Error('Sessão expirada. Faça login novamente.')
+  return JSON.parse(raw).access_token
+}
+
+async function dbSelect(table: string, params = ''): Promise<any[]> {
+  const token = getToken()
+  const resp = await fetch(
+    `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/${table}?${params}&select=*`,
+    { headers: { apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, Authorization: `Bearer ${token}` } }
+  )
+  if (!resp.ok) throw new Error(`Erro ao ler ${table}: ${await resp.text()}`)
+  return resp.json()
+}
+
+async function dbDelete(table: string, filter: string): Promise<void> {
+  const token = getToken()
+  const resp = await fetch(
+    `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/${table}?${filter}`,
+    { method: 'DELETE', headers: { apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, Authorization: `Bearer ${token}`, Prefer: 'return=minimal' } }
+  )
+  if (!resp.ok) throw new Error(`Erro ao apagar ${table}: ${await resp.text()}`)
+}
+
+async function dbInsert(table: string, rows: any[]): Promise<void> {
+  if (!rows.length) return
+  const token = getToken()
+  const resp = await fetch(
+    `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/${table}`,
+    {
+      method: 'POST',
+      headers: { apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+      body: JSON.stringify(rows),
+    }
+  )
+  if (!resp.ok) throw new Error(`Erro ao inserir em ${table}: ${await resp.text()}`)
+}
 
 type PreviewData = {
   alunosCount: number
@@ -270,30 +310,25 @@ export default function UploadSimulados() {
       // 1. Atualiza alunos
       if (preview.alunosData.length) {
         addLog(`👥 Atualizando ${preview.alunosData.length} alunos...`)
-        const { data: jasCadastrados, error: selErr } = await supabase.from('alunos_dados').select('id_aluno, cadastrado')
-        if (selErr) throw new Error(`Erro ao ler alunos: ${selErr.message}`)
+        const jasCadastrados = await dbSelect('alunos_dados', 'select=id_aluno,cadastrado')
         const cadastradoMap: Record<string, boolean> = {}
-        ;(jasCadastrados || []).forEach((a: any) => { cadastradoMap[a.id_aluno] = a.cadastrado })
+        jasCadastrados.forEach((a: any) => { cadastradoMap[a.id_aluno] = a.cadastrado })
         preview.alunosData.forEach(a => { a.cadastrado = cadastradoMap[a.id_aluno] || false })
 
-        const { error: delErr } = await supabase.from('alunos_dados').delete().neq('id_aluno', 'x')
-        if (delErr) throw new Error(`Erro ao limpar alunos: ${delErr.message}`)
+        await dbDelete('alunos_dados', 'id_aluno=neq.xxxx')
         for (let i = 0; i < preview.alunosData.length; i += 100) {
-          const { error: insErr } = await supabase.from('alunos_dados').insert(preview.alunosData.slice(i, i + 100))
-          if (insErr) throw new Error(`Erro ao inserir alunos (lote ${i}): ${insErr.message}`)
+          await dbInsert('alunos_dados', preview.alunosData.slice(i, i + 100))
         }
         addLog(`✅ ${preview.alunosData.length} alunos importados`)
       }
 
       // 2. Limpa e reinsere resultados
       addLog(`🗑 Limpando resultados anteriores...`)
-      const { error: delResErr } = await supabase.from('resultados').delete().neq('id', '00000000-0000-0000-0000-000000000000')
-      if (delResErr) throw new Error(`Erro ao limpar resultados: ${delResErr.message}`)
+      await dbDelete('resultados', 'id=neq.00000000-0000-0000-0000-000000000000')
 
       addLog(`📊 Importando ${preview.registros.length} registros...`)
       for (let i = 0; i < preview.registros.length; i += 100) {
-        const { error: insErr } = await supabase.from('resultados').insert(preview.registros.slice(i, i + 100))
-        if (insErr) throw new Error(`Erro ao inserir resultados (lote ${i}): ${insErr.message}`)
+        await dbInsert('resultados', preview.registros.slice(i, i + 100))
         addLog(`   ↳ ${Math.min(i + 100, preview.registros.length)}/${preview.registros.length} registros`)
       }
 
@@ -311,8 +346,7 @@ export default function UploadSimulados() {
         grupo.sort((a, b) => (b.media_2fase ?? 0) - (a.media_2fase ?? 0))
         grupo.forEach((r, i) => { r.classificacao = i + 1 })
         for (let i = 0; i < grupo.length; i += 100) {
-          const { error: insErr } = await supabase.from('resultados').insert(grupo.slice(i, i + 100))
-          if (insErr) throw new Error(`Erro ao inserir ranking ${key}: ${insErr.message}`)
+          await dbInsert('resultados', grupo.slice(i, i + 100))
         }
         totalRankings += grupo.length
         addLog(`  ✅ ${key.split('__')[0]}: ${grupo.length} alunos`)
@@ -323,7 +357,7 @@ export default function UploadSimulados() {
       setEtapa('done'); setDone(true)
     } catch (e: any) {
       addLog(`\n❌ Erro: ${e.message}`)
-      addLog(`Tente novamente. Se persistir, verifique o banco de dados.`)
+      addLog(`Tente novamente. Se o erro persistir, me informe a mensagem acima.`)
       setEtapa('preview')
     }
   }
