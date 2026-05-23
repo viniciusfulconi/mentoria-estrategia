@@ -13,10 +13,11 @@ const tabsCoordenadorPrimario = [
 ]
 
 const tabsCoordenadorSecundario = [
-  { href: '/turma',      label: 'Turma',      icon: '◈' },
-  { href: '/csat',       label: 'CSAT',       icon: '⭐' },
-  { href: '/cronograma', label: 'Cronograma', icon: '📋' },
-  { href: '/admin',      label: 'Acessos',    icon: '🔑' },
+  { href: '/turma',           label: 'Turma',      icon: '◈' },
+  { href: '/csat',            label: 'CSAT',       icon: '⭐' },
+  { href: '/cronograma',      label: 'Cronograma', icon: '📋' },
+  { href: '/provas-antigas',  label: 'Provas',     icon: '📄' },
+  { href: '/admin',           label: 'Acessos',    icon: '🔑' },
 ]
 
 const tabsMentor = [

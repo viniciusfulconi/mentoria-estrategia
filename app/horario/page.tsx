@@ -128,7 +128,10 @@ export default function Horario() {
               </div>
             )}
             {isMentor && (
-              <Link href="/horario/mentor" style={{ textDecoration: 'none', background: '#2563EB', color: 'white', borderRadius: 8, padding: '5px 12px', fontSize: 11 }}>+ Estudo</Link>
+              <div style={{ display: 'flex', gap: 4 }}>
+                <Link href="/horario/mentor" style={{ textDecoration: 'none', background: '#2563EB', color: 'white', borderRadius: 8, padding: '5px 10px', fontSize: 11 }}>+ Estudo</Link>
+                <Link href="/horario/nova-prova-antiga" style={{ textDecoration: 'none', background: '#7C3AED', color: 'white', borderRadius: 8, padding: '5px 10px', fontSize: 11 }}>+ Prova</Link>
+              </div>
             )}
             {isAluno && (
               <Link href="/horario/nova-atividade" style={{ textDecoration: 'none', background: '#2563EB', color: 'white', borderRadius: 8, padding: '5px 12px', fontSize: 11 }}>+ Pessoal</Link>

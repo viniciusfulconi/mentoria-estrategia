@@ -37,8 +37,12 @@ export default function AlunoPage() {
   const [ciclosDoAluno, setCiclosDoAluno] = useState<string[]>([])
   const [turmaQuestoesLoaded, setTurmaQuestoesLoaded] = useState(false)
   const [cicloAtivo, setCicloAtivo] = useState<string | null>(null)
-  const [aba, setAba] = useState<'geral' | 'simulados' | 'listas'>('geral')
+  const [aba, setAba] = useState<'geral' | 'simulados' | 'listas' | 'provas'>('geral')
   const [loading, setLoading] = useState(true)
+  const [provasAluno, setProvasAluno] = useState<any[]>([])
+  const [correcoesProva, setCorrecoesProva] = useState<any[]>([])
+  const [questoesProvas, setQuestoesProvas] = useState<any[]>([])
+  const [provasLoaded, setProvasLoaded] = useState(false)
 
   // Para aluno, usa o próprio id
   const targetId = meuPerfil?.papel === 'aluno' ? meuPerfil.aluno_id! : id
@@ -52,6 +56,11 @@ export default function AlunoPage() {
     if (aba !== 'simulados' || turmaQuestoesLoaded || !ciclosDoAluno.length) return
     loadTurmaQuestoes()
   }, [aba, ciclosDoAluno, turmaQuestoesLoaded])
+
+  useEffect(() => {
+    if (aba !== 'provas' || provasLoaded || !targetId) return
+    loadProvas()
+  }, [aba, targetId, provasLoaded])
 
   async function load() {
     const cached = alunoCache.get(targetId)
@@ -122,6 +131,49 @@ export default function AlunoPage() {
       ciclosDoAluno: ciclos,
       cicloAtivo: ultimoCiclo,
     })
+  }
+
+  async function loadProvas() {
+    const [{ data: pa }, { data: cp }] = await Promise.all([
+      dbQuery('provas_aluno', { aluno_id: `eq.${targetId}`, order: 'data.desc' }),
+      dbQuery('correcoes_prova', { aluno_id: `eq.${targetId}` }, 'prova_aluno_id,prova_id,respostas,notas,confirmed_at'),
+    ])
+    if (!pa?.length) { setProvasLoaded(true); return }
+    const provaIds = [...new Set(pa.map((p: any) => p.prova_id))].join(',')
+    const [{ data: detalhes }, { data: questoes }] = await Promise.all([
+      dbQuery('provas_antigas', { id: `in.(${provaIds})` }),
+      dbQuery('questoes_prova_antiga', { prova_id: `in.(${provaIds})` }, 'prova_id,numero,materia'),
+    ])
+    const detalheMap = Object.fromEntries((detalhes || []).map((d: any) => [d.id, d]))
+    setProvasAluno(pa.map((p: any) => ({ ...p, prova: detalheMap[p.prova_id] })))
+    setCorrecoesProva(cp || [])
+    setQuestoesProvas(questoes || [])
+    setProvasLoaded(true)
+  }
+
+  function analiseCumulativaProvas() {
+    const corrigidasCompletas = correcoesProva.filter(c => c.confirmed_at)
+    const errorCount: Record<string, number> = {}
+    corrigidasCompletas.forEach(c => {
+      const provaInfo = provasAluno.find(pa => pa.id === c.prova_aluno_id)?.prova
+      const questoesDaProva = questoesProvas.filter((q: any) => q.prova_id === c.prova_id)
+      if (provaInfo?.modelo === 'multipla_escolha') {
+        const resps = c.respostas || {}
+        questoesDaProva.forEach((q: any) => {
+          if (resps[String(q.numero)] && resps[String(q.numero)] !== 'acertou') {
+            errorCount[q.materia] = (errorCount[q.materia] || 0) + 1
+          }
+        })
+      } else {
+        const notas = c.notas || {}
+        questoesDaProva.forEach((q: any) => {
+          if (Number(notas[String(q.numero)] ?? 1) < 0.7) {
+            errorCount[q.materia] = (errorCount[q.materia] || 0) + 1
+          }
+        })
+      }
+    })
+    return Object.entries(errorCount).sort((a, b) => b[1] - a[1])
   }
 
   async function loadTurmaQuestoes() {
@@ -375,6 +427,7 @@ export default function AlunoPage() {
           { id: 'geral', label: 'Visão geral' },
           { id: 'simulados', label: 'Simulados' },
           { id: 'listas', label: 'Listas' },
+          { id: 'provas', label: '📄 Provas' },
         ].map(a => (
           <button key={a.id} onClick={() => setAba(a.id as any)} style={{
             padding: '5px 14px', borderRadius: 16, fontSize: 11, border: 'none',
@@ -565,6 +618,105 @@ export default function AlunoPage() {
         {/* === ABA LISTAS === */}
         {aba === 'listas' && (
           <ListasPage alunoId={targetId} />
+        )}
+
+        {/* === ABA PROVAS ANTIGAS === */}
+        {aba === 'provas' && (
+          <>
+            {!provasLoaded ? (
+              <div style={{ textAlign: 'center', color: '#999', padding: 40 }}>Carregando...</div>
+            ) : provasAluno.length === 0 ? (
+              <div className="card" style={{ textAlign: 'center', color: '#999', padding: 40 }}>
+                <div style={{ fontSize: 32, marginBottom: 10 }}>📄</div>
+                <div>Nenhuma prova antiga atribuída ainda.</div>
+              </div>
+            ) : (() => {
+              const feitas = correcoesProva.filter(c => c.confirmed_at).length
+              const pendentes = provasAluno.length - feitas
+              const errosCumulativos = feitas > 0 ? analiseCumulativaProvas() : []
+              const totalErros = errosCumulativos.reduce((s, [, n]) => s + n, 0)
+              return (
+                <>
+                  {/* Painel de análise geral */}
+                  <div className="card" style={{ marginBottom: 14 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 10 }}>Resumo geral</div>
+                    <div style={{ display: 'flex', gap: 10, marginBottom: feitas > 0 ? 14 : 0 }}>
+                      <div style={{ flex: 1, background: '#DCFCE7', borderRadius: 10, padding: '10px 12px', textAlign: 'center' }}>
+                        <div style={{ fontSize: 22, fontWeight: 700, color: '#14532D' }}>{feitas}</div>
+                        <div style={{ fontSize: 10, color: '#166534' }}>corrigida{feitas !== 1 ? 's' : ''}</div>
+                      </div>
+                      <div style={{ flex: 1, background: '#FEF9C3', borderRadius: 10, padding: '10px 12px', textAlign: 'center' }}>
+                        <div style={{ fontSize: 22, fontWeight: 700, color: '#713F12' }}>{pendentes}</div>
+                        <div style={{ fontSize: 10, color: '#854D0E' }}>pendente{pendentes !== 1 ? 's' : ''}</div>
+                      </div>
+                    </div>
+
+                    {/* Top assuntos mais errados */}
+                    {errosCumulativos.length > 0 && (
+                      <>
+                        <div style={{ fontSize: 12, fontWeight: 600, color: '#DC2626', marginBottom: 8 }}>
+                          📊 Assuntos para revisar (todas as provas)
+                        </div>
+                        {errosCumulativos.slice(0, 6).map(([mat, qtd]) => {
+                          const pct = Math.round((qtd / totalErros) * 100)
+                          return (
+                            <div key={mat} style={{ marginBottom: 7 }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 3 }}>
+                                <span style={{ color: '#333' }}>{mat}</span>
+                                <span style={{ fontWeight: 600, color: '#DC2626' }}>{qtd} erro{qtd > 1 ? 's' : ''}</span>
+                              </div>
+                              <div style={{ height: 5, background: '#F1F5F9', borderRadius: 3, overflow: 'hidden' }}>
+                                <div style={{ height: '100%', width: `${pct}%`, background: '#DC2626', borderRadius: 3 }} />
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </>
+                    )}
+                  </div>
+
+                  {/* Cards individuais */}
+                  {provasAluno.map(pa => {
+                    const correcao = correcoesProva.find(c => c.prova_aluno_id === pa.id)
+                    const corrigida = !!correcao?.confirmed_at
+                    return (
+                      <Link key={pa.id} href={`/minhas-provas/${pa.id}`} style={{ textDecoration: 'none' }}>
+                        <div className="card" style={{ marginBottom: 10, borderLeft: `3px solid ${corrigida ? '#16A34A' : '#7C3AED'}` }}>
+                          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                            <div style={{ fontSize: 24, flexShrink: 0 }}>📄</div>
+                            <div style={{ flex: 1 }}>
+                              <div style={{ fontWeight: 600, fontSize: 14, color: '#1a1a1a', marginBottom: 3 }}>
+                                {pa.prova?.nome || 'Prova'}
+                              </div>
+                              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 4 }}>
+                                <span style={{ fontSize: 10, padding: '2px 7px', borderRadius: 10, background: '#EDE9FE', color: '#5B21B6', fontWeight: 600 }}>
+                                  {(pa.prova?.tipo || '').toUpperCase()} · {pa.prova?.fase}ª Fase
+                                </span>
+                                <span style={{ fontSize: 10, padding: '2px 7px', borderRadius: 10, background: '#F1F5F9', color: '#475569' }}>
+                                  {pa.prova?.num_questoes}q
+                                </span>
+                              </div>
+                              <div style={{ fontSize: 11, color: '#999' }}>
+                                📅 {new Date(pa.data + 'T12:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}
+                              </div>
+                            </div>
+                            <div style={{
+                              fontSize: 10, fontWeight: 600, padding: '3px 9px', borderRadius: 10,
+                              background: corrigida ? '#DCFCE7' : '#FEF9C3',
+                              color: corrigida ? '#14532D' : '#713F12',
+                              flexShrink: 0,
+                            }}>
+                              {corrigida ? '✓ Corrigida' : 'Pendente'}
+                            </div>
+                          </div>
+                        </div>
+                      </Link>
+                    )
+                  })}
+                </>
+              )
+            })()}
+          </>
         )}
       </div>
       <Nav />
