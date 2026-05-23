@@ -115,20 +115,21 @@ export default function UploadSimulados() {
   }
 
   function detectTipo(name: string): { ciclo: string, tipo: string, concurso: string } {
-    const isITA = name.includes('ITA')
-    const isIME = name.includes('IME')
+    // Normaliza para comparação robusta — remove acentos variantes e padroniza case
+    const n = name.normalize('NFC').toLowerCase()
+    const isIME = n.includes('ime')
     const concurso = isIME ? 'IME' : 'ITA'
-    const numMatch = name.match(/Ciclo (\d+)/)
-    const num = numMatch ? String(parseInt(numMatch[1], 10)) : '0'  // remove leading zeros: "04" → "4"
+    const numMatch = name.match(/Ciclo\s*(\d+)/i)
+    const num = numMatch ? String(parseInt(numMatch[1], 10)) : '0'
     const cicloBase = `Ciclo ${num}`
 
-    if (name.includes('1a Fase')) return { ciclo: cicloBase, tipo: '1fase', concurso }
-    if (name.includes('Matem')) return { ciclo: cicloBase, tipo: '2fase_mat', concurso }
-    if (name.includes('Físic') || name.includes('Fisic')) return { ciclo: cicloBase, tipo: '2fase_fis', concurso }
-    if (name.includes('Quím') || name.includes('Quim')) return { ciclo: cicloBase, tipo: '2fase_qui', concurso }
-    if (name.includes('Port') || name.includes('Lingu')) return { ciclo: cicloBase, tipo: '2fase_port', concurso }
-    if (name.includes('Inglês') || name.includes('Ingles')) return { ciclo: cicloBase, tipo: '2fase_ing', concurso }
-    if (name.includes('Processo')) return { ciclo: name, tipo: '1fase', concurso }
+    if (n.includes('1a fase') || n.includes('1ª fase') || n.includes('primeira fase')) return { ciclo: cicloBase, tipo: '1fase', concurso }
+    if (n.includes('matem')) return { ciclo: cicloBase, tipo: '2fase_mat', concurso }
+    if (n.includes('f­sic') || n.includes('fisic')) return { ciclo: cicloBase, tipo: '2fase_fis', concurso }
+    if (n.includes('quím') || n.includes('quim')) return { ciclo: cicloBase, tipo: '2fase_qui', concurso }
+    if (n.includes('port') || n.includes('lingu') || n.includes('redac')) return { ciclo: cicloBase, tipo: '2fase_port', concurso }
+    if (n.includes('ingl')) return { ciclo: cicloBase, tipo: '2fase_ing', concurso }
+    if (n.includes('processo')) return { ciclo: name, tipo: '1fase', concurso }
     return { ciclo: cicloBase, tipo: 'outro', concurso }
   }
 
