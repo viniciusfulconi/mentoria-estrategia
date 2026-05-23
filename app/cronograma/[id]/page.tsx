@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { dbQuery, dbUpdate, dbInsert } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { useParams, useRouter } from 'next/navigation'
 import Nav from '@/components/Nav'
@@ -34,15 +34,15 @@ export default function CronogramaAluno() {
 
   async function load() {
     const [{ data: ts }, { data: ps }, { data: cs }, { data: aluno }] = await Promise.all([
-      supabase.from('topicos').select('*').order('materia').order('incidencia', { ascending: false }),
-      supabase.from('progresso_topicos').select('*').eq('aluno_id', targetId),
-      supabase.from('concursos').select('*').limit(1).single(),
-      supabase.from('alunos_dados').select('nome').eq('id_aluno', targetId).single(),
+      dbQuery('topicos', { order: 'materia,incidencia.desc' }),
+      dbQuery('progresso_topicos', { aluno_id: `eq.${targetId}` }),
+      dbQuery('concursos', { limit: '1' }),
+      dbQuery('alunos_dados', { id_aluno: `eq.${targetId}` }, 'nome'),
     ])
 
     setTopicos(ts || [])
-    setConcurso(cs)
-    setNomeAluno(aluno?.nome || '')
+    setConcurso(cs?.[0] ?? null)
+    setNomeAluno(aluno?.[0]?.nome || '')
 
     const pMap: Record<string, string> = {}
     ;(ps || []).forEach((p: any) => { pMap[p.topico_id] = p.status })
@@ -58,12 +58,12 @@ export default function CronogramaAluno() {
     const existing = progressos[topicoId]
 
     if (existing) {
-      await supabase.from('progresso_topicos')
-        .update({ status, updated_at: new Date().toISOString() })
-        .eq('aluno_id', targetId).eq('topico_id', topicoId)
+      await dbUpdate('progresso_topicos',
+        { aluno_id: `eq.${targetId}`, topico_id: `eq.${topicoId}` },
+        { status, updated_at: new Date().toISOString() }
+      )
     } else {
-      await supabase.from('progresso_topicos')
-        .insert([{ aluno_id: targetId, topico_id: topicoId, status }])
+      await dbInsert('progresso_topicos', [{ aluno_id: targetId, topico_id: topicoId, status }])
     }
 
     setProgressos(p => ({ ...p, [topicoId]: status }))

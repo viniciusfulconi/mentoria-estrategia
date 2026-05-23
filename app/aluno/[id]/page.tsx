@@ -1,7 +1,7 @@
 'use client'
 import ListasPage from '@/app/listas/page'
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { dbQuery } from '@/lib/supabase'
 import Nav from '@/components/Nav'
 import { useRouter, useParams } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
@@ -92,17 +92,19 @@ export default function AlunoPage() {
     // Rodada 1: dados do próprio aluno (5 queries pequenas em paralelo)
     const [
       { data: resultados },
-      { data: perfilData },
-      { data: alunoData },
+      { data: perfilArr },
+      { data: alunoArr },
       { data: ts },
       { data: ps },
     ] = await Promise.all([
-      supabase.from('resultados').select('*').eq('id_aluno', targetId).order('ciclo_nome'),
-      supabase.from('perfis').select('*').eq('aluno_id', targetId).single(),
-      supabase.from('alunos_dados').select('*').eq('id_aluno', targetId).single(),
-      supabase.from('topicos').select('id, materia, nome'),
-      supabase.from('progresso_topicos').select('topico_id, status').eq('aluno_id', targetId),
+      dbQuery('resultados', { id_aluno: `eq.${targetId}`, order: 'ciclo_nome' }),
+      dbQuery('perfis', { aluno_id: `eq.${targetId}` }),
+      dbQuery('alunos_dados', { id_aluno: `eq.${targetId}` }),
+      dbQuery('topicos', {}, 'id,materia,nome'),
+      dbQuery('progresso_topicos', { aluno_id: `eq.${targetId}` }, 'topico_id,status'),
     ])
+    const perfilData = perfilArr?.[0] ?? null
+    const alunoData = alunoArr?.[0] ?? null
 
     // Ciclos que este aluno tem — usados para filtrar os dados de turma
     const ciclos = [...new Set(
@@ -112,10 +114,8 @@ export default function AlunoPage() {
     // Rodada 2: apenas ranking da turma (turmaQuestoes carrega lazy ao abrir aba Simulados)
     const [{ data: todosRanking }] = ciclos.length
       ? await Promise.all([
-          supabase.from('resultados')
-            .select('id_aluno, nome_aluno, nota_matematica, nota_fisica, nota_quimica, media_linguagens, media_1fase, media_2fase')
-            .eq('fase', 'ranking')
-            .in('ciclo_nome', ciclos),
+          dbQuery('resultados', { fase: 'eq.ranking', ciclo_nome: `in.(${ciclos.join(',')})` },
+            'id_aluno,nome_aluno,nota_matematica,nota_fisica,nota_quimica,media_linguagens,media_1fase,media_2fase'),
         ])
       : [{ data: [] as any[] }]
 
@@ -146,11 +146,11 @@ export default function AlunoPage() {
   }
 
   async function loadTurmaQuestoes() {
-    const { data } = await supabase.from('resultados')
-      .select('id_aluno, ciclo_nome, fase, notas_questoes')
-      .neq('fase', 'ranking')
-      .in('ciclo_nome', ciclosDoAluno)
-      .not('notas_questoes', 'is', null)
+    const { data } = await dbQuery('resultados', {
+      fase: 'neq.ranking',
+      ciclo_nome: `in.(${ciclosDoAluno.join(',')})`,
+      notas_questoes: 'not.is.null',
+    }, 'id_aluno,ciclo_nome,fase,notas_questoes')
     setTurmaQuestoes(data || [])
     setTurmaQuestoesLoaded(true)
   }

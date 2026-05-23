@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { dbQuery } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import Nav from '@/components/Nav'
 import Link from 'next/link'
@@ -20,10 +20,10 @@ export default function Cronograma() {
 
   async function load() {
     const [{ data: cs }, { data: ts }, { data: ps }, { data: als }] = await Promise.all([
-      supabase.from('concursos').select('*').order('created_at', { ascending: false }),
-      supabase.from('topicos').select('*'),
-      supabase.from('progresso_topicos').select('*'),
-      supabase.from('alunos_dados').select('*').order('nome'),
+      dbQuery('concursos', { order: 'created_at.desc' }),
+      dbQuery('topicos'),
+      dbQuery('progresso_topicos'),
+      dbQuery('alunos_dados', { order: 'nome' }),
     ])
     setConcursos(cs || [])
     setTopicos(ts || [])

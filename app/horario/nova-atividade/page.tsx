@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { dbQuery, dbInsert } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
 import Nav from '@/components/Nav'
@@ -41,7 +41,7 @@ export default function NovaAtividade() {
       else if (repeticao === 'mensal') dtAtual.setMonth(dtAtual.getMonth() + 1)
     }
 
-    const { error } = await supabase.from('atividades').insert(registros)
+    const { error } = await dbInsert('atividades', registros)
     if (error) { setErro(error.message); setSaving(false) }
     else router.push('/horario')
   }

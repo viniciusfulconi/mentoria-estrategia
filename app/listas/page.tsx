@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { dbQuery, dbDelete } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import Nav from '@/components/Nav'
 import Link from 'next/link'
@@ -17,7 +17,7 @@ export default function ListasPage({ alunoId: propAlunoId }: { alunoId?: string 
 
   useEffect(() => {
     if (!alunoId) return
-    supabase.from('listas').select('*').eq('aluno_id', alunoId).order('data', { ascending: false })
+    dbQuery('listas', { aluno_id: `eq.${alunoId}`, order: 'data.desc' })
       .then(({ data }) => { setListas(data || []); setLoading(false) })
   }, [alunoId])
 
@@ -171,7 +171,7 @@ export default function ListasPage({ alunoId: propAlunoId }: { alunoId?: string 
 function ListaCard({ lista, pct, cor, corPct, isOwn, onDelete }: any) {
   async function deletar() {
     if (!confirm(`Excluir "${lista.nome}"?`)) return
-    await supabase.from('listas').delete().eq('id', lista.id)
+    await dbDelete('listas', { id: `eq.${lista.id}` })
     onDelete()
   }
 

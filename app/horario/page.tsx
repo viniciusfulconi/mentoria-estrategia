@@ -1,7 +1,7 @@
 // @ts-nocheck
 'use client'
 import { useEffect, useState, useCallback } from 'react'
-import { supabase } from '@/lib/supabase'
+import { dbQuery, dbDelete } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import Nav from '@/components/Nav'
 import Link from 'next/link'
@@ -23,15 +23,14 @@ export default function Horario() {
   async function carregarDados() {
     if (!perfil) return
 
-    const { data: turmas } = await supabase.from('turmas').select('id').limit(1)
+    const { data: turmas } = await dbQuery('turmas', { limit: '1' }, 'id')
     setTurmaId(turmas?.[0]?.id || null)
 
-    // Busca atividades
-    let query = supabase.from('atividades').select('*').order('data_inicio')
+    const params: Record<string, string> = { order: 'data_inicio' }
     if (perfil.papel === 'aluno' && perfil.aluno_id) {
-      query = query.or(`aluno_id.eq.${perfil.aluno_id},aluno_id.is.null`)
+      params['or'] = `(aluno_id.eq.${perfil.aluno_id},aluno_id.is.null)`
     }
-    const { data } = await query
+    const { data } = await dbQuery('atividades', params)
     setAtividades(data || [])
     setLoading(false)
   }
@@ -266,7 +265,7 @@ export default function Horario() {
                   if (!confirm('Apagar esta atividade?')) return
                   // Para recorrentes, pergunta se apaga só esta ou todas
                   const id = atividadeSelecionada.id?.split('_')[0]
-                  await supabase.from('atividades').delete().eq('id', id)
+                  await dbDelete('atividades', { id: `eq.${id}` })
                   setAtividades(prev => prev.filter(a => a.id !== id))
                   setAtividadeSelecionada(null)
                 }} style={{ flex: 1, padding: 10, borderRadius: 10, border: '1px solid #DC2626', background: 'white', color: '#DC2626', fontSize: 13, cursor: 'pointer', fontFamily: 'DM Sans,sans-serif', fontWeight: 500 }}>
@@ -317,7 +316,7 @@ function ViewDia({ data, atividades, onSelect, isAluno, perfil, onDelete }: any)
                           {a.professor ? ` · ${a.professor}` : ''}
                         </div>
                         {canDelete && (
-                          <button onClick={async e => { e.stopPropagation(); await supabase.from('atividades').delete().eq('id', a.id); onDelete(a.id) }}
+                          <button onClick={async e => { e.stopPropagation(); await dbDelete('atividades', { id: `eq.${a.id}` }); onDelete(a.id) }}
                             style={{ background: 'none', border: 'none', color: text, opacity: 0.7, cursor: 'pointer', fontSize: 12, padding: 0, marginTop: 2 }}>
                             ✕ excluir
                           </button>

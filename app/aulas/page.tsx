@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { dbQuery } from '@/lib/supabase'
 import Nav from '@/components/Nav'
 import Link from 'next/link'
 
@@ -10,7 +10,7 @@ export default function Aulas() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    supabase.from('aulas').select('*, turma:turmas(nome,tipo)').order('created_at', {ascending:false})
+    dbQuery('aulas', { order: 'created_at.desc' }, '*, turma:turmas(nome,tipo)')
       .then(({ data }) => { setAulas(data||[]); setLoading(false) })
   }, [])
 

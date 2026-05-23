@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { dbQuery } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import Nav from '@/components/Nav'
 import Link from 'next/link'
@@ -20,9 +20,9 @@ export default function Atendimentos() {
 
   async function carregar() {
     setErro(null)
-    let q = supabase.from('atendimentos_mentoria').select('*').order('data_atendimento', { ascending: false })
-    if (perfil?.papel === 'mentor') q = q.eq('mentor', perfil.mentor_nome || '')
-    const { data, error } = await q
+    const params: Record<string, string> = { order: 'data_atendimento.desc' }
+    if (perfil?.papel === 'mentor') params['mentor'] = `eq.${perfil.mentor_nome || ''}`
+    const { data, error } = await dbQuery('atendimentos_mentoria', params)
     if (error) { setErro('Falha ao carregar atendimentos.'); setLoading(false); return }
     setDados(data || [])
     setLoading(false)

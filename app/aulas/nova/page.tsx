@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { dbQuery, dbInsert } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Nav from '@/components/Nav'
 
@@ -21,7 +21,7 @@ export default function NovaAula() {
   const [preview, setPreview] = useState('')
 
   useEffect(() => {
-    supabase.from('turmas').select('*').then(({ data }) => setTurmas(data||[]))
+    dbQuery('turmas').then(({ data }) => setTurmas(data||[]))
   }, [])
 
   function handleUrl(url: string) {
@@ -35,11 +35,11 @@ export default function NovaAula() {
     const youtube_id = ytIdFromUrl(form.youtube_url)
     if (!youtube_id) { setError('URL do YouTube inválida.'); return }
     setSaving(true)
-    const { error: err } = await supabase.from('aulas').insert([{
+    const { error: err } = await dbInsert('aulas', [{
       titulo: form.titulo, youtube_url: form.youtube_url, youtube_id,
       turma_id: form.turma_id || null, materia: form.materia, duracao: form.duracao || '—'
     }])
-    if (err) { setError(err.message); setSaving(false) }
+    if (err) { setError(err); setSaving(false) }
     else router.push('/aulas')
   }
 

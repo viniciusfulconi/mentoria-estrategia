@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { dbQuery, dbInsert } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
 import Nav from '@/components/Nav'
@@ -13,14 +13,14 @@ export default function NovoVestibular() {
   const [saving, setSaving] = useState(false)
   const [erro, setErro] = useState('')
 
-  useEffect(() => { supabase.from('turmas').select('*').then(({ data }) => setTurmas(data || [])) }, [])
+  useEffect(() => { dbQuery('turmas').then(({ data }) => setTurmas(data || [])) }, [])
 
   async function salvar() {
     if (!form.nome || !form.data) { setErro('Preencha nome e data.'); return }
     setSaving(true)
     const dtInicio = new Date(`${form.data}T${form.hora_inicio}`)
     const dtFim = new Date(`${form.data}T${form.hora_fim}`)
-    const { error } = await supabase.from('atividades').insert([{
+    const { error } = await dbInsert('atividades', [{
       tipo: 'vestibular', titulo: form.nome, turma_id: form.turma_id || null,
       data_inicio: dtInicio.toISOString(), data_fim: dtFim.toISOString(),
       link_edital: form.link_edital,

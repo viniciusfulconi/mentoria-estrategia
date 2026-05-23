@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { dbQuery, dbUpdate } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import Nav from '@/components/Nav'
 import { useRouter } from 'next/navigation'
@@ -18,19 +18,19 @@ export default function Admin() {
   }, [perfil])
 
   async function load() {
-    const { data } = await supabase.from('perfis').select('*').order('created_at', { ascending: false })
-    setPendentes((data || []).filter(p => p.status === 'pendente'))
-    setAprovados((data || []).filter(p => p.status === 'aprovado'))
+    const { data } = await dbQuery('perfis', { order: 'created_at.desc' })
+    setPendentes((data || []).filter((p: any) => p.status === 'pendente'))
+    setAprovados((data || []).filter((p: any) => p.status === 'aprovado'))
     setLoading(false)
   }
 
   async function aprovar(id: string) {
-    await supabase.from('perfis').update({ status: 'aprovado' }).eq('id', id)
+    await dbUpdate('perfis', { id: `eq.${id}` }, { status: 'aprovado' })
     load()
   }
 
   async function bloquear(id: string) {
-    await supabase.from('perfis').update({ status: 'bloqueado' }).eq('id', id)
+    await dbUpdate('perfis', { id: `eq.${id}` }, { status: 'bloqueado' })
     load()
   }
 

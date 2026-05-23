@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { dbQuery, dbInsert } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
 import Nav from '@/components/Nav'
@@ -19,8 +19,8 @@ export default function MentorEstudo() {
 
   useEffect(() => {
     Promise.all([
-      supabase.from('alunos_dados').select('*').eq('mentor', perfil?.mentor_nome || '').order('nome'),
-      supabase.from('topicos').select('materia')
+      dbQuery('alunos_dados', { mentor: `eq.${perfil?.mentor_nome || ''}`, order: 'nome' }),
+      dbQuery('topicos', {}, 'materia'),
     ]).then(([{ data: a }, { data: m }]) => {
       setAlunos(a || [])
       setMaterias([...new Set((m || []).map((x: any) => x.materia))].sort() as string[])
@@ -55,7 +55,7 @@ export default function MentorEstudo() {
       else if (repeticao === 'mensal') dtAtual.setMonth(dtAtual.getMonth() + 1)
     }
 
-    const { error } = await supabase.from('atividades').insert(registros)
+    const { error } = await dbInsert('atividades', registros)
     if (error) { setErro(error.message); setSaving(false) }
     else {
       const msg = registros.length > 1 ? `${registros.length} estudos adicionados!` : 'Estudo adicionado!'

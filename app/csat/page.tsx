@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { dbQuery } from '@/lib/supabase'
 import Nav from '@/components/Nav'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -93,8 +93,8 @@ export default function CSAT() {
   async function carregar() {
     setErro(null)
     const [{ data: ps, error: e1 }, { data: rs, error: e2 }] = await Promise.all([
-      supabase.from('pesquisas_csat').select('*').order('data'),
-      supabase.from('respostas_csat').select('*'),
+      dbQuery('pesquisas_csat', { order: 'data' }),
+      dbQuery('respostas_csat'),
     ])
     if (e1 || e2) { setErro('Falha ao carregar dados de CSAT.'); setLoading(false); return }
     setPesquisas(ps || [])

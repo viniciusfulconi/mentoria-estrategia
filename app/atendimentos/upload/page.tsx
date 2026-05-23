@@ -1,7 +1,6 @@
-// @ts-nocheck
 'use client'
 import { useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { dbInsert, dbDelete } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Nav from '@/components/Nav'
 
@@ -56,7 +55,7 @@ export default function UploadAtendimentos() {
     if (!preview.length) return
     setLoading(true)
     addLog('\n🗑 Limpando dados anteriores...')
-    await supabase.from('atendimentos_mentoria').delete().neq('id', '00000000-0000-0000-0000-000000000000')
+    await dbDelete('atendimentos_mentoria', { id: 'neq.00000000-0000-0000-0000-000000000000' })
 
     const records = preview.map(r => {
       const min = parseDuracao(r['Duração Real'])
@@ -86,7 +85,7 @@ export default function UploadAtendimentos() {
     // Insere em lotes de 100
     for (let i = 0; i < records.length; i += 100) {
       const lote = records.slice(i, i + 100)
-      const { error } = await supabase.from('atendimentos_mentoria').insert(lote)
+      const { error } = await dbInsert('atendimentos_mentoria', lote)
       if (error) { addLog(`❌ Erro no lote ${i/100 + 1}: ${error.message}`); break }
       addLog(`  ✅ Lote ${Math.floor(i/100) + 1}/${Math.ceil(records.length/100)} importado`)
     }

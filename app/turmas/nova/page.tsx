@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { dbInsert } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Nav from '@/components/Nav'
 
@@ -13,11 +13,11 @@ export default function NovaTurma() {
   async function salvar() {
     if (!form.nome) { setError('Preencha o nome da turma.'); return }
     setSaving(true)
-    const { error: err } = await supabase.from('turmas').insert([{
+    const { error: err } = await dbInsert('turmas', [{
       nome: form.nome, tipo: form.tipo, ano: Number(form.ano),
       orcamento_total: Number(form.orcamento_total) || 0
     }])
-    if (err) { setError(err.message); setSaving(false) }
+    if (err) { setError(err); setSaving(false) }
     else router.push('/turmas')
   }
 

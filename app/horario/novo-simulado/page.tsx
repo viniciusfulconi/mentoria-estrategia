@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { dbQuery, dbInsert } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
 import Nav from '@/components/Nav'
@@ -16,7 +16,7 @@ export default function NovoSimulado() {
   const [erro, setErro] = useState('')
 
   useEffect(() => {
-    Promise.all([supabase.from('turmas').select('*'), supabase.from('topicos').select('materia')])
+    Promise.all([dbQuery('turmas'), dbQuery('topicos', {}, 'materia')])
       .then(([{ data: t }, { data: m }]) => {
         setTurmas(t || [])
         setMaterias([...new Set((m || []).map((x: any) => x.materia))].sort() as string[])
@@ -32,7 +32,7 @@ export default function NovoSimulado() {
     setSaving(true)
     const dtInicio = new Date(`${form.data}T${form.hora_inicio}`)
     const dtFim = new Date(`${form.data}T${form.hora_fim}`)
-    const { error } = await supabase.from('atividades').insert([{
+    const { error } = await dbInsert('atividades', [{
       tipo: 'simulado', titulo: form.nome, turma_id: form.turma_id,
       tipo_simulado: form.tipo, ciclo_simulado: form.ciclo,
       materias_simulado: materiasSel,

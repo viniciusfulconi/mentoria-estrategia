@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { dbQuery, dbInsert } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
 import Nav from '@/components/Nav'
@@ -22,8 +22,8 @@ export default function NovaAula() {
 
   useEffect(() => {
     Promise.all([
-      supabase.from('turmas').select('*'),
-      supabase.from('topicos').select('materia')
+      dbQuery('turmas'),
+      dbQuery('topicos', {}, 'materia'),
     ]).then(([{ data: t }, { data: m }]) => {
       setTurmas(t || [])
       const ms = [...new Set((m || []).map((x: any) => x.materia))].sort() as string[]
@@ -47,7 +47,7 @@ export default function NovaAula() {
       base.setHours(hi, hm, 0, 0)
       const baseFim = new Date(form.recorrencia_inicio)
       baseFim.setHours(fi, fm, 0, 0)
-      const { error } = await supabase.from('atividades').insert([{
+      const { error } = await dbInsert('atividades', [{
         tipo: 'aula', titulo: `Aula de ${form.materia}`,
         materia: form.materia, professor: form.professor,
         data_inicio: base.toISOString(), data_fim: baseFim.toISOString(),
@@ -79,7 +79,7 @@ export default function NovaAula() {
         if (form.frequencia === 'quinzenal') dtAtual.setDate(dtAtual.getDate() + 14)
         else dtAtual.setMonth(dtAtual.getMonth() + 1)
       }
-      const { error } = await supabase.from('atividades').insert(registros)
+      const { error } = await dbInsert('atividades', registros)
       if (error) { setErro(error.message); setSaving(false); return }
     }
 

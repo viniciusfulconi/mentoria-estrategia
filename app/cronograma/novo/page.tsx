@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { supabase } from '@/lib/supabase'
+import { supabase, dbQuery, dbInsert, dbUpdate } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Nav from '@/components/Nav'
 import * as XLSX from 'xlsx'
@@ -19,16 +19,15 @@ export default function NovoCronograma() {
   const [concursoAtual, setConcursoAtual] = useState<any>(null)
 
   useEffect(() => {
-    supabase.from('concursos').select('*').order('created_at', { ascending: false })
-      .then(({ data }) => {
-        setConcursos(data || [])
-        if (data && data.length > 0) {
-          setModo('editar')
-          setConcursoAtual(data[0])
-          setNome(data[0].nome)
-          setLogoPreview(data[0].logo_url || '')
-        }
-      })
+    dbQuery('concursos', { order: 'created_at.desc' }).then(({ data }) => {
+      setConcursos(data || [])
+      if (data && data.length > 0) {
+        setModo('editar')
+        setConcursoAtual(data[0])
+        setNome(data[0].nome)
+        setLogoPreview(data[0].logo_url || '')
+      }
+    })
   }, [])
 
   function handleLogo(e: React.ChangeEvent<HTMLInputElement>) {
@@ -86,11 +85,11 @@ export default function NovoCronograma() {
     let concursoId = concursoAtual?.id
     if (!concursoId) {
       addLog('📋 Criando concurso...')
-      const { data, error } = await supabase.from('concursos').insert([{ nome, logo_url: logoUrl }]).select().single()
+      const { data, error } = await dbInsert<any>('concursos', [{ nome, logo_url: logoUrl }], true)
       if (error) { addLog(`❌ ${error.message}`); setSaving(false); return }
-      concursoId = data.id
+      concursoId = (data as any)?.[0]?.id
     } else {
-      await supabase.from('concursos').update({ nome, logo_url: logoUrl }).eq('id', concursoId)
+      await dbUpdate('concursos', { id: `eq.${concursoId}` }, { nome, logo_url: logoUrl })
       addLog('✅ Concurso atualizado!')
     }
 
@@ -99,7 +98,7 @@ export default function NovoCronograma() {
       addLog(`📊 Importando ${topicosPreview.length} tópicos...`)
 
       // Remove tópicos antigos
-      await supabase.from('topicos').delete().eq('concurso_id', concursoId)
+      await dbDelete('topicos', { concurso_id: `eq.${concursoId}` })
 
       const records = topicosPreview.map(t => ({
         concurso_id: concursoId,
@@ -108,12 +107,9 @@ export default function NovoCronograma() {
         incidencia: t.incidencia,
       }))
 
-      const { error: topErr } = await supabase.from('topicos').insert(records)
+      const { error: topErr } = await dbInsert('topicos', records)
       if (topErr) { addLog(`❌ Erro tópicos: ${topErr.message}`) }
       else addLog(`✅ ${records.length} tópicos importados!`)
-
-      // Limpa progresso existente pois tópicos mudaram
-      await supabase.from('progresso_topicos').delete().eq('topico_id', 'all')
     }
 
     addLog('🎉 Cronograma salvo com sucesso!')

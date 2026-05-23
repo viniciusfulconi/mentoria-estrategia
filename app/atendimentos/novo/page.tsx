@@ -1,7 +1,6 @@
-// @ts-nocheck
 'use client'
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { supabase, dbQuery, dbInsert } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
 import Nav from '@/components/Nav'
@@ -30,8 +29,8 @@ export default function NovoAtendimento() {
 
   useEffect(() => {
     Promise.all([
-      supabase.from('alunos_dados').select('nome, mentor').order('nome'),
-      supabase.from('atendimentos_mentoria').select('mentor').limit(100),
+      dbQuery('alunos_dados', { order: 'nome' }, 'nome,mentor'),
+      dbQuery('atendimentos_mentoria', { limit: '100' }, 'mentor'),
     ]).then(([{ data: als }, { data: ats }]) => {
       setAlunos(als || [])
       const ms = [...new Set((ats || []).map(a => a.mentor))].sort() as string[]
@@ -72,7 +71,7 @@ export default function NovoAtendimento() {
     const mes = new Date(form.data_atendimento).toLocaleDateString('pt-BR', { month: '2-digit', year: 'numeric' })
     const ano = new Date(form.data_atendimento).getFullYear()
 
-    const { error } = await supabase.from('atendimentos_mentoria').insert([{
+    const { error } = await dbInsert('atendimentos_mentoria', [{
       ...form,
       duracao_minutos: durMin,
       valor_pago: valor,

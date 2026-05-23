@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { dbQuery, dbInsert } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Nav from '@/components/Nav'
 
@@ -14,8 +14,8 @@ export default function NovoAluno() {
 
   useEffect(() => {
     Promise.all([
-      supabase.from('turmas').select('*'),
-      supabase.from('mentores').select('*')
+      dbQuery('turmas'),
+      dbQuery('mentores'),
     ]).then(([{data:t},{data:m}]) => { setTurmas(t||[]); setMentores(m||[]) })
   }, [])
 
@@ -24,11 +24,11 @@ export default function NovoAluno() {
   async function salvar() {
     if (!form.nome || !form.turma_id) { setError('Preencha nome e turma.'); return }
     setSaving(true)
-    const { error: err } = await supabase.from('alunos').insert([{
+    const { error: err } = await dbInsert('alunos', [{
       nome: form.nome, email: form.email, turma_id: form.turma_id,
       mentor_id: form.mentor_id || null
     }])
-    if (err) { setError(err.message); setSaving(false) }
+    if (err) { setError(err); setSaving(false) }
     else router.push('/alunos')
   }
 

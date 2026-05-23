@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { dbQuery } from '@/lib/supabase'
 import Nav from '@/components/Nav'
 import Link from 'next/link'
 
@@ -9,7 +9,7 @@ export default function Turmas() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    supabase.from('turmas').select('*').order('created_at', { ascending: false })
+    dbQuery('turmas', { order: 'created_at.desc' })
       .then(({ data }) => { setTurmas(data || []); setLoading(false) })
   }, [])
 

@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { dbInsert } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Nav from '@/components/Nav'
 import * as XLSX from 'xlsx'
@@ -75,9 +75,9 @@ export default function UploadCSAT() {
 
     // Cria pesquisa
     addLog('📋 Criando pesquisa...')
-    const { data: pesquisa, error: pErr } = await supabase
-      .from('pesquisas_csat').insert([{ nome: nomePesquisa, data: dataPesquisa }]).select().single()
+    const { data: pesquisaArr, error: pErr } = await dbInsert<any>('pesquisas_csat', [{ nome: nomePesquisa, data: dataPesquisa }], true)
     if (pErr) { addLog(`❌ ${pErr.message}`); setSaving(false); return }
+    const pesquisa = (pesquisaArr as any)?.[0]
 
     addLog(`✅ Pesquisa "${nomePesquisa}" criada!`)
     addLog(`📊 Importando ${preview.length} respostas...`)
@@ -98,7 +98,7 @@ export default function UploadCSAT() {
       o_que_mudaria: r.mudaria,
     }))
 
-    const { error: rErr } = await supabase.from('respostas_csat').insert(records)
+    const { error: rErr } = await dbInsert('respostas_csat', records)
     if (rErr) { addLog(`❌ ${rErr.message}`); setSaving(false); return }
 
     addLog(`✅ ${records.length} respostas importadas!`)

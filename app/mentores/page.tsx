@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { dbQuery } from '@/lib/supabase'
 import Nav from '@/components/Nav'
 import Link from 'next/link'
 
@@ -9,7 +9,7 @@ export default function Mentores() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    supabase.from('mentores').select('*, turma:turmas(nome,tipo)').order('nome')
+    dbQuery('mentores', { order: 'nome' }, '*, turma:turmas(nome,tipo)')
       .then(({ data }) => { setMentores(data || []); setLoading(false) })
   }, [])
 

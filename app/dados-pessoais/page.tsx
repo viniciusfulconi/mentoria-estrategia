@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { supabase, dbQuery, dbUpdate } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
 import Nav from '@/components/Nav'
@@ -16,15 +16,16 @@ export default function DadosPessoais() {
 
   useEffect(() => {
     if (!meuPerfil) return
-    supabase.from('perfis').select('*').eq('id', meuPerfil.id).single()
+    dbQuery('perfis', { id: `eq.${meuPerfil.id}` })
       .then(({ data }) => {
-        if (data) {
+        const d = data?.[0]
+        if (d) {
           setForm({
-            telefone: data.telefone || '',
-            modalidade: data.modalidade || 'online',
-            cidade: data.cidade || '',
+            telefone: d.telefone || '',
+            modalidade: d.modalidade || 'online',
+            cidade: d.cidade || '',
           })
-          setFotoPreview(data.foto_url || '')
+          setFotoPreview(d.foto_url || '')
         }
       })
   }, [meuPerfil])
@@ -53,12 +54,12 @@ export default function DadosPessoais() {
       }
     }
 
-    const { error } = await supabase.from('perfis').update({
+    const { error } = await dbUpdate('perfis', { id: `eq.${meuPerfil.id}` }, {
       telefone: form.telefone,
       modalidade: form.modalidade,
       cidade: form.cidade,
       foto_url: fotoUrl,
-    }).eq('id', meuPerfil.id)
+    })
 
     if (error) setMsg('Erro ao salvar: ' + error.message)
     else setMsg('✅ Dados salvos com sucesso!')

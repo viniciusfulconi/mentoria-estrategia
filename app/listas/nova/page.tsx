@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { dbQuery, dbInsert } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
 import Nav from '@/components/Nav'
@@ -18,7 +18,7 @@ export default function NovaLista() {
   const [erro, setErro] = useState('')
 
   useEffect(() => {
-    supabase.from('topicos').select('*').order('materia').order('topico')
+    dbQuery('topicos', { order: 'materia,topico' })
       .then(({ data }) => {
         setTopicos(data || [])
         const ms = [...new Set((data || []).map((t: any) => t.materia))].sort() as string[]
@@ -51,7 +51,7 @@ export default function NovaLista() {
     const alunoId = perfil?.aluno_id
     if (!alunoId) { setErro('Aluno não identificado.'); setSaving(false); return }
 
-    const { error } = await supabase.from('listas').insert([{
+    const { error } = await dbInsert('listas', [{
       aluno_id: alunoId,
       topico_id: form.topico_id || null,
       materia: form.materia,

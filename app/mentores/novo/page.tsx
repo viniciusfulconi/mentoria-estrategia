@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { dbQuery, dbInsert } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Nav from '@/components/Nav'
 
@@ -12,18 +12,18 @@ export default function NovoMentor() {
   const [error, setError] = useState('')
 
   useEffect(() => {
-    supabase.from('turmas').select('*').then(({ data }) => setTurmas(data || []))
+    dbQuery('turmas').then(({ data }) => setTurmas(data || []))
   }, [])
 
   async function salvar() {
     if (!form.nome || !form.turma_id) { setError('Preencha nome e turma.'); return }
     setSaving(true)
-    const { error: err } = await supabase.from('mentores').insert([{
+    const { error: err } = await dbInsert('mentores', [{
       nome: form.nome, email: form.email, turma_id: form.turma_id,
       materia: form.materia, valor_por_atendimento: Number(form.valor_por_atendimento)||0,
       nota_media: Number(form.nota_media)||5, total_atendimentos: 0
     }])
-    if (err) { setError(err.message); setSaving(false) }
+    if (err) { setError(err); setSaving(false) }
     else router.push('/mentores')
   }
 

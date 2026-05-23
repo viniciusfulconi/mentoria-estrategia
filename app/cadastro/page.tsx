@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { supabase } from '@/lib/supabase'
+import { supabase, dbQuery, dbInsert } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
@@ -14,12 +14,12 @@ export default function Cadastro() {
 
   useEffect(() => {
     // Busca mentores únicos da planilha
-    supabase.from('resultados').select('mentor').eq('fase', 'ranking').then(({ data }) => {
+    dbQuery('resultados', { fase: 'eq.ranking' }, 'mentor').then(({ data }) => {
       const ms = [...new Set((data || []).map((r: any) => r.mentor).filter(Boolean))].sort() as string[]
       setMentores(ms)
     })
     // Busca alunos únicos
-    supabase.from('resultados').select('id_aluno, nome_aluno').eq('fase', 'ranking').then(({ data }) => {
+    dbQuery('resultados', { fase: 'eq.ranking' }, 'id_aluno,nome_aluno').then(({ data }) => {
       const seen = new Set()
       const unique = (data || []).filter((r: any) => {
         if (seen.has(r.id_aluno)) return false
@@ -39,7 +39,7 @@ export default function Cadastro() {
     const { data: authData, error: authErr } = await supabase.auth.signUp({ email: form.email, password: form.senha })
     if (authErr) { setErro(authErr.message); setLoading(false); return }
 
-    const { error: perfilErr } = await supabase.from('perfis').insert([{
+    const { error: perfilErr } = await dbInsert('perfis', [{
       id: authData.user?.id,
       email: form.email,
       nome: form.nome,

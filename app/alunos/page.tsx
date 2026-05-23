@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { dbQuery } from '@/lib/supabase'
 import Nav from '@/components/Nav'
 import Link from 'next/link'
 
@@ -11,8 +11,8 @@ export default function Alunos() {
 
   useEffect(() => {
     Promise.all([
-      supabase.from('alunos').select('*, turma:turmas(nome,tipo), mentor:mentores(nome)').order('nome'),
-      supabase.from('simulados').select('*')
+      dbQuery('alunos', { order: 'nome' }, '*, turma:turmas(nome,tipo), mentor:mentores(nome)'),
+      dbQuery('simulados'),
     ]).then(([{data:a},{data:s}]) => {
       setAlunos(a||[])
       setSimulados(s||[])

@@ -1,7 +1,7 @@
 // @ts-nocheck
 'use client'
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { dbQuery } from '@/lib/supabase'
 import Nav from '@/components/Nav'
 import { useParams, useRouter } from 'next/navigation'
 
@@ -135,13 +135,13 @@ export default function MentorCSAT() {
 
   useEffect(() => {
     Promise.all([
-      supabase.from('pesquisas_csat').select('*').order('data'),
-      supabase.from('respostas_csat').select('*').eq('mentor', nome),
-      supabase.from('perfis').select('*').eq('mentor_nome', nome).single(),
+      dbQuery('pesquisas_csat', { order: 'data' }),
+      dbQuery('respostas_csat', { mentor: `eq.${nome}` }),
+      dbQuery('perfis', { mentor_nome: `eq.${nome}` }),
     ]).then(([{ data: ps }, { data: rs }, { data: pf }]) => {
       setPesquisas(ps || [])
       setRespostas(rs || [])
-      setPerfil(pf)
+      setPerfil(pf?.[0] ?? null)
       setLoading(false)
     })
   }, [nome])
