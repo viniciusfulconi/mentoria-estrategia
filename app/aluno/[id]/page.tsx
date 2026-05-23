@@ -120,7 +120,7 @@ export default function AlunoPage() {
       : [{ data: [] as any[] }]
 
     const rankings = (resultados || []).filter(r => r.fase === 'ranking')
-      .sort((a, b) => (a.ciclo_nome || '').localeCompare(b.ciclo_nome || ''))
+      .sort((a, b) => parseInt((a.ciclo_nome || '').match(/\d+/)?.[0] || '0') - parseInt((b.ciclo_nome || '').match(/\d+/)?.[0] || '0'))
     const ultimoCiclo = rankings.length ? rankings[rankings.length - 1].ciclo_nome : null
 
     setDados(resultados || [])
@@ -157,7 +157,9 @@ export default function AlunoPage() {
 
   const nomeAluno = alunoInfo?.nome || perfil?.nome || '...'
   const rankings = dados.filter(r => r.fase === 'ranking')
-  const ciclos = [...new Set(rankings.map(r => r.ciclo_nome))].sort()
+  const ciclos = [...new Set(rankings.map(r => r.ciclo_nome))].sort((a: string, b: string) =>
+    parseInt(a.match(/\d+/)?.[0] || '0') - parseInt(b.match(/\d+/)?.[0] || '0')
+  )
   const rankingAtivo = rankings.find(r => r.ciclo_nome === cicloAtivo)
 
   // Ranking geral

@@ -17,7 +17,9 @@ export default function Turma() {
       .then(({ data }) => {
         const d = data || []
         setDados(d)
-        const cs = [...new Set(d.map((r: any) => r.ciclo_nome))].sort() as string[]
+        const cs = [...new Set(d.map((r: any) => r.ciclo_nome))].sort((a: string, b: string) =>
+          (parseInt(a.match(/\d+/)?.[0] || '0') - parseInt(b.match(/\d+/)?.[0] || '0'))
+        ) as string[]
         setCiclos(cs)
         if (cs.length) setCicloAtivo(cs[cs.length - 1])
         setLoading(false)

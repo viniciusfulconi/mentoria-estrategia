@@ -36,7 +36,9 @@ export default function Simulados() {
     })
 
     setAlunos(Object.values(alunoMap).sort((a, b) => a.nome.localeCompare(b.nome)))
-    setCiclos(Array.from(cicloSet).sort())
+    setCiclos(Array.from(cicloSet).sort((a, b) =>
+      parseInt(a.match(/\d+/)?.[0] || '0') - parseInt(b.match(/\d+/)?.[0] || '0')
+    ))
     setLoading(false)
   }
 

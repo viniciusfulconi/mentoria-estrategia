@@ -119,7 +119,7 @@ export default function UploadSimulados() {
     const isIME = name.includes('IME')
     const concurso = isIME ? 'IME' : 'ITA'
     const numMatch = name.match(/Ciclo (\d+)/)
-    const num = numMatch ? numMatch[1] : '0'
+    const num = numMatch ? String(parseInt(numMatch[1], 10)) : '0'  // remove leading zeros: "04" → "4"
     const cicloBase = `Ciclo ${num}`
 
     if (name.includes('1a Fase')) return { ciclo: cicloBase, tipo: '1fase', concurso }
