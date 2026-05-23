@@ -139,12 +139,12 @@ export default function UploadCSAT() {
 
           {preview.length > 0 && (
             <div style={{ marginTop: 14 }}>
-              <div style={{ fontSize: 12, color: '#1D9E75', marginBottom: 8 }}>
+              <div style={{ fontSize: 12, color: '#16A34A', marginBottom: 8 }}>
                 ✅ {preview.length} respostas · {mentores.length} mentores detectados
               </div>
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                 {mentores.map(m => (
-                  <span key={m} style={{ fontSize: 10, padding: '3px 8px', borderRadius: 10, background: '#EEEDFE', color: '#3C3489' }}>{m}</span>
+                  <span key={m} style={{ fontSize: 10, padding: '3px 8px', borderRadius: 10, background: '#EFF6FF', color: '#1E40AF' }}>{m}</span>
                 ))}
               </div>
             </div>
@@ -155,7 +155,7 @@ export default function UploadCSAT() {
           <div className="card">
             <div style={{ fontFamily: 'monospace', fontSize: 11, lineHeight: 2 }}>
               {log.map((l, i) => (
-                <div key={i} style={{ color: l.startsWith('❌') ? '#E24B4A' : l.startsWith('✅') || l.startsWith('🎉') ? '#1D9E75' : '#666' }}>{l}</div>
+                <div key={i} style={{ color: l.startsWith('❌') ? '#DC2626' : l.startsWith('✅') || l.startsWith('🎉') ? '#16A34A' : '#666' }}>{l}</div>
               ))}
             </div>
           </div>

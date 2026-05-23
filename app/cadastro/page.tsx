@@ -57,7 +57,7 @@ export default function Cadastro() {
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, background: '#F7F6F3' }}>
       <div style={{ width: '100%', maxWidth: 360 }}>
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <div style={{ fontSize: 28, fontWeight: 700, color: '#534AB7' }}>Cadastro</div>
+          <div style={{ fontSize: 28, fontWeight: 700, color: '#2563EB' }}>Cadastro</div>
           <div style={{ fontSize: 13, color: '#999', marginTop: 4 }}>Solicite seu acesso</div>
         </div>
 
@@ -94,14 +94,14 @@ export default function Cadastro() {
             </div>
           )}
 
-          {erro && <div style={{ color: '#E24B4A', fontSize: 13 }}>{erro}</div>}
+          {erro && <div style={{ color: '#DC2626', fontSize: 13 }}>{erro}</div>}
           <button className="btn-primary" onClick={cadastrar} disabled={loading}>
             {loading ? 'Cadastrando...' : 'Solicitar acesso'}
           </button>
         </div>
 
         <div style={{ textAlign: 'center', marginTop: 16, fontSize: 13, color: '#999' }}>
-          Já tem conta? <Link href="/login" style={{ color: '#534AB7', fontWeight: 500 }}>Entrar</Link>
+          Já tem conta? <Link href="/login" style={{ color: '#2563EB', fontWeight: 500 }}>Entrar</Link>
         </div>
       </div>
     </div>

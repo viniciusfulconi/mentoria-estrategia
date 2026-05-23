@@ -51,7 +51,7 @@ export default function ListasPage({ alunoId: propAlunoId }: { alunoId?: string 
     })).sort((a, b) => b.pct - a.pct)
   }
 
-  function corPct(n: number) { return n >= 70 ? '#1D9E75' : n >= 50 ? '#EF9F27' : '#E24B4A' }
+  function corPct(n: number) { return n >= 70 ? '#16A34A' : n >= 50 ? '#D97706' : '#DC2626' }
 
   const isOwn = perfil?.papel === 'aluno'
 
@@ -66,7 +66,7 @@ export default function ListasPage({ alunoId: propAlunoId }: { alunoId?: string 
           <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4 }}>
             {materias.map(m => {
               const s = statsMat(m)
-              const cor = CORES_MAT[m] || '#534AB7'
+              const cor = CORES_MAT[m] || '#2563EB'
               const active = materiaAtiva === m
               return (
                 <button key={m} onClick={() => setMateriaAtiva(active ? 'todas' : m)} style={{
@@ -89,7 +89,7 @@ export default function ListasPage({ alunoId: propAlunoId }: { alunoId?: string 
       {/* Botão nova lista */}
       {isOwn && (
         <Link href="/listas/nova" style={{ textDecoration: 'none' }}>
-          <div style={{ background: '#534AB7', color: 'white', borderRadius: 12, padding: '12px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
+          <div style={{ background: '#2563EB', color: 'white', borderRadius: 12, padding: '12px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
             <span style={{ fontSize: 20 }}>+</span>
             <span style={{ fontSize: 14, fontWeight: 500 }}>Adicionar nova lista</span>
           </div>
@@ -101,7 +101,7 @@ export default function ListasPage({ alunoId: propAlunoId }: { alunoId?: string 
           <div style={{ fontSize: 32, marginBottom: 10 }}>📝</div>
           <div style={{ marginBottom: 12 }}>Nenhuma lista cadastrada ainda.</div>
           {isOwn && (
-            <Link href="/listas/nova" style={{ textDecoration: 'none', display: 'inline-block', background: '#534AB7', color: 'white', borderRadius: 12, padding: '10px 20px', fontSize: 14 }}>
+            <Link href="/listas/nova" style={{ textDecoration: 'none', display: 'inline-block', background: '#2563EB', color: 'white', borderRadius: 12, padding: '10px 20px', fontSize: 14 }}>
               Adicionar primeira lista
             </Link>
           )}
@@ -119,7 +119,7 @@ export default function ListasPage({ alunoId: propAlunoId }: { alunoId?: string 
                     <span style={{ fontSize: 10, color: '#999', marginRight: 8 }}>{t.acertos}/{t.total} · {t.count} lista{t.count !== 1 ? 's' : ''}</span>
                     <span style={{ fontWeight: 600, color: corPct(t.pct) }}>{t.pct}%</span>
                   </div>
-                  <div style={{ height: 5, background: '#F0EEE8', borderRadius: 3, overflow: 'hidden' }}>
+                  <div style={{ height: 5, background: '#F1F5F9', borderRadius: 3, overflow: 'hidden' }}>
                     <div style={{ height: '100%', width: `${t.pct}%`, background: corPct(t.pct), borderRadius: 3 }} />
                   </div>
                 </div>
@@ -137,7 +137,7 @@ export default function ListasPage({ alunoId: propAlunoId }: { alunoId?: string 
             materias.map(mat => {
               const ls = listas.filter(l => l.materia === mat)
               const s = statsMat(mat)
-              const cor = CORES_MAT[mat] || '#534AB7'
+              const cor = CORES_MAT[mat] || '#2563EB'
               return (
                 <div key={mat} style={{ marginBottom: 16 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
@@ -156,7 +156,7 @@ export default function ListasPage({ alunoId: propAlunoId }: { alunoId?: string 
           ) : (
             listasFiltradas.map(l => {
               const pct = Math.round((l.acertos / l.total) * 100)
-              const cor = CORES_MAT[l.materia] || '#534AB7'
+              const cor = CORES_MAT[l.materia] || '#2563EB'
               return (
                 <ListaCard key={l.id} lista={l} pct={pct} cor={cor} corPct={corPct} isOwn={isOwn} onDelete={() => setListas(prev => prev.filter(x => x.id !== l.id))} />
               )
@@ -185,7 +185,7 @@ function ListaCard({ lista, pct, cor, corPct, isOwn, onDelete }: any) {
             {new Date(lista.data).toLocaleDateString('pt-BR')}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ height: 5, background: '#F0EEE8', borderRadius: 3, overflow: 'hidden', flex: 1 }}>
+            <div style={{ height: 5, background: '#F1F5F9', borderRadius: 3, overflow: 'hidden', flex: 1 }}>
               <div style={{ height: '100%', width: `${pct}%`, background: corPct(pct), borderRadius: 3 }} />
             </div>
             <span style={{ fontSize: 12, fontWeight: 600, color: corPct(pct), minWidth: 36 }}>{pct}%</span>

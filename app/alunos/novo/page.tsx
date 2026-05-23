@@ -55,7 +55,7 @@ export default function NovoAluno() {
             {mentoresFiltrados.map((m:any) => <option key={m.id} value={m.id}>{m.nome} — {m.materia}</option>)}
           </select>
         </div>
-        {error && <div style={{ color:'#E24B4A', fontSize:13 }}>{error}</div>}
+        {error && <div style={{ color:'#DC2626', fontSize:13 }}>{error}</div>}
         <button className="btn-primary" onClick={salvar} disabled={saving} style={{ marginTop:8 }}>{saving?'Salvando...':'Salvar aluno'}</button>
         <button className="btn-secondary" onClick={() => router.back()}>Cancelar</button>
       </div>

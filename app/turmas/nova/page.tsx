@@ -47,7 +47,7 @@ export default function NovaTurma() {
           <label>Orçamento total (R$)</label>
           <input type="number" value={form.orcamento_total} onChange={e => setForm({...form, orcamento_total:e.target.value})} placeholder="Ex: 10000" />
         </div>
-        {error && <div style={{ color:'#E24B4A', fontSize:13 }}>{error}</div>}
+        {error && <div style={{ color:'#DC2626', fontSize:13 }}>{error}</div>}
         <button className="btn-primary" onClick={salvar} disabled={saving} style={{ marginTop:8 }}>
           {saving ? 'Salvando...' : 'Salvar turma'}
         </button>

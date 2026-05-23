@@ -72,7 +72,7 @@ export default function NovaAula() {
           </select>
         </div>
         <div><label>Duração (ex: 42 min)</label><input value={form.duracao} onChange={e=>setForm({...form,duracao:e.target.value})} placeholder="42 min" /></div>
-        {error && <div style={{ color:'#E24B4A', fontSize:13 }}>{error}</div>}
+        {error && <div style={{ color:'#DC2626', fontSize:13 }}>{error}</div>}
         <button className="btn-primary" onClick={salvar} disabled={saving} style={{ marginTop:8 }}>{saving?'Salvando...':'Salvar aula'}</button>
         <button className="btn-secondary" onClick={() => router.back()}>Cancelar</button>
       </div>

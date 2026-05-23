@@ -105,7 +105,7 @@ export default function Turma() {
   }
 
   function corNota(n: number) {
-    return n >= 7 ? '#1D9E75' : n >= 5 ? '#EF9F27' : '#E24B4A'
+    return n >= 7 ? '#16A34A' : n >= 5 ? '#D97706' : '#DC2626'
   }
 
   const abas = [
@@ -133,7 +133,7 @@ export default function Turma() {
         {ciclos.map(c => (
           <button key={c} onClick={() => setCicloAtivo(c)} style={{
             padding: '5px 12px', borderRadius: 20, fontSize: 11, border: '0.5px solid rgba(0,0,0,0.12)',
-            background: cicloAtivo === c ? '#534AB7' : 'transparent',
+            background: cicloAtivo === c ? '#2563EB' : 'transparent',
             color: cicloAtivo === c ? 'white' : '#666',
             cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'DM Sans,sans-serif'
           }}>
@@ -147,7 +147,7 @@ export default function Turma() {
         {abas.map(a => (
           <button key={a.id} onClick={() => setAba(a.id as any)} style={{
             padding: '4px 12px', borderRadius: 16, fontSize: 11, border: 'none',
-            background: aba === a.id ? '#1a1a1a' : '#F1EFE8',
+            background: aba === a.id ? '#1a1a1a' : '#F1F5F9',
             color: aba === a.id ? 'white' : '#666',
             cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'DM Sans,sans-serif'
           }}>{a.label}</button>
@@ -163,13 +163,13 @@ export default function Turma() {
                 ? (r._mediaGeral || 0)
                 : mediaAluno(r)
               const cor = cicloAtivo === 'geral'
-                ? (media >= 5 ? '#1D9E75' : '#E24B4A')
-                : (r.resultado_ciclo === 'Aprovado' ? '#1D9E75' : '#E24B4A')
+                ? (media >= 5 ? '#16A34A' : '#DC2626')
+                : (r.resultado_ciclo === 'Aprovado' ? '#16A34A' : '#DC2626')
               const posicao = cicloAtivo === 'geral' ? i + 1 : (r.classificacao || i + 1)
               return (
                 <Link key={r.id_aluno} href={`/aluno/${r.id_aluno}`} style={{ textDecoration: 'none' }}>
                   <div className="card" style={{ marginBottom: 8, display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <div style={{ width: 28, height: 28, borderRadius: '50%', background: i < 3 ? '#EEEDFE' : '#F1EFE8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 600, color: i < 3 ? '#534AB7' : '#888', flexShrink: 0 }}>
+                    <div style={{ width: 28, height: 28, borderRadius: '50%', background: i < 3 ? '#EFF6FF' : '#F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 600, color: i < 3 ? '#2563EB' : '#888', flexShrink: 0 }}>
                       {posicao}
                     </div>
                     <div style={{ flex: 1 }}>
@@ -178,7 +178,7 @@ export default function Turma() {
                     </div>
                     <div style={{ textAlign: 'right' }}>
                       <div style={{ fontSize: 16, fontWeight: 600, color: cor }}>{media.toFixed(1)}</div>
-                      <span style={{ fontSize: 9, padding: '1px 6px', borderRadius: 8, background: r.resultado_ciclo === 'Aprovado' ? '#EAF3DE' : '#FCEBEB', color: r.resultado_ciclo === 'Aprovado' ? '#27500A' : '#791F1F' }}>
+                      <span style={{ fontSize: 9, padding: '1px 6px', borderRadius: 8, background: r.resultado_ciclo === 'Aprovado' ? '#DCFCE7' : '#FEF2F2', color: r.resultado_ciclo === 'Aprovado' ? '#14532D' : '#991B1B' }}>
                         {r.resultado_ciclo === 'Aprovado' ? '✓' : '✗'}
                       </span>
                     </div>
@@ -196,10 +196,10 @@ export default function Turma() {
                 </div>
               ) : atencao.map(r => (
                 <Link key={r.id} href={`/aluno/${r.id_aluno}`} style={{ textDecoration: 'none' }}>
-                  <div className="card" style={{ marginBottom: 10, borderLeft: '3px solid #E24B4A' }}>
+                  <div className="card" style={{ marginBottom: 10, borderLeft: '3px solid #DC2626' }}>
                     <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 4 }}>{r.nome_aluno}</div>
                     <div style={{ fontSize: 11, color: '#999', marginBottom: 6 }}>Mentor: {r.mentor}</div>
-                    {r.motivo_reprovacao && <div style={{ fontSize: 11, color: '#E24B4A' }}>✗ {r.motivo_reprovacao}</div>}
+                    {r.motivo_reprovacao && <div style={{ fontSize: 11, color: '#DC2626' }}>✗ {r.motivo_reprovacao}</div>}
                     <div style={{ display: 'flex', gap: 12, marginTop: 6, fontSize: 11 }}>
                       {r.media_1fase !== null && <span>1ª fase: <strong style={{ color: corNota(Number(r.media_1fase)) }}>{Number(r.media_1fase).toFixed(1)}</strong></span>}
                       {r.nota_matematica !== null && <span>Mat: <strong style={{ color: corNota(Number(r.nota_matematica)) }}>{Number(r.nota_matematica).toFixed(1)}</strong></span>}
@@ -255,7 +255,7 @@ export default function Turma() {
                       </div>
                       <div style={{ textAlign: 'right' }}>
                         <div style={{ fontSize: 18, fontWeight: 600, color: corNota(media) }}>{media.toFixed(1)}</div>
-                        {reprovados > 0 && <div style={{ fontSize: 10, color: '#E24B4A' }}>⚠ {reprovados} reprov.</div>}
+                        {reprovados > 0 && <div style={{ fontSize: 10, color: '#DC2626' }}>⚠ {reprovados} reprov.</div>}
                       </div>
                     </div>
                     {alunos.map((a: any, i: number) => {
@@ -265,7 +265,7 @@ export default function Turma() {
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 0', borderTop: i === 0 ? '0.5px solid rgba(0,0,0,0.06)' : 'none', borderBottom: '0.5px solid rgba(0,0,0,0.06)' }}>
                             <span style={{ fontSize: 11, color: '#999', minWidth: 20 }}>#{i + 1}</span>
                             <span style={{ flex: 1, fontSize: 12 }}>{a.nome_aluno}</span>
-                            <span style={{ fontSize: 9, padding: '1px 5px', borderRadius: 6, background: a.resultado_ciclo === 'Aprovado' ? '#EAF3DE' : '#FCEBEB', color: a.resultado_ciclo === 'Aprovado' ? '#27500A' : '#791F1F' }}>
+                            <span style={{ fontSize: 9, padding: '1px 5px', borderRadius: 6, background: a.resultado_ciclo === 'Aprovado' ? '#DCFCE7' : '#FEF2F2', color: a.resultado_ciclo === 'Aprovado' ? '#14532D' : '#991B1B' }}>
                               {a.resultado_ciclo === 'Aprovado' ? '✓' : '✗'}
                             </span>
                             <span style={{ fontWeight: 600, fontSize: 12, color: corNota(m), minWidth: 30, textAlign: 'right' }}>{m.toFixed(1)}</span>

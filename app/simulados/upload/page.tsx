@@ -6,11 +6,22 @@ import { useRouter } from 'next/navigation'
 import Nav from '@/components/Nav'
 import * as XLSX from 'xlsx'
 
+type PreviewData = {
+  alunosCount: number
+  abas: { nome: string; ciclo: string; tipo: string; concurso: string; alunos: number; avisos: string[] }[]
+  avisoGeral: string[]
+  alunosData: any[]
+  registros: any[]
+  todosDados: any[]
+}
+
 export default function UploadSimulados() {
   const router = useRouter()
   const [log, setLog] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
   const [done, setDone] = useState(false)
+  const [preview, setPreview] = useState<PreviewData | null>(null)
+  const [etapa, setEtapa] = useState<'idle' | 'parsing' | 'preview' | 'saving' | 'done'>('idle')
 
   function addLog(msg: string) { setLog(prev => [...prev, msg]) }
 
@@ -134,105 +145,71 @@ export default function UploadSimulados() {
     return rankings
   }
 
-  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setLoading(true); setLog([]); setDone(false)
-
-    const buf = await file.arrayBuffer()
-    const wb = XLSX.read(buf, { type: 'array' })
-    addLog(`📂 ${wb.SheetNames.length} abas encontradas`)
-
-    // 1. Importa alunos
+  function parsearPlanilha(wb: any): PreviewData {
+    const ignorar = ['Ids Alunos', 'Processo Seletivo']
     const idsRows = parseSheet(wb, 'Ids Alunos')
-    if (idsRows.length) {
-      addLog(`\n👤 Importando ${idsRows.length} alunos...`)
-      const { data: jasCadastrados } = await supabase.from('alunos_dados').select('id_aluno, cadastrado')
-      const cadastradoMap: Record<string, boolean> = {}
-      ;(jasCadastrados || []).forEach((a: any) => { cadastradoMap[a.id_aluno] = a.cadastrado })
 
-      const alunosData = idsRows.map(r => {
-        const idAluno = String(r['IdAluno'] || '')
-        return {
-          id_aluno: idAluno,
-          nome: String(r['Aluno'] || ''),
-          mentor: r['Mentor do Aluno'] || null,
-          data_nascimento: excelDateToISO(r['Data nascimento do Aluno']),
-          ingresso: r['Ingresso na Turma'] || null,
-          cadastrado: cadastradoMap[idAluno] || false,
-        }
-      }).filter(a => a.id_aluno && a.nome)
-
-      await supabase.from('alunos_dados').delete().neq('id_aluno', 'x')
-      for (let i = 0; i < alunosData.length; i += 100) {
-        await supabase.from('alunos_dados').insert(alunosData.slice(i, i + 100))
-      }
-      addLog(`✅ ${alunosData.length} alunos importados`)
-    }
-
-    // Monta mapa nome -> id para fallback
-    const idsRows2 = parseSheet(wb, 'Ids Alunos')
     const nomeParaId: Record<string, string> = {}
-    idsRows2.forEach((r: any) => {
+    idsRows.forEach((r: any) => {
       const id = String(r['IdAluno'] || '').trim()
       const nome = String(r['Aluno'] || '').trim().toLowerCase()
       if (id && nome) nomeParaId[nome] = id
     })
 
-    // 2. Limpa resultados antigos
-    addLog(`\n🗑 Limpando resultados anteriores...`)
-    await supabase.from('resultados').delete().neq('id', '00000000-0000-0000-0000-000000000000')
+    const alunosData = idsRows.map(r => {
+      const idAluno = String(r['IdAluno'] || '')
+      return {
+        id_aluno: idAluno,
+        nome: String(r['Aluno'] || ''),
+        mentor: r['Mentor do Aluno'] || null,
+        data_nascimento: excelDateToISO(r['Data nascimento do Aluno']),
+        ingresso: r['Ingresso na Turma'] || null,
+        cadastrado: false,
+      }
+    }).filter(a => a.id_aluno && a.nome)
 
-    // 3. Processa cada aba de notas
-    const ignorar = ['Ids Alunos', 'Processo Seletivo']
-    const abasNotas = wb.SheetNames.filter(n => 
-      !ignorar.includes(n) && 
-      !n.includes('Ranking') && 
+    const abasNotas = wb.SheetNames.filter(n =>
+      !ignorar.includes(n) &&
+      !n.includes('Ranking') &&
       !n.includes('Simulado Zero') &&
       !n.includes('Ciclo 0') &&
       !n.includes('Diagnóstico')
     )
-    addLog(`\n📊 Processando ${abasNotas.length} abas de notas...`)
 
     const todosDados: any[] = []
-    let totalRecs = 0
+    const registros: any[] = []
+    const avisoGeral: string[] = []
+    const abasResumo: PreviewData['abas'] = []
 
     for (const sheetName of abasNotas) {
       const rows = parseSheet(wb, sheetName)
       if (!rows.length) continue
 
       const { ciclo, tipo, concurso } = detectTipo(sheetName)
-      addLog(`  → ${sheetName} (${rows.length} alunos)`)
+      const avisos: string[] = []
+      let semId = 0
 
-      const records = rows.map(r => {
+      const recs = rows.map(r => {
         let idAluno = String(r['IdAluno'] ?? '').trim()
-        // Fallback: busca ID pelo nome quando IdAluno está vazio
         if (!idAluno || idAluno === 'null' || idAluno === 'undefined') {
           const nomeAluno = String(r['Aluno'] || '').trim().toLowerCase()
           idAluno = nomeParaId[nomeAluno] || ''
         }
-        if (!idAluno) return null
+        if (!idAluno) { semId++; return null }
 
-        // Notas por questão para assertividade
         const notasQuestoes: Record<string, number> = {}
         Object.keys(r).forEach(k => {
           if (k.match(/^Q\d+$/) && typeof r[k] === 'number') notasQuestoes[k] = r[k]
         })
 
         const rec: any = {
-          ciclo_nome: ciclo,
-          concurso,
-          id_aluno: idAluno,
-          nome_aluno: String(r['Aluno'] || ''),
-          mentor: r['Mentor do Aluno'] || null,
-          fase: tipo,
-          notas_questoes: Object.keys(notasQuestoes).length ? notasQuestoes : null,
+          ciclo_nome: ciclo, concurso, id_aluno: idAluno,
+          nome_aluno: String(r['Aluno'] || ''), mentor: r['Mentor do Aluno'] || null,
+          fase: tipo, notas_questoes: Object.keys(notasQuestoes).length ? notasQuestoes : null,
           resultado: r['Resultado'] || null,
           motivo_reprovacao: r['Motivo Eliminação'] || r['Motivo Reprovação'] || null,
           classificacao: r['CL'] ? Number(r['CL']) : null,
         }
-
-        // Notas específicas por tipo
         if (tipo === '1fase') {
           rec.media_1fase = r['Nota'] !== undefined ? Number(r['Nota']) : null
           rec.acertos_mat_1f = r['Acertos Matemática'] ? Number(r['Acertos Matemática']) : null
@@ -249,8 +226,6 @@ export default function UploadSimulados() {
           rec.nota_quimica = r['Nota'] !== undefined ? Number(r['Nota']) : null
           rec.pontos_inteiros = r['Pontos Inteiros'] ? Number(r['Pontos Inteiros']) : null
         } else if (tipo === '2fase_port') {
-          // ITA: Media Linguagens = (obj + redação) / 2
-          // IME: Nota agregada de Port + Ing
           rec.media_linguagens = r['Media Linguagens'] !== undefined ? Number(r['Media Linguagens'])
             : r['Nota'] !== undefined ? Number(r['Nota']) : null
           rec.nota_redacao = r['Nota Redacao'] !== undefined ? Number(r['Nota Redacao']) : null
@@ -258,32 +233,71 @@ export default function UploadSimulados() {
         } else if (tipo === '2fase_ing') {
           rec.nota_ingles = r['Nota'] !== undefined ? Number(r['Nota']) : null
         }
-
         todosDados.push(rec)
+        registros.push(rec)
         return rec
       }).filter(Boolean)
 
-      totalRecs += records.length
-      for (let i = 0; i < records.length; i += 100) {
-        await supabase.from('resultados').insert(records.slice(i, i + 100))
-      }
+      if (semId > 0) avisos.push(`${semId} aluno${semId > 1 ? 's' : ''} sem ID — serão ignorados`)
+      abasResumo.push({ nome: sheetName, ciclo, tipo, concurso, alunos: recs.length, avisos })
     }
 
-    addLog(`✅ ${totalRecs} registros de notas importados`)
+    if (!alunosData.length) avisoGeral.push('Aba "Ids Alunos" não encontrada ou vazia')
 
-    // 4. Calcula e insere rankings sintéticos
-    addLog(`\n🏆 Calculando rankings...`)
-    const rankings = calcularRankings(todosDados)
-    
-    // Agrupa por ciclo
+    return { alunosCount: alunosData.length, abas: abasResumo, avisoGeral, alunosData, registros, todosDados }
+  }
+
+  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setEtapa('parsing'); setLog([]); setDone(false); setPreview(null)
+
+    const buf = await file.arrayBuffer()
+    const wb = XLSX.read(buf, { type: 'array' })
+    const dados = parsearPlanilha(wb)
+    setPreview(dados)
+    setEtapa('preview')
+  }
+
+  async function confirmarImportacao() {
+    if (!preview) return
+    setEtapa('saving'); setLog([])
+    const addLog = (msg: string) => setLog(prev => [...prev, msg])
+
+    addLog(`📂 Iniciando importação...`)
+
+    // 1. Atualiza alunos
+    if (preview.alunosData.length) {
+      const { data: jasCadastrados } = await supabase.from('alunos_dados').select('id_aluno, cadastrado')
+      const cadastradoMap: Record<string, boolean> = {}
+      ;(jasCadastrados || []).forEach((a: any) => { cadastradoMap[a.id_aluno] = a.cadastrado })
+      preview.alunosData.forEach(a => { a.cadastrado = cadastradoMap[a.id_aluno] || false })
+
+      await supabase.from('alunos_dados').delete().neq('id_aluno', 'x')
+      for (let i = 0; i < preview.alunosData.length; i += 100) {
+        await supabase.from('alunos_dados').insert(preview.alunosData.slice(i, i + 100))
+      }
+      addLog(`✅ ${preview.alunosData.length} alunos importados`)
+    }
+
+    // 2. Limpa e reinsere resultados
+    addLog(`🗑 Limpando resultados anteriores...`)
+    await supabase.from('resultados').delete().neq('id', '00000000-0000-0000-0000-000000000000')
+
+    addLog(`📊 Importando ${preview.registros.length} registros...`)
+    for (let i = 0; i < preview.registros.length; i += 100) {
+      await supabase.from('resultados').insert(preview.registros.slice(i, i + 100))
+    }
+
+    // 3. Rankings
+    addLog(`🏆 Calculando rankings...`)
+    const rankings = calcularRankings(preview.todosDados)
     const porCiclo: Record<string, any[]> = {}
     rankings.forEach(r => {
       const k = `${r.ciclo_nome}__${r.concurso}`
       if (!porCiclo[k]) porCiclo[k] = []
       porCiclo[k].push(r)
     })
-
-    // Ordena por média e atribui classificação
     let totalRankings = 0
     for (const [key, grupo] of Object.entries(porCiclo)) {
       grupo.sort((a, b) => (b.media_2fase ?? 0) - (a.media_2fase ?? 0))
@@ -292,14 +306,17 @@ export default function UploadSimulados() {
         await supabase.from('resultados').insert(grupo.slice(i, i + 100))
       }
       totalRankings += grupo.length
-      const [cicloKey] = key.split('__')
-      addLog(`  ✅ ${cicloKey}: ${grupo.length} alunos`)
+      addLog(`  ✅ ${key.split('__')[0]}: ${grupo.length} alunos`)
     }
 
     addLog(`\n🎉 Importação concluída!`)
-    addLog(`   📊 ${totalRecs} notas + ${totalRankings} rankings`)
-    setDone(true)
-    setLoading(false)
+    addLog(`   📊 ${preview.registros.length} notas + ${totalRankings} rankings`)
+    setEtapa('done'); setDone(true)
+  }
+
+  const TIPO_LABEL: Record<string, string> = {
+    '1fase': '1ª Fase', '2fase_mat': 'Mat.', '2fase_fis': 'Fís.',
+    '2fase_qui': 'Quí.', '2fase_port': 'Port.', '2fase_ing': 'Ing.', outro: '?',
   }
 
   return (
@@ -307,27 +324,107 @@ export default function UploadSimulados() {
       <div style={{ background: 'white', borderBottom: '0.5px solid rgba(0,0,0,0.08)', padding: '16px', position: 'sticky', top: 0, zIndex: 10, display: 'flex', alignItems: 'center', gap: 12 }}>
         <button onClick={() => router.back()} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#999' }}>←</button>
         <div style={{ fontSize: 17, fontWeight: 600 }}>Upload de resultados</div>
+        {etapa === 'preview' && (
+          <span style={{ fontSize: 11, padding: '3px 10px', borderRadius: 20, background: '#FFFBEB', color: '#78350F', fontWeight: 600 }}>
+            Aguardando confirmação
+          </span>
+        )}
       </div>
 
       <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <div className="card">
-          <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 6 }}>Planilha de gabaritos (.xlsx)</div>
-          <div style={{ fontSize: 12, color: '#999', marginBottom: 12, lineHeight: 1.6 }}>
-            Selecione a planilha atualizada. Os dados anteriores serão substituídos.<br/>
-            Ciclos parciais (sem todas as fases) são importados normalmente.
-          </div>
-          <input type="file" accept=".xlsx,.xls" onChange={handleFile} disabled={loading}
-            style={{ width: '100%', padding: '10px', borderRadius: 10, border: '0.5px solid rgba(0,0,0,0.12)', background: '#F7F6F3', fontSize: 13 }} />
-        </div>
 
-        {log.length > 0 && (
+        {/* Seleção de arquivo */}
+        {(etapa === 'idle' || etapa === 'parsing') && (
+          <div className="card">
+            <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 6 }}>Planilha de gabaritos (.xlsx)</div>
+            <div style={{ fontSize: 12, color: '#999', marginBottom: 12, lineHeight: 1.6 }}>
+              Selecione a planilha atualizada. Os dados serão analisados antes de qualquer alteração.
+            </div>
+            <input type="file" accept=".xlsx,.xls" onChange={handleFile} disabled={etapa === 'parsing'}
+              style={{ width: '100%', padding: '10px', borderRadius: 10, border: '0.5px solid rgba(0,0,0,0.12)', background: '#F8FAFC', fontSize: 13 }} />
+            {etapa === 'parsing' && (
+              <div style={{ textAlign: 'center', color: '#2563EB', padding: '16px 0 4px', fontSize: 13, fontWeight: 500 }}>
+                Lendo planilha...
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Preview */}
+        {etapa === 'preview' && preview && (
+          <>
+            {/* Avisos gerais */}
+            {preview.avisoGeral.length > 0 && (
+              <div className="card" style={{ borderLeft: '4px solid #DC2626', background: '#FEF2F2' }}>
+                {preview.avisoGeral.map((a, i) => (
+                  <div key={i} style={{ fontSize: 12, color: '#991B1B', fontWeight: 600 }}>⚠ {a}</div>
+                ))}
+              </div>
+            )}
+
+            {/* Resumo */}
+            <div className="card">
+              <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 12 }}>O que será importado</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 14 }}>
+                <div style={{ background: '#F8FAFC', borderRadius: 10, padding: '10px 14px' }}>
+                  <div style={{ fontSize: 22, fontWeight: 700, color: '#2563EB' }}>{preview.alunosCount}</div>
+                  <div style={{ fontSize: 11, color: '#999' }}>alunos na planilha</div>
+                </div>
+                <div style={{ background: '#F8FAFC', borderRadius: 10, padding: '10px 14px' }}>
+                  <div style={{ fontSize: 22, fontWeight: 700, color: '#2563EB' }}>{preview.registros.length}</div>
+                  <div style={{ fontSize: 11, color: '#999' }}>registros de notas</div>
+                </div>
+              </div>
+
+              <div style={{ fontSize: 11, fontWeight: 600, color: '#999', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>
+                Abas encontradas ({preview.abas.length})
+              </div>
+              {preview.abas.map((aba, i) => (
+                <div key={i} style={{
+                  display: 'flex', alignItems: 'flex-start', gap: 10, padding: '8px 0',
+                  borderBottom: i < preview.abas.length - 1 ? '1px solid var(--border)' : 'none',
+                }}>
+                  <span style={{
+                    fontSize: 10, fontWeight: 600, padding: '2px 7px', borderRadius: 8, flexShrink: 0,
+                    background: aba.concurso === 'ITA' ? '#EFF6FF' : '#DCFCE7',
+                    color: aba.concurso === 'ITA' ? '#1E40AF' : '#14532D',
+                  }}>{aba.concurso}</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 12, color: '#1a1a1a', fontWeight: 500 }}>
+                      {aba.ciclo} — {TIPO_LABEL[aba.tipo] || aba.tipo}
+                    </div>
+                    <div style={{ fontSize: 11, color: '#999' }}>{aba.alunos} alunos</div>
+                    {aba.avisos.map((av, j) => (
+                      <div key={j} style={{ fontSize: 11, color: '#D97706', marginTop: 2 }}>⚠ {av}</div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="card" style={{ background: '#FEF2F2', borderLeft: '4px solid #DC2626' }}>
+              <div style={{ fontSize: 12, color: '#991B1B', fontWeight: 600, marginBottom: 4 }}>Atenção — esta ação é irreversível</div>
+              <div style={{ fontSize: 12, color: '#991B1B' }}>Todos os resultados anteriores serão apagados e substituídos pelos dados desta planilha.</div>
+            </div>
+
+            <button className="btn-primary" onClick={confirmarImportacao}>
+              Confirmar importação →
+            </button>
+            <button className="btn-secondary" onClick={() => { setEtapa('idle'); setPreview(null) }}>
+              Cancelar — escolher outro arquivo
+            </button>
+          </>
+        )}
+
+        {/* Log de execução */}
+        {(etapa === 'saving' || etapa === 'done') && log.length > 0 && (
           <div className="card">
             <div style={{ fontFamily: 'monospace', fontSize: 11, lineHeight: 1.9, maxHeight: 400, overflowY: 'auto' }}>
               {log.map((l, i) => (
                 <div key={i} style={{
-                  color: l.startsWith('❌') ? '#E24B4A'
-                    : l.startsWith('✅') || l.startsWith('🎉') ? '#1D9E75'
-                    : l.startsWith('🏆') || l.startsWith('📊') ? '#534AB7'
+                  color: l.startsWith('❌') ? '#DC2626'
+                    : l.startsWith('✅') || l.startsWith('🎉') ? '#16A34A'
+                    : l.startsWith('🏆') || l.startsWith('📊') ? '#2563EB'
                     : '#666'
                 }}>{l}</div>
               ))}
@@ -335,12 +432,16 @@ export default function UploadSimulados() {
           </div>
         )}
 
-        {loading && <div style={{ textAlign: 'center', color: '#534AB7', padding: 20, fontWeight: 500 }}>Importando... aguarde</div>}
+        {etapa === 'saving' && (
+          <div style={{ textAlign: 'center', color: '#2563EB', padding: 20, fontWeight: 500 }}>Importando... aguarde</div>
+        )}
 
-        {done && (
+        {etapa === 'done' && (
           <button className="btn-primary" onClick={() => router.push('/simulados')}>Ver alunos →</button>
         )}
-        {!loading && !done && <button className="btn-secondary" onClick={() => router.back()}>Cancelar</button>}
+        {etapa === 'idle' && (
+          <button className="btn-secondary" onClick={() => router.back()}>Cancelar</button>
+        )}
       </div>
       <Nav />
     </div>

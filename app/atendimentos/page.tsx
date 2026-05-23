@@ -1,25 +1,29 @@
-// @ts-nocheck
 'use client'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import Nav from '@/components/Nav'
 import Link from 'next/link'
+import type { AtendimentoMentoria } from '@/lib/supabase'
 
 export default function Atendimentos() {
   const { perfil } = useAuth()
-  const [dados, setDados] = useState<any[]>([])
+  const [dados, setDados] = useState<AtendimentoMentoria[]>([])
   const [loading, setLoading] = useState(true)
+  const [erro, setErro] = useState<string | null>(null)
   const [filtroMentor, setFiltroMentor] = useState('todos')
   const [filtroMes, setFiltroMes] = useState('todos')
-  const [aba, setAba] = useState<'lista'|'financeiro'|'psico'>('lista')
+  const [aba, setAba] = useState<'lista' | 'financeiro' | 'psico'>('lista')
+  const [limite, setLimite] = useState(50)
 
   useEffect(() => { carregar() }, [perfil])
 
   async function carregar() {
+    setErro(null)
     let q = supabase.from('atendimentos_mentoria').select('*').order('data_atendimento', { ascending: false })
     if (perfil?.papel === 'mentor') q = q.eq('mentor', perfil.mentor_nome || '')
-    const { data } = await q
+    const { data, error } = await q
+    if (error) { setErro('Falha ao carregar atendimentos.'); setLoading(false); return }
     setDados(data || [])
     setLoading(false)
   }
@@ -75,9 +79,9 @@ export default function Atendimentos() {
           <div style={{ fontSize: 17, fontWeight: 600 }}>Atendimentos</div>
           <div style={{ display: 'flex', gap: 6 }}>
             {perfil?.papel === 'coordenador' && (
-              <Link href="/atendimentos/upload" style={{ textDecoration: 'none', background: '#F1EFE8', color: '#666', borderRadius: 10, padding: '6px 12px', fontSize: 12 }}>↑ Import</Link>
+              <Link href="/atendimentos/upload" style={{ textDecoration: 'none', background: '#F1F5F9', color: '#666', borderRadius: 10, padding: '6px 12px', fontSize: 12 }}>↑ Import</Link>
             )}
-            <Link href="/atendimentos/novo" style={{ textDecoration: 'none', background: '#534AB7', color: 'white', borderRadius: 10, padding: '6px 12px', fontSize: 12, fontWeight: 500 }}>+ Novo</Link>
+            <Link href="/atendimentos/novo" style={{ textDecoration: 'none', background: '#2563EB', color: 'white', borderRadius: 10, padding: '6px 12px', fontSize: 12, fontWeight: 500 }}>+ Novo</Link>
           </div>
         </div>
 
@@ -106,7 +110,7 @@ export default function Atendimentos() {
           ].map(a => (
             <button key={a.id} onClick={() => setAba(a.id as any)} style={{
               padding: '4px 12px', borderRadius: 14, fontSize: 11, border: 'none',
-              background: aba === a.id ? '#1a1a1a' : '#F1EFE8',
+              background: aba === a.id ? '#1a1a1a' : '#F1F5F9',
               color: aba === a.id ? 'white' : '#666',
               cursor: 'pointer', fontFamily: 'DM Sans,sans-serif'
             }}>{a.label}</button>
@@ -115,10 +119,16 @@ export default function Atendimentos() {
       </div>
 
       <div style={{ padding: 16 }}>
-        {loading ? <div style={{ textAlign: 'center', color: '#999', padding: 40 }}>Carregando...</div> : (
+        {loading ? <div style={{ textAlign: 'center', color: '#999', padding: 40 }}>Carregando...</div>
+        : erro ? (
+          <div className="card" style={{ textAlign: 'center', padding: 40 }}>
+            <div style={{ fontSize: 13, color: '#DC2626', marginBottom: 12 }}>{erro}</div>
+            <button onClick={carregar} style={{ padding: '8px 20px', borderRadius: 10, background: '#2563EB', color: 'white', border: 'none', fontSize: 13, cursor: 'pointer', fontFamily: 'DM Sans, sans-serif' }}>Tentar novamente</button>
+          </div>
+        ) : (
           <>
             {/* LISTA */}
-            {aba === 'lista' && filtrados.slice(0, 50).map(d => (
+            {aba === 'lista' && filtrados.slice(0, limite).map(d => (
               <div key={d.id} className="card" style={{ marginBottom: 10 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
                   <div>
@@ -126,25 +136,34 @@ export default function Atendimentos() {
                     <div style={{ fontSize: 11, color: '#999', marginTop: 2 }}>{d.mentor} · {new Date(d.data_atendimento).toLocaleDateString('pt-BR')}</div>
                   </div>
                   <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: '#1D9E75' }}>R$ {Number(d.valor_pago || 0).toFixed(2)}</div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: '#16A34A' }}>R$ {Number(d.valor_pago || 0).toFixed(2)}</div>
                     <div style={{ fontSize: 10, color: '#999' }}>{formatMin(d.duracao_minutos || 0)}</div>
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 8, background: d.tipo === 'Individual' ? '#EEEDFE' : '#E1F5EE', color: d.tipo === 'Individual' ? '#3C3489' : '#085041' }}>{d.tipo}</span>
-                  {d.encaminhamento_psico && <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 8, background: '#FCEBEB', color: '#791F1F' }}>🧠 Psico</span>}
-                  {d.arquivo_gemini_url && <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 8, background: '#EAF3DE', color: '#27500A' }}>📄 Docx</span>}
-                  {d.link_gemini && !d.arquivo_gemini_url && <a href={d.link_gemini} target="_blank" rel="noopener noreferrer" style={{ fontSize: 10, padding: '2px 8px', borderRadius: 8, background: '#F1EFE8', color: '#534AB7', textDecoration: 'none' }}>🔗 Gemini</a>}
-                  {d.link_gravacao && <a href={d.link_gravacao} target="_blank" rel="noopener noreferrer" style={{ fontSize: 10, padding: '2px 8px', borderRadius: 8, background: '#F1EFE8', color: '#534AB7', textDecoration: 'none' }}>▶ Gravação</a>}
+                  <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 8, background: d.tipo === 'Individual' ? '#EFF6FF' : '#DCFCE7', color: d.tipo === 'Individual' ? '#1E40AF' : '#14532D' }}>{d.tipo}</span>
+                  {d.encaminhamento_psico && <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 8, background: '#FEF2F2', color: '#991B1B' }}>🧠 Psico</span>}
+                  {d.arquivo_gemini_url && <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 8, background: '#DCFCE7', color: '#14532D' }}>📄 Docx</span>}
+                  {d.link_gemini && !d.arquivo_gemini_url && <a href={d.link_gemini} target="_blank" rel="noopener noreferrer" style={{ fontSize: 10, padding: '2px 8px', borderRadius: 8, background: '#F1F5F9', color: '#2563EB', textDecoration: 'none' }}>🔗 Gemini</a>}
+                  {d.link_gravacao && <a href={d.link_gravacao} target="_blank" rel="noopener noreferrer" style={{ fontSize: 10, padding: '2px 8px', borderRadius: 8, background: '#F1F5F9', color: '#2563EB', textDecoration: 'none' }}>▶ Gravação</a>}
                 </div>
                 {d.descricao && <div style={{ fontSize: 12, color: '#666', marginTop: 8, lineHeight: 1.5, borderTop: '0.5px solid rgba(0,0,0,0.06)', paddingTop: 8 }}>{d.descricao}</div>}
               </div>
             ))}
 
+            {aba === 'lista' && filtrados.length > limite && (
+              <button
+                onClick={() => setLimite(l => l + 50)}
+                style={{ width: '100%', padding: '12px', borderRadius: 12, border: '0.5px solid rgba(0,0,0,0.12)', background: 'white', color: '#2563EB', fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', marginBottom: 10 }}
+              >
+                Carregar mais ({filtrados.length - limite} restantes)
+              </button>
+            )}
+
             {/* FINANCEIRO */}
             {aba === 'financeiro' && (
               <>
-                <div style={{ background: '#534AB7', borderRadius: 14, padding: '16px 20px', marginBottom: 16, textAlign: 'center' }}>
+                <div style={{ background: '#2563EB', borderRadius: 14, padding: '16px 20px', marginBottom: 16, textAlign: 'center' }}>
                   <div style={{ fontSize: 32, fontWeight: 800, color: 'white' }}>R$ {totalGeral.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
                   <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', marginTop: 4 }}>Total gasto · {filtrados.length} atendimentos</div>
                 </div>
@@ -155,10 +174,10 @@ export default function Atendimentos() {
                         <div style={{ fontSize: 14, fontWeight: 600 }}>{f.mentor}</div>
                         <div style={{ fontSize: 11, color: '#999' }}>{f.count} atend. · {formatMin(f.totalMin)}</div>
                       </div>
-                      <div style={{ fontSize: 20, fontWeight: 700, color: '#1D9E75' }}>R$ {f.totalValor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+                      <div style={{ fontSize: 20, fontWeight: 700, color: '#16A34A' }}>R$ {f.totalValor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
                     </div>
-                    <div style={{ height: 6, background: '#F0EEE8', borderRadius: 3, overflow: 'hidden' }}>
-                      <div style={{ height: '100%', width: `${totalGeral > 0 ? (f.totalValor/totalGeral)*100 : 0}%`, background: '#534AB7', borderRadius: 3 }} />
+                    <div style={{ height: 6, background: '#F1F5F9', borderRadius: 3, overflow: 'hidden' }}>
+                      <div style={{ height: '100%', width: `${totalGeral > 0 ? (f.totalValor/totalGeral)*100 : 0}%`, background: '#2563EB', borderRadius: 3 }} />
                     </div>
                     <div style={{ fontSize: 10, color: '#999', marginTop: 4 }}>{totalGeral > 0 ? ((f.totalValor/totalGeral)*100).toFixed(1) : 0}% do total</div>
                   </div>
@@ -174,12 +193,12 @@ export default function Atendimentos() {
                   <div>Nenhum encaminhamento psicológico neste período</div>
                 </div>
               ) : psico.map(d => (
-                <div key={d.id} className="card" style={{ marginBottom: 10, borderLeft: '3px solid #E24B4A' }}>
+                <div key={d.id} className="card" style={{ marginBottom: 10, borderLeft: '3px solid #DC2626' }}>
                   <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}>{d.aluno}</div>
                   <div style={{ fontSize: 11, color: '#999', marginBottom: 6 }}>
                     {d.mentor} · {new Date(d.data_atendimento).toLocaleDateString('pt-BR')}
                   </div>
-                  {d.solicitacao_aluno && <div style={{ fontSize: 12, color: '#E24B4A', marginBottom: 4 }}>📌 {d.solicitacao_aluno}</div>}
+                  {d.solicitacao_aluno && <div style={{ fontSize: 12, color: '#DC2626', marginBottom: 4 }}>📌 {d.solicitacao_aluno}</div>}
                   {d.descricao && <div style={{ fontSize: 12, color: '#666', lineHeight: 1.5 }}>{d.descricao}</div>}
                 </div>
               ))

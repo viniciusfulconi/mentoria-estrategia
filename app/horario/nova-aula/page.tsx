@@ -125,9 +125,9 @@ export default function NovaAula() {
             ].map(op => (
               <button key={op.val} onClick={() => setForm({ ...form, frequencia: op.val })} style={{
                 flex: 1, padding: '8px', borderRadius: 10, fontSize: 12,
-                border: `1.5px solid ${form.frequencia === op.val ? '#534AB7' : 'rgba(0,0,0,0.1)'}`,
-                background: form.frequencia === op.val ? '#EEEDFE' : 'transparent',
-                color: form.frequencia === op.val ? '#534AB7' : '#666',
+                border: `1.5px solid ${form.frequencia === op.val ? '#2563EB' : 'rgba(0,0,0,0.1)'}`,
+                background: form.frequencia === op.val ? '#EFF6FF' : 'transparent',
+                color: form.frequencia === op.val ? '#2563EB' : '#666',
                 cursor: 'pointer', fontFamily: 'DM Sans,sans-serif', fontWeight: 500
               }}>{op.label}</button>
             ))}
@@ -147,7 +147,7 @@ export default function NovaAula() {
             📅 {form.frequencia === 'semanal' ? 'Toda' : form.frequencia === 'quinzenal' ? 'A cada 2 semanas, na' : 'Todo mês, na'} {DIAS_SEMANA[Number(form.dia_semana)]}, das {form.hora_inicio} às {form.hora_fim}, aula de {form.materia}{form.professor ? ` com ${form.professor}` : ''}
           </div>
         )}
-        {erro && <div style={{ color: '#E24B4A', fontSize: 13 }}>{erro}</div>}
+        {erro && <div style={{ color: '#DC2626', fontSize: 13 }}>{erro}</div>}
         <button className="btn-primary" onClick={salvar} disabled={saving}>{saving ? 'Salvando...' : 'Criar aula'}</button>
         <button className="btn-secondary" onClick={() => router.back()}>Cancelar</button>
       </div>

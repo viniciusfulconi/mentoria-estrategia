@@ -103,9 +103,9 @@ export default function NovoAtendimento() {
             </select>
           </div>
         ) : (
-          <div className="card" style={{ background: '#EEEDFE', padding: '10px 14px' }}>
+          <div className="card" style={{ background: '#EFF6FF', padding: '10px 14px' }}>
             <div style={{ fontSize: 12, color: '#999' }}>Mentor</div>
-            <div style={{ fontSize: 14, fontWeight: 600, color: '#534AB7' }}>{form.mentor}</div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: '#2563EB' }}>{form.mentor}</div>
           </div>
         )}
 
@@ -116,9 +116,9 @@ export default function NovoAtendimento() {
             {['Individual', 'Coletiva'].map(t => (
               <button key={t} onClick={() => setForm({ ...form, tipo: t })} style={{
                 flex: 1, padding: '9px', borderRadius: 10,
-                border: `1.5px solid ${form.tipo === t ? '#534AB7' : 'rgba(0,0,0,0.1)'}`,
-                background: form.tipo === t ? '#EEEDFE' : 'transparent',
-                color: form.tipo === t ? '#534AB7' : '#666',
+                border: `1.5px solid ${form.tipo === t ? '#2563EB' : 'rgba(0,0,0,0.1)'}`,
+                background: form.tipo === t ? '#EFF6FF' : 'transparent',
+                color: form.tipo === t ? '#2563EB' : '#666',
                 cursor: 'pointer', fontFamily: 'DM Sans,sans-serif', fontSize: 13, fontWeight: 500
               }}>{t}</button>
             ))}
@@ -147,24 +147,24 @@ export default function NovoAtendimento() {
         {durMin > 0 && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             <div style={{ background: '#F7F6F3', borderRadius: 10, padding: '10px 14px', textAlign: 'center' }}>
-              <div style={{ fontSize: 18, fontWeight: 700, color: '#534AB7' }}>{durMin}min</div>
+              <div style={{ fontSize: 18, fontWeight: 700, color: '#2563EB' }}>{durMin}min</div>
               <div style={{ fontSize: 10, color: '#999' }}>duração</div>
             </div>
-            <div style={{ background: '#EAF3DE', borderRadius: 10, padding: '10px 14px', textAlign: 'center' }}>
-              <div style={{ fontSize: 18, fontWeight: 700, color: '#1D9E75' }}>R$ {valor.toFixed(2)}</div>
-              <div style={{ fontSize: 10, color: '#1D9E75' }}>valor</div>
+            <div style={{ background: '#DCFCE7', borderRadius: 10, padding: '10px 14px', textAlign: 'center' }}>
+              <div style={{ fontSize: 18, fontWeight: 700, color: '#16A34A' }}>R$ {valor.toFixed(2)}</div>
+              <div style={{ fontSize: 10, color: '#16A34A' }}>valor</div>
             </div>
           </div>
         )}
 
         {/* Encaminhamento psico */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: form.encaminhamento_psico ? '#FCEBEB' : '#F7F6F3', borderRadius: 12, padding: '12px 16px', cursor: 'pointer' }}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: form.encaminhamento_psico ? '#FEF2F2' : '#F7F6F3', borderRadius: 12, padding: '12px 16px', cursor: 'pointer' }}
           onClick={() => setForm({ ...form, encaminhamento_psico: !form.encaminhamento_psico })}>
-          <div style={{ width: 22, height: 22, borderRadius: 6, border: `2px solid ${form.encaminhamento_psico ? '#E24B4A' : 'rgba(0,0,0,0.15)'}`, background: form.encaminhamento_psico ? '#E24B4A' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <div style={{ width: 22, height: 22, borderRadius: 6, border: `2px solid ${form.encaminhamento_psico ? '#DC2626' : 'rgba(0,0,0,0.15)'}`, background: form.encaminhamento_psico ? '#DC2626' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             {form.encaminhamento_psico && <span style={{ color: 'white', fontSize: 14 }}>✓</span>}
           </div>
           <div>
-            <div style={{ fontSize: 13, fontWeight: 500, color: form.encaminhamento_psico ? '#E24B4A' : '#1a1a1a' }}>Encaminhamento psicológico</div>
+            <div style={{ fontSize: 13, fontWeight: 500, color: form.encaminhamento_psico ? '#DC2626' : '#1a1a1a' }}>Encaminhamento psicológico</div>
             <div style={{ fontSize: 11, color: '#999' }}>Marque se o aluno precisa de apoio psicológico</div>
           </div>
         </div>
@@ -188,10 +188,10 @@ export default function NovoAtendimento() {
           <div style={{ fontSize: 11, color: '#999', marginBottom: 8 }}>Use o upload para habilitar o resumo por IA</div>
           <input type="file" accept=".docx,.doc" onChange={e => setArquivo(e.target.files?.[0] || null)}
             style={{ width: '100%', padding: '10px', borderRadius: 10, border: '0.5px solid rgba(0,0,0,0.12)', background: '#F7F6F3', fontSize: 13 }} />
-          {arquivo && <div style={{ fontSize: 11, color: '#1D9E75', marginTop: 6 }}>✅ {arquivo.name}</div>}
+          {arquivo && <div style={{ fontSize: 11, color: '#16A34A', marginTop: 6 }}>✅ {arquivo.name}</div>}
         </div>
 
-        {erro && <div style={{ color: '#E24B4A', fontSize: 13, background: '#FFF0F0', padding: 10, borderRadius: 8 }}>{erro}</div>}
+        {erro && <div style={{ color: '#DC2626', fontSize: 13, background: '#FFF0F0', padding: 10, borderRadius: 8 }}>{erro}</div>}
 
         <button className="btn-primary" onClick={salvar} disabled={saving} style={{ marginTop: 4 }}>
           {saving ? 'Salvando...' : 'Registrar atendimento'}

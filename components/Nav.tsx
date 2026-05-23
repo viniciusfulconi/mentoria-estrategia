@@ -1,57 +1,359 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
+import { useSidebar } from '@/components/AppShell'
 
-const tabsCoordenador = [
-  { href: '/', label: 'Início', icon: '⬡' },
-  { href: '/simulados', label: 'Alunos', icon: '◎' },
-  { href: '/turma', label: 'Turma', icon: '◈' },
-  { href: '/atendimentos', label: 'Atend.', icon: '🤝' },
-  { href: '/csat', label: 'CSAT', icon: '⭐' },
-  { href: '/cronograma', label: 'Crono.', icon: '📋' },
-  { href: '/horario', label: 'Horário', icon: '📅' },
-  { href: '/admin', label: 'Acessos', icon: '🔑' },
+const tabsCoordenadorPrimario = [
+  { href: '/',             label: 'Início',        icon: '⬡' },
+  { href: '/simulados',    label: 'Alunos',         icon: '◎' },
+  { href: '/atendimentos', label: 'Atendimentos',   icon: '🤝' },
+  { href: '/horario',      label: 'Horário',        icon: '📅' },
+]
+
+const tabsCoordenadorSecundario = [
+  { href: '/turma',      label: 'Turma',      icon: '◈' },
+  { href: '/csat',       label: 'CSAT',       icon: '⭐' },
+  { href: '/cronograma', label: 'Cronograma', icon: '📋' },
+  { href: '/admin',      label: 'Acessos',    icon: '🔑' },
 ]
 
 const tabsMentor = [
-  { href: '/mentor', label: 'Alunos', icon: '◎' },
-  { href: '/atendimentos', label: 'Atend.', icon: '🤝' },
-  { href: '/horario', label: 'Horário', icon: '📅' },
-  { href: '/aulas', label: 'Aulas', icon: '▶' },
+  { href: '/mentor',       label: 'Alunos',    icon: '◎' },
+  { href: '/atendimentos', label: 'Atend.',    icon: '🤝' },
+  { href: '/horario',      label: 'Horário',   icon: '📅' },
+  { href: '/aulas',        label: 'Aulas',     icon: '▶' },
 ]
 
 const tabsAluno = [
-  { href: '/meu-perfil', label: 'Início', icon: '◎' },
+  { href: '/meu-perfil',    label: 'Início',     icon: '◎' },
   { href: '/cronograma/meu', label: 'Cronograma', icon: '📋' },
-  { href: '/horario', label: 'Horário', icon: '📅' },
-  { href: '/aulas', label: 'Aulas', icon: '▶' },
+  { href: '/horario',       label: 'Horário',    icon: '📅' },
+  { href: '/aulas',         label: 'Aulas',      icon: '▶' },
 ]
+
+const PAPEL_LABEL: Record<string, string> = {
+  coordenador: 'Coordenador',
+  mentor: 'Mentor',
+  aluno: 'Aluno',
+}
+
+function NavItem({ href, icon, label, active }: { href: string; icon: string; label: string; active: boolean }) {
+  return (
+    <Link href={href} style={{
+      display: 'flex', alignItems: 'center', gap: 12,
+      padding: '9px 12px', borderRadius: 10, textDecoration: 'none',
+      background: active ? 'var(--purple-light)' : 'transparent',
+      color: active ? 'var(--purple)' : 'var(--text-muted)',
+      fontWeight: active ? 600 : 400, fontSize: 14,
+      transition: 'background 0.15s, color 0.15s',
+    }}
+    onMouseEnter={e => { if (!active) e.currentTarget.style.background = 'var(--bg)' }}
+    onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent' }}
+    >
+      <span style={{ fontSize: 17, width: 22, textAlign: 'center', flexShrink: 0 }}>{icon}</span>
+      {label}
+    </Link>
+  )
+}
 
 export default function Nav() {
   const path = usePathname()
   const { perfil, signOut, loading } = useAuth()
+  const { open: sidebarOpen, toggle: toggleSidebar } = useSidebar()
+  const [drawerAberto, setDrawerAberto] = useState(false)
+  const [navVisible, setNavVisible] = useState(true)
+  const lastScrollY = useRef(0)
+  const ticking = useRef(false)
 
-  if (loading) return <nav style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: 'white', borderTop: '0.5px solid rgba(0,0,0,0.08)', height: 56, zIndex: 100 }} />
+  useEffect(() => {
+    function handleScroll() {
+      if (ticking.current) return
+      ticking.current = true
+      requestAnimationFrame(() => {
+        const currentY = window.scrollY
+        if (currentY < 60) {
+          setNavVisible(true)
+        } else if (currentY > lastScrollY.current + 4) {
+          setNavVisible(false)
+          setDrawerAberto(false)
+        } else if (currentY < lastScrollY.current - 4) {
+          setNavVisible(true)
+        }
+        lastScrollY.current = currentY
+        ticking.current = false
+      })
+    }
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
+  if (loading) return (
+    <>
+      <aside className="sidebar-desktop" style={{
+        position: 'fixed', left: 0, top: 0, bottom: 0, width: 240,
+        background: 'white', borderRight: '1px solid var(--border)',
+        zIndex: 100,
+      }} />
+      <nav className="nav-mobile-only" style={{
+        position: 'fixed', bottom: 0, left: 0, right: 0,
+        background: 'white', borderTop: '1px solid var(--border)',
+        height: 'var(--nav-h)', zIndex: 100,
+      }} />
+    </>
+  )
 
   const papel = perfil?.papel
-  const tabs = papel === 'coordenador' ? tabsCoordenador : papel === 'mentor' ? tabsMentor : tabsAluno
+  const isCoordenador = papel === 'coordenador'
+  const tabs = isCoordenador ? tabsCoordenadorPrimario : papel === 'mentor' ? tabsMentor : tabsAluno
+  const iniciais = perfil?.nome?.split(' ').map(w => w[0]).slice(0, 2).join('') || '?'
+  const secundarioAtivo = isCoordenador && tabsCoordenadorSecundario.some(t => path.startsWith(t.href))
 
   return (
-    <nav style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: 'white', borderTop: '0.5px solid rgba(0,0,0,0.08)', display: 'flex', zIndex: 100, paddingBottom: 'env(safe-area-inset-bottom)', overflowX: 'auto' }}>
-      {tabs.map(t => {
-        const active = t.href === '/' ? path === '/' : path.startsWith(t.href)
-        return (
-          <Link key={t.href} href={t.href} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '8px 4px 6px', textDecoration: 'none', color: active ? '#534AB7' : '#999', fontSize: 9, fontWeight: active ? 600 : 400, gap: 2, transition: 'color 0.15s', minWidth: 50 }}>
-            <span style={{ fontSize: 16 }}>{t.icon}</span>
-            {t.label}
-          </Link>
-        )
-      })}
-      <button onClick={signOut} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '8px 4px 6px', background: 'none', border: 'none', color: '#999', fontSize: 9, gap: 2, cursor: 'pointer', minWidth: 50 }}>
-        <span style={{ fontSize: 16 }}>↩</span>
-        Sair
-      </button>
-    </nav>
+    <>
+      {/* ══════════════════════════════════════
+          SIDEBAR — desktop only
+      ══════════════════════════════════════ */}
+      <aside className="sidebar-desktop" style={{
+        position: 'fixed', left: 0, top: 0, bottom: 0, width: 240,
+        background: 'white', borderRight: '1px solid var(--border)',
+        zIndex: 100, flexDirection: 'column',
+        boxShadow: '1px 0 0 var(--border)',
+        transform: sidebarOpen ? 'translateX(0)' : 'translateX(-100%)',
+        transition: 'transform 0.25s ease',
+      }}>
+        {/* Logo + toggle */}
+        <div style={{
+          padding: '22px 20px 18px',
+          borderBottom: '1px solid var(--border)',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        }}>
+          <div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--purple)', letterSpacing: '-0.3px', lineHeight: 1.2 }}>
+              Mentoria
+            </div>
+            <div style={{ fontSize: 10, color: 'var(--text-hint)', marginTop: 3, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+              Estratégia Concursos
+            </div>
+          </div>
+          <button
+            onClick={toggleSidebar}
+            title="Recolher menu"
+            style={{
+              background: 'none', border: 'none', cursor: 'pointer',
+              color: 'var(--text-hint)', fontSize: 18, padding: 4, borderRadius: 6,
+              lineHeight: 1,
+            }}
+          >✕</button>
+        </div>
+
+        {/* Itens de navegação */}
+        <div style={{ flex: 1, padding: '12px 10px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 2 }}>
+          {tabs.map(t => {
+            const active = t.href === '/' ? path === '/' : path.startsWith(t.href)
+            return <NavItem key={t.href} href={t.href} icon={t.icon} label={t.label} active={active} />
+          })}
+
+          {isCoordenador && (
+            <>
+              <div style={{
+                fontSize: 10, fontWeight: 600, color: 'var(--text-hint)',
+                textTransform: 'uppercase', letterSpacing: '0.09em',
+                padding: '14px 12px 6px',
+              }}>
+                Mais
+              </div>
+              {tabsCoordenadorSecundario.map(t => {
+                const active = path.startsWith(t.href)
+                return <NavItem key={t.href} href={t.href} icon={t.icon} label={t.label} active={active} />
+              })}
+            </>
+          )}
+        </div>
+
+        {/* Usuário + Sair */}
+        <div style={{ padding: '10px 10px 12px', borderTop: '1px solid var(--border)' }}>
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 10,
+            padding: '10px 12px', marginBottom: 2,
+          }}>
+            <div style={{
+              width: 32, height: 32, borderRadius: '50%',
+              background: 'var(--purple-light)', flexShrink: 0,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 11, fontWeight: 700, color: 'var(--purple-dark)',
+            }}>
+              {iniciais}
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{
+                fontSize: 13, fontWeight: 600, color: 'var(--text)',
+                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+              }}>
+                {perfil?.nome}
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--text-hint)', marginTop: 1 }}>
+                {PAPEL_LABEL[papel || ''] || ''}
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={signOut}
+            style={{
+              width: '100%', display: 'flex', alignItems: 'center', gap: 10,
+              padding: '9px 12px', borderRadius: 10, border: 'none',
+              background: 'transparent', color: 'var(--text-hint)',
+              fontSize: 13, cursor: 'pointer', fontFamily: 'DM Sans, sans-serif',
+              transition: 'background 0.15s, color 0.15s',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = '#FFF0F0'; e.currentTarget.style.color = 'var(--red)' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-hint)' }}
+          >
+            <span style={{ fontSize: 15, width: 22, textAlign: 'center' }}>↩</span>
+            Sair
+          </button>
+        </div>
+      </aside>
+
+      {/* Botão para reabrir sidebar (desktop, quando fechada) */}
+      {!sidebarOpen && (
+        <button
+          className="sidebar-desktop"
+          onClick={toggleSidebar}
+          title="Abrir menu"
+          style={{
+            position: 'fixed', top: 16, left: 16, zIndex: 101,
+            background: 'white', border: '1px solid var(--border)',
+            borderRadius: 10, padding: '8px 10px',
+            cursor: 'pointer', fontSize: 18,
+            boxShadow: 'var(--shadow-sm)',
+            color: 'var(--purple)',
+          }}
+        >☰</button>
+      )}
+
+      {/* ══════════════════════════════════════
+          MOBILE — bottom nav + drawer
+      ══════════════════════════════════════ */}
+
+      {/* Overlay do drawer */}
+      {drawerAberto && (
+        <div
+          className="nav-mobile-only"
+          onClick={() => setDrawerAberto(false)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 98 }}
+        />
+      )}
+
+      {/* Drawer "Mais" (coordenador) */}
+      {isCoordenador && (
+        <div className="nav-mobile-only" style={{
+          position: 'fixed', bottom: 'var(--nav-h)', left: 0, right: 0, zIndex: 99,
+          background: 'white', borderRadius: '20px 20px 0 0',
+          borderTop: '1px solid var(--border)',
+          padding: '16px 16px 8px',
+          transform: drawerAberto && navVisible ? 'translateY(0)' : 'translateY(100%)',
+          transition: 'transform 0.25s ease',
+          boxShadow: '0 -4px 24px rgba(0,0,0,0.10)',
+        }}>
+          <div style={{ width: 36, height: 4, borderRadius: 2, background: '#E0E0E0', margin: '0 auto 16px' }} />
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
+            {tabsCoordenadorSecundario.map(t => {
+              const active = path.startsWith(t.href)
+              return (
+                <Link
+                  key={t.href}
+                  href={t.href}
+                  onClick={() => setDrawerAberto(false)}
+                  style={{
+                    textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 12,
+                    padding: '14px 16px', borderRadius: 14,
+                    background: active ? 'var(--purple-light)' : 'var(--bg)',
+                    border: `1px solid ${active ? 'var(--purple)' : 'transparent'}`,
+                  }}
+                >
+                  <span style={{ fontSize: 20 }}>{t.icon}</span>
+                  <span style={{ fontSize: 14, fontWeight: active ? 600 : 400, color: active ? 'var(--purple)' : 'var(--text)' }}>
+                    {t.label}
+                  </span>
+                </Link>
+              )
+            })}
+          </div>
+          <button
+            onClick={() => { setDrawerAberto(false); signOut() }}
+            style={{
+              width: '100%', padding: '13px', borderRadius: 12,
+              border: '1px solid rgba(0,0,0,0.09)', background: 'white',
+              color: 'var(--red)', fontSize: 14, fontWeight: 500,
+              cursor: 'pointer', fontFamily: 'DM Sans, sans-serif',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            }}
+          >
+            <span>↩</span> Sair
+          </button>
+        </div>
+      )}
+
+      {/* Bottom nav */}
+      <nav className="nav-mobile-only" style={{
+        position: 'fixed', bottom: 0, left: 0, right: 0,
+        background: 'white', borderTop: '1px solid var(--border)',
+        display: 'flex', zIndex: 100,
+        paddingBottom: 'env(safe-area-inset-bottom)',
+        boxShadow: '0 -1px 10px rgba(0,0,0,0.06)',
+        height: 'var(--nav-h)',
+        transform: navVisible ? 'translateY(0)' : 'translateY(100%)',
+        transition: 'transform 0.28s ease',
+      }}>
+        {tabs.map(t => {
+          const active = t.href === '/' ? path === '/' : path.startsWith(t.href)
+          return (
+            <Link key={t.href} href={t.href} style={{
+              flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
+              justifyContent: 'center', padding: '6px 4px',
+              textDecoration: 'none',
+              color: active ? 'var(--purple)' : 'var(--text-hint)',
+              fontSize: 9, fontWeight: active ? 600 : 400,
+              gap: 3, transition: 'color 0.15s',
+            }}>
+              <span style={{ fontSize: 19 }}>{t.icon}</span>
+              {t.label}
+            </Link>
+          )
+        })}
+
+        {isCoordenador ? (
+          <button
+            onClick={() => setDrawerAberto(v => !v)}
+            style={{
+              flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
+              justifyContent: 'center', padding: '6px 4px',
+              background: 'none', border: 'none',
+              color: drawerAberto || secundarioAtivo ? 'var(--purple)' : 'var(--text-hint)',
+              fontSize: 9, fontWeight: drawerAberto || secundarioAtivo ? 600 : 400,
+              gap: 3, cursor: 'pointer',
+            }}
+          >
+            <span style={{ fontSize: 19 }}>⋯</span>
+            Mais
+          </button>
+        ) : (
+          <button
+            onClick={signOut}
+            style={{
+              flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
+              justifyContent: 'center', padding: '6px 4px',
+              background: 'none', border: 'none',
+              color: 'var(--text-hint)', fontSize: 9, gap: 3, cursor: 'pointer',
+            }}
+          >
+            <span style={{ fontSize: 19 }}>↩</span>
+            Sair
+          </button>
+        )}
+      </nav>
+    </>
   )
 }

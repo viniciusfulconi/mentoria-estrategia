@@ -8,19 +8,19 @@ export const CORES_TIPO: Record<string, { bg: string, text: string }> = {
   simulado: { bg: '#FF7043', text: '#FFFFFF' },
   vestibular: { bg: '#212121', text: '#FFFFFF' },
   prova_antiga: { bg: '#5C6BC0', text: '#FFFFFF' },
-  estudo: { bg: '#534AB7', text: '#FFFFFF' },
+  estudo: { bg: '#2563EB', text: '#FFFFFF' },
   pessoal: { bg: '#26A69A', text: '#FFFFFF' },
 }
 
 export function corAtividade(ativ: any): { bg: string, text: string } {
   if (ativ.tipo === 'estudo' && ativ.materia) {
-    const cor = CORES_MATERIA[ativ.materia] || '#534AB7'
+    const cor = CORES_MATERIA[ativ.materia] || '#2563EB'
     return { bg: cor, text: '#FFFFFF' }
   }
   if (ativ.tipo === 'pessoal' && ativ.cor) {
     return { bg: ativ.cor, text: '#FFFFFF' }
   }
-  return CORES_TIPO[ativ.tipo] || { bg: '#534AB7', text: '#FFFFFF' }
+  return CORES_TIPO[ativ.tipo] || { bg: '#2563EB', text: '#FFFFFF' }
 }
 
 export function formatHora(dt: string | Date): string {

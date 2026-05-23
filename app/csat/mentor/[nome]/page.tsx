@@ -26,8 +26,8 @@ function mediaGeral(respostas: any[]): number {
   return todas.reduce((a, b) => a + b, 0) / todas.length
 }
 
-function corMedia(m: number) { return m > 4.5 ? '#1D9E75' : m >= 4.0 ? '#EF9F27' : '#E24B4A' }
-function bgMedia(m: number) { return m > 4.5 ? '#EAF3DE' : m >= 4.0 ? '#FAEEDA' : '#FCEBEB' }
+function corMedia(m: number) { return m > 4.5 ? '#16A34A' : m >= 4.0 ? '#D97706' : '#DC2626' }
+function bgMedia(m: number) { return m > 4.5 ? '#DCFCE7' : m >= 4.0 ? '#FFFBEB' : '#FEF2F2' }
 function textoMedia(m: number) { return m > 4.5 ? 'Muito bom' : m >= 4.0 ? 'Bom, mas com pontos de melhoria' : 'Sinal de alerta' }
 
 function StarRating({ value, max = 5 }: { value: number, max?: number }) {
@@ -36,7 +36,7 @@ function StarRating({ value, max = 5 }: { value: number, max?: number }) {
       {Array.from({ length: max }, (_, i) => (
         <div key={i} style={{
           width: 20, height: 20, borderRadius: 4,
-          background: i < Math.round(value) ? '#EF9F27' : '#F0EEE8',
+          background: i < Math.round(value) ? '#D97706' : '#F1F5F9',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: 12
         }}>
@@ -55,7 +55,7 @@ function LineChart({ pesquisas, dados, label }: { pesquisas: string[], dados: nu
   const yScale = (v: number) => h - pad - ((v - min) / (max - min)) * (h - pad * 2)
   const points = dados.map((v, i) => [pad + i * xStep, yScale(v)])
   const path = points.map(([x, y], i) => `${i === 0 ? 'M' : 'L'}${x},${y}`).join(' ')
-  const cor = dados.length ? corMedia(dados[dados.length - 1]) : '#534AB7'
+  const cor = dados.length ? corMedia(dados[dados.length - 1]) : '#2563EB'
   return (
     <svg viewBox={`0 0 ${w} ${h}`} width="100%">
       {[2,3,4,5].map(v => (
@@ -185,9 +185,9 @@ export default function MentorCSAT() {
 
       {/* Seletor pesquisa */}
       <div style={{ display: 'flex', gap: 6, overflowX: 'auto', padding: '8px 16px', background: 'white', borderBottom: '0.5px solid rgba(0,0,0,0.06)' }}>
-        <button onClick={() => setPesquisaAtiva('todas')} style={{ padding: '4px 12px', borderRadius: 16, fontSize: 11, border: 'none', background: pesquisaAtiva === 'todas' ? '#534AB7' : '#F1EFE8', color: pesquisaAtiva === 'todas' ? 'white' : '#666', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'DM Sans,sans-serif' }}>Geral</button>
+        <button onClick={() => setPesquisaAtiva('todas')} style={{ padding: '4px 12px', borderRadius: 16, fontSize: 11, border: 'none', background: pesquisaAtiva === 'todas' ? '#2563EB' : '#F1F5F9', color: pesquisaAtiva === 'todas' ? 'white' : '#666', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'DM Sans,sans-serif' }}>Geral</button>
         {pesquisas.filter(p => respostas.some(r => r.pesquisa_id === p.id)).map(p => (
-          <button key={p.id} onClick={() => setPesquisaAtiva(p.id)} style={{ padding: '4px 12px', borderRadius: 16, fontSize: 11, border: 'none', background: pesquisaAtiva === p.id ? '#534AB7' : '#F1EFE8', color: pesquisaAtiva === p.id ? 'white' : '#666', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'DM Sans,sans-serif' }}>{p.nome}</button>
+          <button key={p.id} onClick={() => setPesquisaAtiva(p.id)} style={{ padding: '4px 12px', borderRadius: 16, fontSize: 11, border: 'none', background: pesquisaAtiva === p.id ? '#2563EB' : '#F1F5F9', color: pesquisaAtiva === p.id ? 'white' : '#666', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'DM Sans,sans-serif' }}>{p.nome}</button>
         ))}
       </div>
 
@@ -198,7 +198,7 @@ export default function MentorCSAT() {
             {perfil?.foto_url ? (
               <img src={perfil.foto_url} alt={nome} style={{ width: 72, height: 72, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
             ) : (
-              <div style={{ width: 72, height: 72, borderRadius: '50%', background: '#EEEDFE', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, fontWeight: 700, color: '#3C3489', flexShrink: 0 }}>
+              <div style={{ width: 72, height: 72, borderRadius: '50%', background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, fontWeight: 700, color: '#1E40AF', flexShrink: 0 }}>
                 {nome.split(' ').map(w => w[0]).slice(0, 2).join('')}
               </div>
             )}
@@ -238,7 +238,7 @@ export default function MentorCSAT() {
                   <span style={{ color: '#555' }}>{c.icon} {c.label}</span>
                   <span style={{ fontWeight: 700, color: co }}>{m.toFixed(2)}</span>
                 </div>
-                <div style={{ height: 8, background: '#F0EEE8', borderRadius: 4, overflow: 'hidden' }}>
+                <div style={{ height: 8, background: '#F1F5F9', borderRadius: 4, overflow: 'hidden' }}>
                   <div style={{ height: '100%', width: `${pct}%`, background: co, borderRadius: 4, transition: 'width 0.5s' }} />
                 </div>
               </div>
@@ -279,7 +279,7 @@ export default function MentorCSAT() {
             ].map(a => (
               <button key={a.id} onClick={() => setAbaFeedback(a.id as any)} style={{
                 padding: '5px 12px', borderRadius: 16, fontSize: 11, border: 'none',
-                background: abaFeedback === a.id ? '#1a1a1a' : '#F1EFE8',
+                background: abaFeedback === a.id ? '#1a1a1a' : '#F1F5F9',
                 color: abaFeedback === a.id ? 'white' : '#666',
                 cursor: 'pointer', fontFamily: 'DM Sans,sans-serif'
               }}>{a.label}</button>
@@ -287,7 +287,7 @@ export default function MentorCSAT() {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {(abaFeedback === 'ajuda' ? feedbacksAjuda : feedbacksMelhorar).map((f, i) => (
-              <div key={i} style={{ background: '#F7F6F3', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: '#444', lineHeight: 1.5, borderLeft: `3px solid ${abaFeedback === 'ajuda' ? '#1D9E75' : '#534AB7'}` }}>
+              <div key={i} style={{ background: '#F7F6F3', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: '#444', lineHeight: 1.5, borderLeft: `3px solid ${abaFeedback === 'ajuda' ? '#16A34A' : '#2563EB'}` }}>
                 "{f}"
               </div>
             ))}

@@ -3,7 +3,22 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: { persistSession: true, autoRefreshToken: true, flowType: 'implicit' },
+  global: {
+    fetch: (url, options = {}) => {
+      const urlStr = url instanceof Request ? url.url : String(url)
+      if (urlStr.includes('/auth/v1/')) {
+        // Timeout de 10s em requests de auth — evita lock infinito no cliente JS
+        const ctrl = new AbortController()
+        const tid = setTimeout(() => ctrl.abort(), 10000)
+        return fetch(url, { ...options, signal: options.signal ?? ctrl.signal })
+          .finally(() => clearTimeout(tid))
+      }
+      return fetch(url, { ...options, keepalive: true })
+    },
+  },
+})
 
 export type Turma = {
   id: string
@@ -72,4 +87,38 @@ export type Atendimento = {
   created_at: string
   mentor?: Mentor
   aluno?: Aluno
+}
+
+export type AtendimentoMentoria = {
+  id: string
+  mentor: string
+  aluno: string | null
+  data_atendimento: string
+  tipo: string
+  duracao_minutos: number
+  valor_pago: number
+  descricao: string | null
+  encaminhamento_psico: boolean
+  arquivo_gemini_url: string | null
+  link_gemini: string | null
+  link_gravacao: string | null
+  solicitacao_aluno: string | null
+}
+
+export type PesquisaCsat = {
+  id: string
+  nome: string
+  data: string
+}
+
+export type RespostaCsat = {
+  id: string
+  pesquisa_id: string
+  mentor: string
+  qualidade_atendimento: number
+  organizacao_planejamento: number
+  diferencial_mentoria: number
+  clareza_orientacoes: number
+  acompanhamento_cobranca: number
+  comunicacao_relacao: number
 }

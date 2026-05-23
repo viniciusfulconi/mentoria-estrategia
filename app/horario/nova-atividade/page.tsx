@@ -68,7 +68,7 @@ export default function NovaAtividade() {
             ))}
           </div>
         </div>
-        {erro && <div style={{ color: '#E24B4A', fontSize: 13 }}>{erro}</div>}
+        {erro && <div style={{ color: '#DC2626', fontSize: 13 }}>{erro}</div>}
         <button className="btn-primary" onClick={salvar} disabled={saving}>{saving ? 'Salvando...' : 'Salvar atividade'}</button>
         <button className="btn-secondary" onClick={() => router.back()}>Cancelar</button>
       </div>

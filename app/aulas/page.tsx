@@ -23,14 +23,14 @@ export default function Aulas() {
     <div style={{ paddingBottom:80 }}>
       <div style={{ background:'white', borderBottom:'0.5px solid rgba(0,0,0,0.08)', padding:'16px', position:'sticky', top:0, zIndex:10, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
         <div style={{ fontSize:17, fontWeight:600 }}>Aulas</div>
-        <Link href="/aulas/nova" style={{ textDecoration:'none', background:'#534AB7', color:'white', borderRadius:10, padding:'7px 14px', fontSize:13, fontWeight:500 }}>+ Nova</Link>
+        <Link href="/aulas/nova" style={{ textDecoration:'none', background:'#2563EB', color:'white', borderRadius:10, padding:'7px 14px', fontSize:13, fontWeight:500 }}>+ Nova</Link>
       </div>
 
       <div style={{ display:'flex', gap:6, overflowX:'auto', padding:'10px 16px', background:'white', borderBottom:'0.5px solid rgba(0,0,0,0.06)' }}>
         {filtros.map(f => (
           <button key={f} onClick={()=>setFiltro(f)} style={{
             padding:'5px 12px', borderRadius:20, fontSize:12, border:'0.5px solid rgba(0,0,0,0.12)',
-            background:filtro===f?'#534AB7':'transparent', color:filtro===f?'white':'#666',
+            background:filtro===f?'#2563EB':'transparent', color:filtro===f?'white':'#666',
             cursor:'pointer', whiteSpace:'nowrap', fontFamily:'DM Sans,sans-serif'
           }}>{f==='todas'?'Todas':f}</button>
         ))}
@@ -42,7 +42,7 @@ export default function Aulas() {
           <div className="card" style={{ textAlign:'center', color:'#999', padding:40 }}>
             <div style={{ fontSize:32, marginBottom:10 }}>▶</div>
             <div>Nenhuma aula encontrada.</div>
-            <Link href="/aulas/nova" style={{ textDecoration:'none', display:'inline-block', marginTop:14, background:'#534AB7', color:'white', borderRadius:12, padding:'10px 20px', fontSize:14 }}>Adicionar aula</Link>
+            <Link href="/aulas/nova" style={{ textDecoration:'none', display:'inline-block', marginTop:14, background:'#2563EB', color:'white', borderRadius:12, padding:'10px 20px', fontSize:14 }}>Adicionar aula</Link>
           </div>
         ) : (
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
@@ -53,7 +53,7 @@ export default function Aulas() {
                     <img src={ytThumb(a.youtube_id)} alt={a.titulo} style={{ width:'100%', height:'100%', objectFit:'cover', opacity:0.85 }} onError={e=>{(e.target as HTMLImageElement).style.display='none'}} />
                     <div style={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center' }}>
                       <div style={{ width:30, height:30, borderRadius:'50%', background:'rgba(255,255,255,0.9)', display:'flex', alignItems:'center', justifyContent:'center' }}>
-                        <span style={{ fontSize:12, color:'#534AB7', marginLeft:2 }}>▶</span>
+                        <span style={{ fontSize:12, color:'#2563EB', marginLeft:2 }}>▶</span>
                       </div>
                     </div>
                     <span style={{ position:'absolute', top:6, left:6 }} className={a.turma?.tipo==='ITA'?'badge-ita':'badge-med'}>{a.turma?.tipo||'Geral'}</span>

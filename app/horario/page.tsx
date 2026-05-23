@@ -22,18 +22,9 @@ export default function Horario() {
 
   async function carregarDados() {
     if (!perfil) return
-    // Busca turma do aluno
-    let tId: string | null = null
-    if (perfil.papel === 'aluno' && perfil.aluno_id) {
-      const { data: alunoData } = await supabase.from('resultados').select('turma_id').eq('id_aluno', perfil.aluno_id).limit(1).single()
-      // Busca turma pelo nome do aluno
-      const { data: turmas } = await supabase.from('turmas').select('id').limit(1)
-      tId = turmas?.[0]?.id || null
-    } else {
-      const { data: turmas } = await supabase.from('turmas').select('id').limit(1)
-      tId = turmas?.[0]?.id || null
-    }
-    setTurmaId(tId)
+
+    const { data: turmas } = await supabase.from('turmas').select('id').limit(1)
+    setTurmaId(turmas?.[0]?.id || null)
 
     // Busca atividades
     let query = supabase.from('atividades').select('*').order('data_inicio')
@@ -139,10 +130,10 @@ export default function Horario() {
               </div>
             )}
             {isMentor && (
-              <Link href="/horario/mentor" style={{ textDecoration: 'none', background: '#534AB7', color: 'white', borderRadius: 8, padding: '5px 12px', fontSize: 11 }}>+ Estudo</Link>
+              <Link href="/horario/mentor" style={{ textDecoration: 'none', background: '#2563EB', color: 'white', borderRadius: 8, padding: '5px 12px', fontSize: 11 }}>+ Estudo</Link>
             )}
             {isAluno && (
-              <Link href="/horario/nova-atividade" style={{ textDecoration: 'none', background: '#534AB7', color: 'white', borderRadius: 8, padding: '5px 12px', fontSize: 11 }}>+ Pessoal</Link>
+              <Link href="/horario/nova-atividade" style={{ textDecoration: 'none', background: '#2563EB', color: 'white', borderRadius: 8, padding: '5px 12px', fontSize: 11 }}>+ Pessoal</Link>
             )}
           </div>
         </div>
@@ -152,7 +143,7 @@ export default function Horario() {
           {(['dia', 'semana', 'mes', 'ano'] as Visualizacao[]).map(v => (
             <button key={v} onClick={() => setVis(v)} style={{
               padding: '4px 12px', borderRadius: 16, fontSize: 11, border: 'none',
-              background: vis === v ? '#534AB7' : '#F1EFE8', color: vis === v ? 'white' : '#666',
+              background: vis === v ? '#2563EB' : '#F1F5F9', color: vis === v ? 'white' : '#666',
               cursor: 'pointer', fontFamily: 'DM Sans,sans-serif',
             }}>{v === 'dia' ? 'Dia' : v === 'semana' ? 'Semana' : v === 'mes' ? 'Mês' : 'Ano'}</button>
           ))}
@@ -160,9 +151,9 @@ export default function Horario() {
 
         {/* Navegação */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <button onClick={navAnterior} style={{ background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', color: '#534AB7' }}>‹</button>
+          <button onClick={navAnterior} style={{ background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', color: '#2563EB' }}>‹</button>
           <div style={{ fontSize: 14, fontWeight: 600, textAlign: 'center', textTransform: 'capitalize' }}>{tituloNav()}</div>
-          <button onClick={navProximo} style={{ background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', color: '#534AB7' }}>›</button>
+          <button onClick={navProximo} style={{ background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', color: '#2563EB' }}>›</button>
         </div>
       </div>
 
@@ -233,7 +224,7 @@ export default function Horario() {
                 {Object.entries(horasEstudo).sort((a, b) => b[1] - a[1]).map(([mat, h]) => (
                   <div key={mat} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 4 }}>
                     <span style={{ color: '#666' }}>{mat}</span>
-                    <span style={{ fontWeight: 600, color: '#534AB7' }}>{h.toFixed(1)}h</span>
+                    <span style={{ fontWeight: 600, color: '#2563EB' }}>{h.toFixed(1)}h</span>
                   </div>
                 ))}
               </div>
@@ -264,7 +255,7 @@ export default function Horario() {
               </div>
             )}
             {atividadeSelecionada.link && (
-              <a href={atividadeSelecionada.link} target="_blank" rel="noopener noreferrer" style={{ display: 'block', marginTop: 10, color: '#534AB7', fontSize: 13, textDecoration: 'none' }}>
+              <a href={atividadeSelecionada.link} target="_blank" rel="noopener noreferrer" style={{ display: 'block', marginTop: 10, color: '#2563EB', fontSize: 13, textDecoration: 'none' }}>
                 🔗 Abrir link
               </a>
             )}
@@ -278,11 +269,11 @@ export default function Horario() {
                   await supabase.from('atividades').delete().eq('id', id)
                   setAtividades(prev => prev.filter(a => a.id !== id))
                   setAtividadeSelecionada(null)
-                }} style={{ flex: 1, padding: 10, borderRadius: 10, border: '1px solid #E24B4A', background: 'white', color: '#E24B4A', fontSize: 13, cursor: 'pointer', fontFamily: 'DM Sans,sans-serif', fontWeight: 500 }}>
+                }} style={{ flex: 1, padding: 10, borderRadius: 10, border: '1px solid #DC2626', background: 'white', color: '#DC2626', fontSize: 13, cursor: 'pointer', fontFamily: 'DM Sans,sans-serif', fontWeight: 500 }}>
                   🗑 Apagar
                 </button>
               )}
-              <button onClick={() => setAtividadeSelecionada(null)} style={{ flex: 1, padding: 10, borderRadius: 10, border: 'none', background: '#F1EFE8', color: '#666', fontSize: 13, cursor: 'pointer', fontFamily: 'DM Sans,sans-serif' }}>
+              <button onClick={() => setAtividadeSelecionada(null)} style={{ flex: 1, padding: 10, borderRadius: 10, border: 'none', background: '#F1F5F9', color: '#666', fontSize: 13, cursor: 'pointer', fontFamily: 'DM Sans,sans-serif' }}>
                 Fechar
               </button>
             </div>
@@ -378,9 +369,9 @@ function ViewSemana({ dataAtual, atividadesExpandidas, onSelect, onSelectDia }: 
         {dias.map((d, i) => {
           const isHoje = d.getDate() === hoje.getDate() && d.getMonth() === hoje.getMonth() && d.getFullYear() === hoje.getFullYear()
           return (
-            <div key={i} onClick={() => onSelectDia(d)} style={{ textAlign: 'center', cursor: 'pointer', padding: '6px 2px', borderRadius: 8, background: isHoje ? '#EEEDFE' : 'transparent' }}>
-              <div style={{ fontSize: 10, color: isHoje ? '#534AB7' : '#999' }}>{DIAS_CURTO[i]}</div>
-              <div style={{ fontSize: 16, fontWeight: isHoje ? 700 : 400, color: isHoje ? '#534AB7' : '#1a1a1a' }}>{d.getDate()}</div>
+            <div key={i} onClick={() => onSelectDia(d)} style={{ textAlign: 'center', cursor: 'pointer', padding: '6px 2px', borderRadius: 8, background: isHoje ? '#EFF6FF' : 'transparent' }}>
+              <div style={{ fontSize: 10, color: isHoje ? '#2563EB' : '#999' }}>{DIAS_CURTO[i]}</div>
+              <div style={{ fontSize: 16, fontWeight: isHoje ? 700 : 400, color: isHoje ? '#2563EB' : '#1a1a1a' }}>{d.getDate()}</div>
             </div>
           )
         })}
@@ -390,7 +381,7 @@ function ViewSemana({ dataAtual, atividadesExpandidas, onSelect, onSelectDia }: 
           const ativs = atividadesDoDia(d)
           const isHoje = d.getDate() === hoje.getDate() && d.getMonth() === hoje.getMonth() && d.getFullYear() === hoje.getFullYear()
           return (
-            <div key={i} style={{ minHeight: 120, borderRadius: 8, border: '1px solid ' + (isHoje ? '#534AB7' : 'rgba(0,0,0,0.06)'), padding: 4, background: isHoje ? '#FAFAFE' : 'white' }}>
+            <div key={i} style={{ minHeight: 120, borderRadius: 8, border: '1px solid ' + (isHoje ? '#2563EB' : 'rgba(0,0,0,0.06)'), padding: 4, background: isHoje ? '#FAFAFE' : 'white' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                 {ativs.map((a: any) => {
                   const cores = corAtividade(a)
@@ -449,11 +440,11 @@ function ViewMes({ dataAtual, atividadesExpandidas, onSelectDia }: any) {
           return (
             <div key={i} onClick={() => onSelectDia(new Date(ano, mes, dia))} style={{
               minHeight: 52, borderRadius: 8, padding: '4px 3px',
-              background: isHoje ? '#EEEDFE' : 'white',
-              border: `0.5px solid ${isHoje ? '#534AB7' : 'rgba(0,0,0,0.06)'}`,
+              background: isHoje ? '#EFF6FF' : 'white',
+              border: `0.5px solid ${isHoje ? '#2563EB' : 'rgba(0,0,0,0.06)'}`,
               cursor: 'pointer'
             }}>
-              <div style={{ fontSize: 11, fontWeight: isHoje ? 700 : 400, color: isHoje ? '#534AB7' : '#333', textAlign: 'center', marginBottom: 2 }}>{dia}</div>
+              <div style={{ fontSize: 11, fontWeight: isHoje ? 700 : 400, color: isHoje ? '#2563EB' : '#333', textAlign: 'center', marginBottom: 2 }}>{dia}</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                 {ativs.slice(0, 2).map((a: any) => {
                   const { bg, text } = corAtividade(a)
@@ -491,10 +482,10 @@ function ViewAno({ ano, atividadesExpandidas, onSelectMes }: any) {
         return (
           <div key={mi} onClick={() => onSelectMes(mi)} className="card" style={{
             cursor: 'pointer', textAlign: 'center', padding: '12px 8px',
-            border: isMesAtual ? '1.5px solid #534AB7' : '0.5px solid rgba(0,0,0,0.08)',
-            background: isMesAtual ? '#EEEDFE' : 'white'
+            border: isMesAtual ? '1.5px solid #2563EB' : '0.5px solid rgba(0,0,0,0.08)',
+            background: isMesAtual ? '#EFF6FF' : 'white'
           }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: isMesAtual ? '#534AB7' : '#1a1a1a', marginBottom: 6 }}>{m}</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: isMesAtual ? '#2563EB' : '#1a1a1a', marginBottom: 6 }}>{m}</div>
             <div style={{ fontSize: 11, color: '#999', marginBottom: 6 }}>{atividsMes.length} ativ.</div>
             <div style={{ display: 'flex', gap: 3, justifyContent: 'center', flexWrap: 'wrap' }}>
               {tipos.slice(0, 4).map((t: any) => {

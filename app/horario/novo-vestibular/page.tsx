@@ -46,7 +46,7 @@ export default function NovoVestibular() {
         </div>
         <div><label>Link do edital (Google Drive)</label><input value={form.link_edital} onChange={e => setForm({ ...form, link_edital: e.target.value })} placeholder="https://drive.google.com/..." /></div>
         {form.data && <div style={{ background: '#212121', color: 'white', borderRadius: 10, padding: 12, fontSize: 12 }}>🎓 {form.nome || 'Prova'} — {new Date(form.data + 'T12:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}</div>}
-        {erro && <div style={{ color: '#E24B4A', fontSize: 13 }}>{erro}</div>}
+        {erro && <div style={{ color: '#DC2626', fontSize: 13 }}>{erro}</div>}
         <button className="btn-primary" onClick={salvar} disabled={saving}>{saving ? 'Salvando...' : 'Cadastrar prova'}</button>
         <button className="btn-secondary" onClick={() => router.back()}>Cancelar</button>
       </div>

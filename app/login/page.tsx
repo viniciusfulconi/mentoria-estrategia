@@ -1,7 +1,6 @@
 'use client'
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
 function CorujaLogo({ size = 160 }: { size?: number }) {
@@ -20,35 +19,71 @@ function CorujaLogo({ size = 160 }: { size?: number }) {
       <circle cx="74" cy="36" r="4" fill="#0A1628"/>
       <circle cx="48" cy="34" r="1.5" fill="white" opacity="0.8"/>
       <circle cx="76" cy="34" r="1.5" fill="white" opacity="0.8"/>
-      <path d="M56 44 L60 50 L64 44Z" fill="#EF9F27"/>
+      <path d="M56 44 L60 50 L64 44Z" fill="#D97706"/>
       <path d="M30 22 Q60 8 90 22" fill="none" stroke="#B8C8F0" strokeWidth="3" strokeLinecap="round"/>
-      <path d="M48 108 L44 116 M48 108 L50 116 M48 108 L46 116" stroke="#EF9F27" strokeWidth="2" strokeLinecap="round"/>
-      <path d="M72 108 L68 116 M72 108 L74 116 M72 108 L70 116" stroke="#EF9F27" strokeWidth="2" strokeLinecap="round"/>
+      <path d="M48 108 L44 116 M48 108 L50 116 M48 108 L46 116" stroke="#D97706" strokeWidth="2" strokeLinecap="round"/>
+      <path d="M72 108 L68 116 M72 108 L74 116 M72 108 L70 116" stroke="#D97706" strokeWidth="2" strokeLinecap="round"/>
     </svg>
   )
 }
 
 export default function Login() {
-  const router = useRouter()
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
   const [loading, setLoading] = useState(false)
   const [erro, setErro] = useState('')
+  const [recuperando, setRecuperando] = useState(false)
+  const [emailRecuperacao, setEmailRecuperacao] = useState('')
+  const [recuperacaoEnviada, setRecuperacaoEnviada] = useState(false)
+  const [loadingRecuperacao, setLoadingRecuperacao] = useState(false)
 
   async function entrar() {
     if (!email || !senha) { setErro('Preencha e-mail e senha.'); return }
     setLoading(true); setErro('')
-    const { error } = await supabase.auth.signInWithPassword({ email, password: senha })
-    if (error) { setErro('E-mail ou senha incorretos.'); setLoading(false) }
-    else {
-      const { data: { user } } = await supabase.auth.getUser()
-      const { data } = await supabase.from('perfis').select('papel,status').eq('id', user?.id || '').single()
-      if (data?.status === 'pendente') router.push('/aguardando')
-      else if (data?.papel === 'coordenador') router.push('/')
-      else if (data?.papel === 'mentor') router.push('/mentor')
-      else if (data?.papel === 'aluno') router.push('/meu-perfil')
-      else router.push('/')
+    try {
+      // Usa REST direto para evitar lock do cliente JS quando há sessão travada
+      const resp = await fetch(
+        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/token?grant_type=password`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+          },
+          body: JSON.stringify({ email, password: senha }),
+        }
+      )
+      if (!resp.ok) {
+        setErro('E-mail ou senha incorretos.')
+        setLoading(false)
+        return
+      }
+      const data = await resp.json()
+      // Armazena sessão diretamente e faz reload limpo (reinicializa o cliente JS)
+      const ref = process.env.NEXT_PUBLIC_SUPABASE_URL!.replace('https://', '').replace('.supabase.co', '')
+      localStorage.setItem(`sb-${ref}-auth-token`, JSON.stringify({
+        access_token: data.access_token,
+        token_type: data.token_type,
+        expires_in: data.expires_in,
+        expires_at: Math.floor(Date.now() / 1000) + data.expires_in,
+        refresh_token: data.refresh_token,
+        user: data.user,
+      }))
+      window.location.href = '/'
+    } catch {
+      setErro('Erro ao conectar. Tente novamente.')
+      setLoading(false)
     }
+  }
+
+  async function enviarRecuperacao() {
+    if (!emailRecuperacao) return
+    setLoadingRecuperacao(true)
+    await supabase.auth.resetPasswordForEmail(emailRecuperacao, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    })
+    setRecuperacaoEnviada(true)
+    setLoadingRecuperacao(false)
   }
 
   return (
@@ -64,7 +99,7 @@ export default function Login() {
         <div style={{ position: 'absolute', width: 400, height: 400, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.05)', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }} />
         <div style={{ position: 'absolute', width: 600, height: 600, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.03)', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }} />
         <div style={{ position: 'absolute', width: 200, height: 200, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.07)', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }} />
-        <div style={{ position: 'absolute', width: 320, height: 320, borderRadius: '50%', background: 'radial-gradient(circle, rgba(83,74,183,0.3) 0%, transparent 70%)', top: '50%', left: '50%', transform: 'translate(-50%, -55%)' }} />
+        <div style={{ position: 'absolute', width: 320, height: 320, borderRadius: '50%', background: 'radial-gradient(circle, rgba(37,99,235,0.3) 0%, transparent 70%)', top: '50%', left: '50%', transform: 'translate(-50%, -55%)' }} />
 
         <div style={{ position: 'relative', zIndex: 1, marginBottom: 32 }}>
           <CorujaLogo size={180} />
@@ -107,12 +142,12 @@ export default function Login() {
             </div>
 
             {erro && (
-              <div style={{ background: '#FCEBEB', color: '#791F1F', fontSize: 13, padding: '10px 14px', borderRadius: 10 }}>{erro}</div>
+              <div style={{ background: '#FEF2F2', color: '#991B1B', fontSize: 13, padding: '10px 14px', borderRadius: 10 }}>{erro}</div>
             )}
 
             <button onClick={entrar} disabled={loading} style={{
               width: '100%', padding: '13px', borderRadius: 12,
-              background: loading ? '#aaa' : '#534AB7', color: 'white',
+              background: loading ? '#aaa' : '#2563EB', color: 'white',
               border: 'none', fontSize: 15, fontWeight: 600,
               cursor: loading ? 'not-allowed' : 'pointer',
               fontFamily: 'DM Sans, sans-serif', marginTop: 4,
@@ -121,9 +156,50 @@ export default function Login() {
             </button>
           </div>
 
-          <div style={{ textAlign: 'center', marginTop: 24, fontSize: 13, color: '#999' }}>
+          <div style={{ textAlign: 'center', marginTop: 16 }}>
+            <button
+              onClick={() => { setRecuperando(v => !v); setRecuperacaoEnviada(false) }}
+              style={{ background: 'none', border: 'none', fontSize: 13, color: '#2563EB', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif' }}
+            >
+              Esqueci minha senha
+            </button>
+          </div>
+
+          {recuperando && (
+            <div style={{ marginTop: 8, padding: '16px', background: 'white', borderRadius: 14, border: '1px solid rgba(0,0,0,0.08)' }}>
+              {recuperacaoEnviada ? (
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: 24, marginBottom: 8 }}>✉</div>
+                  <div style={{ fontSize: 13, color: '#1a1a1a', fontWeight: 500, marginBottom: 4 }}>E-mail enviado!</div>
+                  <div style={{ fontSize: 12, color: '#999' }}>Verifique sua caixa de entrada e siga as instruções para redefinir sua senha.</div>
+                </div>
+              ) : (
+                <>
+                  <div style={{ fontSize: 13, color: '#555', marginBottom: 10 }}>
+                    Digite seu e-mail e enviaremos um link para redefinir sua senha.
+                  </div>
+                  <input
+                    type="email"
+                    value={emailRecuperacao}
+                    onChange={e => setEmailRecuperacao(e.target.value)}
+                    placeholder="seu@email.com"
+                    style={{ width: '100%', padding: '10px 14px', borderRadius: 10, border: '1.5px solid rgba(0,0,0,0.1)', background: '#F7F6F3', fontSize: 14, fontFamily: 'DM Sans, sans-serif', outline: 'none', boxSizing: 'border-box', marginBottom: 10 }}
+                  />
+                  <button
+                    onClick={enviarRecuperacao}
+                    disabled={loadingRecuperacao || !emailRecuperacao}
+                    style={{ width: '100%', padding: '10px', borderRadius: 10, background: loadingRecuperacao || !emailRecuperacao ? '#aaa' : '#2563EB', color: 'white', border: 'none', fontSize: 14, fontWeight: 500, cursor: loadingRecuperacao || !emailRecuperacao ? 'not-allowed' : 'pointer', fontFamily: 'DM Sans, sans-serif' }}
+                  >
+                    {loadingRecuperacao ? 'Enviando...' : 'Enviar link'}
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+
+          <div style={{ textAlign: 'center', marginTop: 16, fontSize: 13, color: '#999' }}>
             Não tem conta?{' '}
-            <Link href="/cadastro" style={{ color: '#534AB7', fontWeight: 600, textDecoration: 'none' }}>Cadastre-se</Link>
+            <Link href="/cadastro" style={{ color: '#2563EB', fontWeight: 600, textDecoration: 'none' }}>Cadastre-se</Link>
           </div>
         </div>
       </div>

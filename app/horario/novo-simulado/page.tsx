@@ -58,7 +58,7 @@ export default function NovoSimulado() {
           <label>Matérias envolvidas</label>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 6 }}>
             {materias.map(m => (
-              <button key={m} onClick={() => toggleMateria(m)} style={{ padding: '5px 12px', borderRadius: 20, fontSize: 11, border: '0.5px solid rgba(0,0,0,0.12)', background: materiasSel.includes(m) ? '#534AB7' : 'transparent', color: materiasSel.includes(m) ? 'white' : '#666', cursor: 'pointer', fontFamily: 'DM Sans,sans-serif' }}>{m}</button>
+              <button key={m} onClick={() => toggleMateria(m)} style={{ padding: '5px 12px', borderRadius: 20, fontSize: 11, border: '0.5px solid rgba(0,0,0,0.12)', background: materiasSel.includes(m) ? '#2563EB' : 'transparent', color: materiasSel.includes(m) ? 'white' : '#666', cursor: 'pointer', fontFamily: 'DM Sans,sans-serif' }}>{m}</button>
             ))}
           </div>
         </div>
@@ -67,7 +67,7 @@ export default function NovoSimulado() {
           <div><label>Início</label><input type="time" value={form.hora_inicio} onChange={e => setForm({ ...form, hora_inicio: e.target.value })} /></div>
           <div><label>Fim</label><input type="time" value={form.hora_fim} onChange={e => setForm({ ...form, hora_fim: e.target.value })} /></div>
         </div>
-        {erro && <div style={{ color: '#E24B4A', fontSize: 13 }}>{erro}</div>}
+        {erro && <div style={{ color: '#DC2626', fontSize: 13 }}>{erro}</div>}
         <button className="btn-primary" onClick={salvar} disabled={saving}>{saving ? 'Salvando...' : 'Criar simulado'}</button>
         <button className="btn-secondary" onClick={() => router.back()}>Cancelar</button>
       </div>

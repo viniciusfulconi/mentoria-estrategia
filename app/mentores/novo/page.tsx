@@ -52,7 +52,7 @@ export default function NovoMentor() {
           </select>
         </div>
         <div><label>Valor por atendimento (R$)</label><input type="number" value={form.valor_por_atendimento} onChange={e=>setForm({...form,valor_por_atendimento:e.target.value})} placeholder="Ex: 40" /></div>
-        {error && <div style={{ color:'#E24B4A', fontSize:13 }}>{error}</div>}
+        {error && <div style={{ color:'#DC2626', fontSize:13 }}>{error}</div>}
         <button className="btn-primary" onClick={salvar} disabled={saving} style={{ marginTop:8 }}>{saving?'Salvando...':'Salvar mentor'}</button>
         <button className="btn-secondary" onClick={() => router.back()}>Cancelar</button>
       </div>

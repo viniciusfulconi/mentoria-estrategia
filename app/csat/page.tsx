@@ -1,10 +1,10 @@
-// @ts-nocheck
 'use client'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import Nav from '@/components/Nav'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import type { PesquisaCsat, RespostaCsat } from '@/lib/supabase'
 
 const CRITERIOS = [
   { key: 'qualidade_atendimento', label: 'Qualidade dos atendimentos' },
@@ -28,8 +28,8 @@ function mediaGeral(respostas: any[]): number {
 }
 
 function BadgeMedia({ media }: { media: number }) {
-  const cor = media > 4.5 ? '#1D9E75' : media >= 4.0 ? '#EF9F27' : '#E24B4A'
-  const bg = media > 4.5 ? '#EAF3DE' : media >= 4.0 ? '#FAEEDA' : '#FCEBEB'
+  const cor = media > 4.5 ? '#16A34A' : media >= 4.0 ? '#D97706' : '#DC2626'
+  const bg = media > 4.5 ? '#DCFCE7' : media >= 4.0 ? '#FFFBEB' : '#FEF2F2'
   const texto = media > 4.5 ? 'Muito bom' : media >= 4.0 ? 'Bom, mas com pontos de melhoria' : 'Sinal de alerta'
   return (
     <div style={{ background: bg, borderRadius: 14, padding: '16px 20px', textAlign: 'center', border: `1.5px solid ${cor}20` }}>
@@ -42,14 +42,14 @@ function BadgeMedia({ media }: { media: number }) {
 
 function CriterioBar({ label, media }: { label: string, media: number }) {
   const pct = (media / 5) * 100
-  const cor = media > 4.5 ? '#1D9E75' : media >= 4.0 ? '#EF9F27' : '#E24B4A'
+  const cor = media > 4.5 ? '#16A34A' : media >= 4.0 ? '#D97706' : '#DC2626'
   return (
     <div style={{ marginBottom: 12 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 4 }}>
         <span style={{ color: '#555' }}>{label}</span>
         <span style={{ fontWeight: 700, color: cor }}>{media.toFixed(2)}</span>
       </div>
-      <div style={{ height: 7, background: '#F0EEE8', borderRadius: 4, overflow: 'hidden' }}>
+      <div style={{ height: 7, background: '#F1F5F9', borderRadius: 4, overflow: 'hidden' }}>
         <div style={{ height: '100%', width: `${pct}%`, background: cor, borderRadius: 4, transition: 'width 0.5s' }} />
       </div>
     </div>
@@ -69,12 +69,12 @@ function LineChart({ pesquisas, dados }: { pesquisas: string[], dados: number[] 
       {[1,2,3,4,5].map(v => (
         <line key={v} x1={pad} y1={yScale(v)} x2={w-pad} y2={yScale(v)} stroke="rgba(0,0,0,0.06)" strokeWidth="1" />
       ))}
-      <path d={path} fill="none" stroke="#534AB7" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-      <path d={`${path} L${points[points.length-1][0]},${h-pad} L${pad},${h-pad} Z`} fill="#534AB7" fillOpacity="0.08" />
+      <path d={path} fill="none" stroke="#2563EB" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d={`${path} L${points[points.length-1][0]},${h-pad} L${pad},${h-pad} Z`} fill="#2563EB" fillOpacity="0.08" />
       {points.map(([x, y], i) => (
         <g key={i}>
-          <circle cx={x} cy={y} r="4" fill="#534AB7" stroke="white" strokeWidth="1.5" />
-          <text x={x} y={y - 8} textAnchor="middle" fontSize="9" fontWeight="700" fill="#534AB7">{dados[i].toFixed(1)}</text>
+          <circle cx={x} cy={y} r="4" fill="#2563EB" stroke="white" strokeWidth="1.5" />
+          <text x={x} y={y - 8} textAnchor="middle" fontSize="9" fontWeight="700" fill="#2563EB">{dados[i].toFixed(1)}</text>
           <text x={x} y={h - 6} textAnchor="middle" fontSize="7" fill="#999">{pesquisas[i].split('—')[0].trim().replace('Pesquisa ', 'P')}</text>
         </g>
       ))}
@@ -84,21 +84,25 @@ function LineChart({ pesquisas, dados }: { pesquisas: string[], dados: number[] 
 
 export default function CSAT() {
   const router = useRouter()
-  const [pesquisas, setPesquisas] = useState<any[]>([])
-  const [respostas, setRespostas] = useState<any[]>([])
+  const [pesquisas, setPesquisas] = useState<PesquisaCsat[]>([])
+  const [respostas, setRespostas] = useState<RespostaCsat[]>([])
   const [pesquisaAtiva, setPesquisaAtiva] = useState<string>('todas')
   const [loading, setLoading] = useState(true)
+  const [erro, setErro] = useState<string | null>(null)
 
-  useEffect(() => {
-    Promise.all([
+  async function carregar() {
+    setErro(null)
+    const [{ data: ps, error: e1 }, { data: rs, error: e2 }] = await Promise.all([
       supabase.from('pesquisas_csat').select('*').order('data'),
-      supabase.from('respostas_csat').select('*')
-    ]).then(([{ data: ps }, { data: rs }]) => {
-      setPesquisas(ps || [])
-      setRespostas(rs || [])
-      setLoading(false)
-    })
-  }, [])
+      supabase.from('respostas_csat').select('*'),
+    ])
+    if (e1 || e2) { setErro('Falha ao carregar dados de CSAT.'); setLoading(false); return }
+    setPesquisas(ps || [])
+    setRespostas(rs || [])
+    setLoading(false)
+  }
+
+  useEffect(() => { carregar() }, [])
 
   const respostasFiltradas = pesquisaAtiva === 'todas'
     ? respostas
@@ -119,20 +123,20 @@ export default function CSAT() {
       <div style={{ background: 'white', borderBottom: '0.5px solid rgba(0,0,0,0.08)', padding: '16px', position: 'sticky', top: 0, zIndex: 10 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
           <div style={{ fontSize: 17, fontWeight: 600 }}>CSAT — Satisfação</div>
-          <Link href="/csat/upload" style={{ textDecoration: 'none', background: '#534AB7', color: 'white', borderRadius: 10, padding: '7px 14px', fontSize: 13, fontWeight: 500 }}>↑ Upload</Link>
+          <Link href="/csat/upload" style={{ textDecoration: 'none', background: '#2563EB', color: 'white', borderRadius: 10, padding: '7px 14px', fontSize: 13, fontWeight: 500 }}>↑ Upload</Link>
         </div>
         {/* Seletor de pesquisa */}
         <div style={{ display: 'flex', gap: 6, overflowX: 'auto' }}>
           <button onClick={() => setPesquisaAtiva('todas')} style={{
             padding: '4px 12px', borderRadius: 16, fontSize: 11, border: 'none',
-            background: pesquisaAtiva === 'todas' ? '#534AB7' : '#F1EFE8',
+            background: pesquisaAtiva === 'todas' ? '#2563EB' : '#F1F5F9',
             color: pesquisaAtiva === 'todas' ? 'white' : '#666',
             cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'DM Sans,sans-serif'
           }}>Geral</button>
           {pesquisas.map(p => (
             <button key={p.id} onClick={() => setPesquisaAtiva(p.id)} style={{
               padding: '4px 12px', borderRadius: 16, fontSize: 11, border: 'none',
-              background: pesquisaAtiva === p.id ? '#534AB7' : '#F1EFE8',
+              background: pesquisaAtiva === p.id ? '#2563EB' : '#F1F5F9',
               color: pesquisaAtiva === p.id ? 'white' : '#666',
               cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'DM Sans,sans-serif'
             }}>{p.nome}</button>
@@ -143,11 +147,16 @@ export default function CSAT() {
       <div style={{ padding: 16 }}>
         {loading ? (
           <div style={{ textAlign: 'center', color: '#999', padding: 40 }}>Carregando...</div>
+        ) : erro ? (
+          <div className="card" style={{ textAlign: 'center', padding: 40 }}>
+            <div style={{ fontSize: 13, color: '#DC2626', marginBottom: 12 }}>{erro}</div>
+            <button onClick={carregar} style={{ padding: '8px 20px', borderRadius: 10, background: '#2563EB', color: 'white', border: 'none', fontSize: 13, cursor: 'pointer', fontFamily: 'DM Sans, sans-serif' }}>Tentar novamente</button>
+          </div>
         ) : respostas.length === 0 ? (
           <div className="card" style={{ textAlign: 'center', padding: 40, color: '#999' }}>
             <div style={{ fontSize: 40, marginBottom: 12 }}>📊</div>
             <div style={{ marginBottom: 16 }}>Nenhuma pesquisa importada ainda.</div>
-            <Link href="/csat/upload" style={{ textDecoration: 'none', background: '#534AB7', color: 'white', borderRadius: 12, padding: '10px 20px', fontSize: 14 }}>
+            <Link href="/csat/upload" style={{ textDecoration: 'none', background: '#2563EB', color: 'white', borderRadius: 12, padding: '10px 20px', fontSize: 14 }}>
               Importar primeira pesquisa
             </Link>
           </div>
@@ -184,11 +193,11 @@ export default function CSAT() {
               .map(m => ({ nome: m, media: mediaGeral(respostasFiltradas.filter(r => r.mentor === m)) }))
               .sort((a, b) => b.media - a.media)
               .map((m, i) => {
-                const cor = m.media > 4.5 ? '#1D9E75' : m.media >= 4.0 ? '#EF9F27' : '#E24B4A'
+                const cor = m.media > 4.5 ? '#16A34A' : m.media >= 4.0 ? '#D97706' : '#DC2626'
                 return (
                   <Link key={m.nome} href={`/csat/mentor/${encodeURIComponent(m.nome)}`} style={{ textDecoration: 'none' }}>
                     <div className="card" style={{ marginBottom: 8, display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#EEEDFE', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: '#534AB7', flexShrink: 0 }}>
+                      <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: '#2563EB', flexShrink: 0 }}>
                         {i + 1}
                       </div>
                       <div style={{ flex: 1 }}>

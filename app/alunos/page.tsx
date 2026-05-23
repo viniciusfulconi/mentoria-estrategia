@@ -35,7 +35,7 @@ export default function Alunos() {
     <div style={{ paddingBottom:80 }}>
       <div style={{ background:'white', borderBottom:'0.5px solid rgba(0,0,0,0.08)', padding:'16px', position:'sticky', top:0, zIndex:10, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
         <div style={{ fontSize:17, fontWeight:600 }}>Alunos</div>
-        <Link href="/alunos/novo" style={{ textDecoration:'none', background:'#534AB7', color:'white', borderRadius:10, padding:'7px 14px', fontSize:13, fontWeight:500 }}>+ Novo</Link>
+        <Link href="/alunos/novo" style={{ textDecoration:'none', background:'#2563EB', color:'white', borderRadius:10, padding:'7px 14px', fontSize:13, fontWeight:500 }}>+ Novo</Link>
       </div>
       <div style={{ padding:16 }}>
         {loading ? <div style={{ textAlign:'center', color:'#999', padding:40 }}>Carregando...</div>
@@ -43,7 +43,7 @@ export default function Alunos() {
           <div className="card" style={{ textAlign:'center', color:'#999', padding:40 }}>
             <div style={{ fontSize:32, marginBottom:10 }}>◎</div>
             <div>Nenhum aluno cadastrado.</div>
-            <Link href="/alunos/novo" style={{ textDecoration:'none', display:'inline-block', marginTop:14, background:'#534AB7', color:'white', borderRadius:12, padding:'10px 20px', fontSize:14 }}>Adicionar aluno</Link>
+            <Link href="/alunos/novo" style={{ textDecoration:'none', display:'inline-block', marginTop:14, background:'#2563EB', color:'white', borderRadius:12, padding:'10px 20px', fontSize:14 }}>Adicionar aluno</Link>
           </div>
         ) : alunos.map((a:any) => {
           const ultima = ultimaNota(a.id)
@@ -52,7 +52,7 @@ export default function Alunos() {
           return (
             <div key={a.id} className="card" style={{ marginBottom:10 }}>
               <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:10 }}>
-                <div style={{ width:36, height:36, borderRadius:'50%', background:'#EEEDFE', display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:600, color:'#3C3489', flexShrink:0 }}>
+                <div style={{ width:36, height:36, borderRadius:'50%', background:'#EFF6FF', display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:600, color:'#1E40AF', flexShrink:0 }}>
                   {a.nome.split(' ').map((w:string)=>w[0]).slice(0,2).join('')}
                 </div>
                 <div style={{ flex:1 }}>
@@ -69,7 +69,7 @@ export default function Alunos() {
               )}
               {perf !== null && (
                 <div style={{ marginTop:8, height:4, background:'rgba(0,0,0,0.06)', borderRadius:2, overflow:'hidden' }}>
-                  <div style={{ height:'100%', width:`${perf}%`, background: perf>=70?'#1D9E75':'#EF9F27', borderRadius:2, transition:'width 0.4s' }} />
+                  <div style={{ height:'100%', width:`${perf}%`, background: perf>=70?'#16A34A':'#D97706', borderRadius:2, transition:'width 0.4s' }} />
                 </div>
               )}
             </div>

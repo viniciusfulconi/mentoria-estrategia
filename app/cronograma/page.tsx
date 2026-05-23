@@ -46,7 +46,7 @@ export default function Cronograma() {
   }
 
   function pctMateria(alunoId: string, materia: string) {
-    const topicosMat = topicos.filter(t => t.materia === materias)
+    const topicosMat = topicos.filter(t => t.materia === materia)
     if (!topicosMat.length) return 0
     const finalizados = progressos.filter(p =>
       p.aluno_id === alunoId &&
@@ -68,7 +68,7 @@ export default function Cronograma() {
       <div style={{ background: 'white', borderBottom: '0.5px solid rgba(0,0,0,0.08)', padding: '16px', position: 'sticky', top: 0, zIndex: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ fontSize: 17, fontWeight: 600 }}>Cronograma</div>
         {perfil?.papel === 'coordenador' && (
-          <Link href="/cronograma/novo" style={{ textDecoration: 'none', background: '#534AB7', color: 'white', borderRadius: 10, padding: '7px 14px', fontSize: 13, fontWeight: 500 }}>
+          <Link href="/cronograma/novo" style={{ textDecoration: 'none', background: '#2563EB', color: 'white', borderRadius: 10, padding: '7px 14px', fontSize: 13, fontWeight: 500 }}>
             {concurso ? '✎ Editar' : '+ Novo'}
           </Link>
         )}
@@ -79,7 +79,7 @@ export default function Cronograma() {
         {[{ id: 'alunos', label: 'Todos os alunos' }, { id: 'criticos', label: '⚠ Mais atrasados' }].map(a => (
           <button key={a.id} onClick={() => setAba(a.id as any)} style={{
             padding: '5px 14px', borderRadius: 16, fontSize: 11, border: 'none',
-            background: aba === a.id ? '#1a1a1a' : '#F1EFE8',
+            background: aba === a.id ? '#1a1a1a' : '#F1F5F9',
             color: aba === a.id ? 'white' : '#666',
             cursor: 'pointer', fontFamily: 'DM Sans,sans-serif'
           }}>{a.label}</button>
@@ -93,7 +93,7 @@ export default function Cronograma() {
             <div style={{ fontSize: 32, marginBottom: 10 }}>📋</div>
             <div style={{ marginBottom: 12 }}>Nenhum cronograma cadastrado ainda.</div>
             {perfil?.papel === 'coordenador' && (
-              <Link href="/cronograma/novo" style={{ textDecoration: 'none', display: 'inline-block', background: '#534AB7', color: 'white', borderRadius: 12, padding: '10px 20px', fontSize: 14 }}>Criar cronograma</Link>
+              <Link href="/cronograma/novo" style={{ textDecoration: 'none', display: 'inline-block', background: '#2563EB', color: 'white', borderRadius: 12, padding: '10px 20px', fontSize: 14 }}>Criar cronograma</Link>
             )}
           </div>
         ) : (
@@ -112,12 +112,12 @@ export default function Cronograma() {
             {/* Lista de alunos */}
             {aba === 'alunos' && alunosComPct.map(a => {
               const pct = a.pct
-              const cor = pct >= 70 ? '#1D9E75' : pct >= 40 ? '#EF9F27' : '#E24B4A'
+              const cor = pct >= 70 ? '#16A34A' : pct >= 40 ? '#D97706' : '#DC2626'
               return (
                 <Link key={a.id_aluno} href={`/cronograma/${a.id_aluno}`} style={{ textDecoration: 'none' }}>
                   <div className="card" style={{ marginBottom: 8 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
-                      <div style={{ width: 34, height: 34, borderRadius: '50%', background: '#EEEDFE', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 600, color: '#3C3489', flexShrink: 0 }}>
+                      <div style={{ width: 34, height: 34, borderRadius: '50%', background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 600, color: '#1E40AF', flexShrink: 0 }}>
                         {a.nome.split(' ').map((w: string) => w[0]).slice(0, 2).join('')}
                       </div>
                       <div style={{ flex: 1 }}>
@@ -129,7 +129,7 @@ export default function Cronograma() {
                         <div style={{ fontSize: 10, color: '#999' }}>do edital</div>
                       </div>
                     </div>
-                    <div style={{ height: 4, background: '#F0EEE8', borderRadius: 2, overflow: 'hidden' }}>
+                    <div style={{ height: 4, background: '#F1F5F9', borderRadius: 2, overflow: 'hidden' }}>
                       <div style={{ height: '100%', width: `${pct}%`, background: cor, borderRadius: 2 }} />
                     </div>
                   </div>
@@ -142,14 +142,14 @@ export default function Cronograma() {
               const pct = a.pct
               return (
                 <Link key={a.id_aluno} href={`/cronograma/${a.id_aluno}`} style={{ textDecoration: 'none' }}>
-                  <div className="card" style={{ marginBottom: 8, borderLeft: pct < 30 ? '3px solid #E24B4A' : '3px solid #EF9F27' }}>
+                  <div className="card" style={{ marginBottom: 8, borderLeft: pct < 30 ? '3px solid #DC2626' : '3px solid #D97706' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                       <div style={{ fontSize: 16, fontWeight: 700, color: '#999', minWidth: 24 }}>#{i + 1}</div>
                       <div style={{ flex: 1 }}>
                         <div style={{ fontSize: 13, fontWeight: 500 }}>{a.nome}</div>
                         <div style={{ fontSize: 11, color: '#999' }}>{a.mentor}</div>
                       </div>
-                      <div style={{ fontSize: 18, fontWeight: 600, color: '#E24B4A' }}>{pct}%</div>
+                      <div style={{ fontSize: 18, fontWeight: 600, color: '#DC2626' }}>{pct}%</div>
                     </div>
                   </div>
                 </Link>

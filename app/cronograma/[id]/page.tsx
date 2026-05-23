@@ -7,8 +7,8 @@ import Nav from '@/components/Nav'
 
 const STATUS_OPTS = [
   { value: 'nao_iniciada', label: 'Não iniciada', cor: '#ccc' },
-  { value: 'em_andamento', label: 'Em andamento', cor: '#EF9F27' },
-  { value: 'finalizada', label: 'Finalizada', cor: '#1D9E75' },
+  { value: 'em_andamento', label: 'Em andamento', cor: '#D97706' },
+  { value: 'finalizada', label: 'Finalizada', cor: '#16A34A' },
 ]
 
 export default function CronogramaAluno() {
@@ -97,14 +97,14 @@ export default function CronogramaAluno() {
           {concurso && <div style={{ fontSize: 11, color: '#999' }}>{concurso.nome}</div>}
         </div>
         <div style={{ textAlign: 'right' }}>
-          <div style={{ fontSize: 20, fontWeight: 700, color: pctGeral >= 70 ? '#1D9E75' : pctGeral >= 40 ? '#EF9F27' : '#E24B4A' }}>{pctGeral}%</div>
+          <div style={{ fontSize: 20, fontWeight: 700, color: pctGeral >= 70 ? '#16A34A' : pctGeral >= 40 ? '#D97706' : '#DC2626' }}>{pctGeral}%</div>
           <div style={{ fontSize: 10, color: '#999' }}>do edital</div>
         </div>
       </div>
 
       {/* Barra geral */}
-      <div style={{ height: 4, background: '#F0EEE8' }}>
-        <div style={{ height: '100%', width: `${pctGeral}%`, background: pctGeral >= 70 ? '#1D9E75' : pctGeral >= 40 ? '#EF9F27' : '#E24B4A', transition: 'width 0.4s' }} />
+      <div style={{ height: 4, background: '#F1F5F9' }}>
+        <div style={{ height: '100%', width: `${pctGeral}%`, background: pctGeral >= 70 ? '#16A34A' : pctGeral >= 40 ? '#D97706' : '#DC2626', transition: 'width 0.4s' }} />
       </div>
 
       {/* Seletor de matéria */}
@@ -115,7 +115,7 @@ export default function CronogramaAluno() {
           return (
             <button key={m} onClick={() => setMateriaAtiva(m)} style={{
               padding: '5px 12px', borderRadius: 20, fontSize: 11, border: '0.5px solid rgba(0,0,0,0.12)',
-              background: active ? '#534AB7' : 'transparent', color: active ? 'white' : '#666',
+              background: active ? '#2563EB' : 'transparent', color: active ? 'white' : '#666',
               cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'DM Sans,sans-serif',
               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1, minWidth: 70
             }}>
@@ -159,7 +159,7 @@ export default function CronogramaAluno() {
                       <div style={{ fontSize: 13, color: '#1a1a1a', lineHeight: 1.4 }}>{t.topico}</div>
                       {t.incidencia > 0 && (
                         <div style={{ fontSize: 10, color: '#999', marginTop: 2 }}>
-                          Incidência: <span style={{ color: t.incidencia >= 0.7 ? '#E24B4A' : t.incidencia >= 0.4 ? '#EF9F27' : '#1D9E75', fontWeight: 500 }}>{(t.incidencia * 100).toFixed(0)}%</span>
+                          Incidência: <span style={{ color: t.incidencia >= 0.7 ? '#DC2626' : t.incidencia >= 0.4 ? '#D97706' : '#16A34A', fontWeight: 500 }}>{(t.incidencia * 100).toFixed(0)}%</span>
                         </div>
                       )}
                     </div>

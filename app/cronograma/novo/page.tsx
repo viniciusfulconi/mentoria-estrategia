@@ -158,16 +158,16 @@ export default function NovoCronograma() {
 
           {topicosPreview.length > 0 && (
             <div style={{ marginTop: 14 }}>
-              <div style={{ fontSize: 12, color: '#1D9E75', marginBottom: 8 }}>✅ {topicosPreview.length} tópicos · {materias.length} matérias detectadas</div>
+              <div style={{ fontSize: 12, color: '#16A34A', marginBottom: 8 }}>✅ {topicosPreview.length} tópicos · {materias.length} matérias detectadas</div>
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                 {materias.map(m => (
-                  <span key={m} style={{ fontSize: 10, padding: '3px 8px', borderRadius: 10, background: '#EEEDFE', color: '#3C3489' }}>{m}</span>
+                  <span key={m} style={{ fontSize: 10, padding: '3px 8px', borderRadius: 10, background: '#EFF6FF', color: '#1E40AF' }}>{m}</span>
                 ))}
               </div>
               <div style={{ marginTop: 10, maxHeight: 200, overflowY: 'auto', fontSize: 11, color: '#666' }}>
                 {topicosPreview.slice(0, 5).map((t, i) => (
                   <div key={i} style={{ padding: '3px 0', borderBottom: '0.5px solid rgba(0,0,0,0.06)' }}>
-                    <span style={{ color: '#534AB7', fontWeight: 500 }}>{t.materia}</span> · {t.topico} · <span style={{ color: '#EF9F27' }}>{(t.incidencia * 100).toFixed(0)}%</span>
+                    <span style={{ color: '#2563EB', fontWeight: 500 }}>{t.materia}</span> · {t.topico} · <span style={{ color: '#D97706' }}>{(t.incidencia * 100).toFixed(0)}%</span>
                   </div>
                 ))}
                 {topicosPreview.length > 5 && <div style={{ color: '#999', marginTop: 4 }}>... e mais {topicosPreview.length - 5} tópicos</div>}
@@ -181,7 +181,7 @@ export default function NovoCronograma() {
           <div className="card">
             <div style={{ fontFamily: 'monospace', fontSize: 11, lineHeight: 2 }}>
               {log.map((l, i) => (
-                <div key={i} style={{ color: l.startsWith('❌') ? '#E24B4A' : l.startsWith('✅') || l.startsWith('🎉') ? '#1D9E75' : '#666' }}>{l}</div>
+                <div key={i} style={{ color: l.startsWith('❌') ? '#DC2626' : l.startsWith('✅') || l.startsWith('🎉') ? '#16A34A' : '#666' }}>{l}</div>
               ))}
             </div>
           </div>

@@ -32,7 +32,7 @@ export default function MentorEstudo() {
     if (repeticao !== 'nenhuma' && !dataFimRep) { setErro('Preencha a data final da repetição.'); return }
     setSaving(true)
 
-    const cor = CORES_MATERIA[form.materia] || '#534AB7'
+    const cor = CORES_MATERIA[form.materia] || '#2563EB'
     const registros = []
     const dtBase = new Date(form.data)
     const dtFimRep = dataFimRep ? new Date(dataFimRep) : dtBase
@@ -83,7 +83,7 @@ export default function MentorEstudo() {
           <label>Matéria</label>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 6 }}>
             {materias.map(m => {
-              const cor = CORES_MATERIA[m] || '#534AB7'
+              const cor = CORES_MATERIA[m] || '#2563EB'
               return (
                 <button key={m} onClick={() => setForm({ ...form, materia: m })} style={{
                   padding: '5px 12px', borderRadius: 20, fontSize: 11,
@@ -113,7 +113,7 @@ export default function MentorEstudo() {
               <button key={op.val} onClick={() => setRepeticao(op.val)} style={{
                 padding: '6px 14px', borderRadius: 20, fontSize: 12,
                 border: '0.5px solid rgba(0,0,0,0.12)',
-                background: repeticao === op.val ? '#534AB7' : 'transparent',
+                background: repeticao === op.val ? '#2563EB' : 'transparent',
                 color: repeticao === op.val ? 'white' : '#666',
                 cursor: 'pointer', fontFamily: 'DM Sans,sans-serif'
               }}>{op.label}</button>
@@ -144,7 +144,7 @@ export default function MentorEstudo() {
             <span style={{ color: CORES_MATERIA[form.materia], fontWeight: 600 }}>■</span> Estudo de {form.materia} — {form.hora_inicio} às {form.hora_fim}
           </div>
         )}
-        {erro && <div style={{ color: '#E24B4A', fontSize: 13 }}>{erro}</div>}
+        {erro && <div style={{ color: '#DC2626', fontSize: 13 }}>{erro}</div>}
         <button className="btn-primary" onClick={salvar} disabled={saving}>{saving ? 'Salvando...' : 'Adicionar estudo'}</button>
         <button className="btn-secondary" onClick={() => router.back()}>Cancelar</button>
       </div>
