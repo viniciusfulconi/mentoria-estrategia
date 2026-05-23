@@ -474,6 +474,7 @@ export default function UploadSimulados() {
                     <div style={{ fontSize: 12, color: '#1a1a1a', fontWeight: 500 }}>
                       {aba.ciclo} — {TIPO_LABEL[aba.tipo] || aba.tipo}
                     </div>
+                    <div style={{ fontSize: 10, color: '#aaa', fontFamily: 'monospace' }}>{aba.nome}</div>
                     <div style={{ fontSize: 11, color: '#999' }}>{aba.alunos} alunos</div>
                     {aba.avisos.map((av, j) => (
                       <div key={j} style={{ fontSize: 11, color: '#D97706', marginTop: 2 }}>⚠ {av}</div>
