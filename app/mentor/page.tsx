@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { supabase, dbQuery } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import Nav from '@/components/Nav'
 import Link from 'next/link'
@@ -20,12 +20,10 @@ export default function MentorDashboard() {
 
   async function carregar() {
     setErro(null)
-    const { data, error } = await supabase
-      .from('resultados')
-      .select('*')
-      .eq('fase', 'ranking')
-      .eq('mentor', perfil!.mentor_nome!)
-      .order('ciclo_nome')
+    const { data, error } = await dbQuery(
+      'resultados',
+      { fase: 'eq.ranking', mentor: `eq.${perfil!.mentor_nome!}`, order: 'ciclo_nome' }
+    )
 
     if (error) { setErro('Falha ao carregar dados.'); setLoading(false); return }
     const d = data || []

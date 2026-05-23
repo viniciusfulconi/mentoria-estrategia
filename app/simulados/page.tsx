@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { dbQuery } from '@/lib/supabase'
 import Nav from '@/components/Nav'
 import PageLoader from '@/components/PageLoader'
 import Link from 'next/link'
@@ -16,11 +16,11 @@ export default function Simulados() {
 
   async function load() {
     setErro(null)
-    const { data, error } = await supabase
-      .from('resultados')
-      .select('id_aluno, nome_aluno, mentor, ciclo_nome, fase, resultado_ciclo, media_1fase, media_2fase')
-      .eq('fase', 'ranking')
-      .order('ciclo_nome')
+    const { data, error } = await dbQuery(
+      'resultados',
+      { 'fase': 'eq.ranking', 'order': 'ciclo_nome' },
+      'id_aluno,nome_aluno,mentor,ciclo_nome,fase,resultado_ciclo,media_1fase,media_2fase'
+    )
 
     if (error) { setErro('Falha ao carregar alunos.'); setLoading(false); return }
     if (!data) { setLoading(false); return }

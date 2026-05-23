@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { dbQuery } from '@/lib/supabase'
 import Nav from '@/components/Nav'
 import PageLoader from '@/components/PageLoader'
 import Link from 'next/link'
@@ -13,8 +13,7 @@ export default function Turma() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Busca todos os resultados — inclui ciclos sem ranking
-    supabase.from('resultados').select('*').eq('fase', 'ranking').order('ciclo_nome')
+    dbQuery('resultados', { fase: 'eq.ranking', order: 'ciclo_nome' })
       .then(({ data }) => {
         const d = data || []
         setDados(d)

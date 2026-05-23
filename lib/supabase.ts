@@ -3,6 +3,40 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
+// ─── REST direto — evita lock do cliente JS ───────────────────────────────────
+function getAccessToken(): string | null {
+  if (typeof window === 'undefined') return null
+  try {
+    const ref = supabaseUrl.replace('https://', '').replace('.supabase.co', '')
+    const raw = localStorage.getItem(`sb-${ref}-auth-token`)
+    return raw ? JSON.parse(raw).access_token : null
+  } catch { return null }
+}
+
+type QueryResult<T> = { data: T | null; error: string | null }
+
+export async function dbQuery<T = any>(
+  table: string,
+  params: Record<string, string> = {},
+  select = '*'
+): Promise<QueryResult<T[]>> {
+  const token = getAccessToken()
+  const qs = new URLSearchParams({ select, ...params }).toString()
+  try {
+    const resp = await fetch(`${supabaseUrl}/rest/v1/${table}?${qs}`, {
+      headers: {
+        apikey: supabaseAnonKey,
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    })
+    if (!resp.ok) return { data: null, error: await resp.text() }
+    return { data: await resp.json(), error: null }
+  } catch (e: any) {
+    return { data: null, error: e.message }
+  }
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: { persistSession: true, autoRefreshToken: true, flowType: 'implicit' },
   global: {

@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { dbQuery } from '@/lib/supabase'
 import Nav from '@/components/Nav'
 import Link from 'next/link'
 
@@ -12,19 +12,18 @@ export default function Home() {
 
   useEffect(() => {
     async function load() {
-      const [{ count: alunos }, { count: mentores }, { count: atendimentos }, { count: aulas }, { data: turmasData }, { data: rankings }] = await Promise.all([
-        supabase.from('alunos').select('*', { count: 'exact', head: true }),
-        supabase.from('mentores').select('*', { count: 'exact', head: true }),
-        supabase.from('atendimentos').select('*', { count: 'exact', head: true }),
-        supabase.from('aulas').select('*', { count: 'exact', head: true }),
-        supabase.from('turmas').select('*'),
-        supabase.from('resultados')
-          .select('id_aluno, nome_aluno, mentor, ciclo_nome, concurso, resultado_ciclo, nota_matematica, nota_fisica, nota_quimica, media_linguagens, media_2fase, media_1fase')
-          .eq('fase', 'ranking')
-          .not('resultado_ciclo', 'is', null)
-          .order('ciclo_nome', { ascending: false }),
+      const [{ data: alunosD }, { data: mentoresD }, { data: atendimentosD }, { data: aulasD }, { data: turmasData }, { data: rankings }] = await Promise.all([
+        dbQuery('alunos', {}, 'id'),
+        dbQuery('mentores', {}, 'id'),
+        dbQuery('atendimentos', {}, 'id'),
+        dbQuery('aulas', {}, 'id'),
+        dbQuery('turmas'),
+        dbQuery('resultados',
+          { fase: 'eq.ranking', resultado_ciclo: 'not.is.null', order: 'ciclo_nome.desc' },
+          'id_aluno,nome_aluno,mentor,ciclo_nome,concurso,resultado_ciclo,nota_matematica,nota_fisica,nota_quimica,media_linguagens,media_2fase,media_1fase'
+        ),
       ])
-      setStats({ alunos: alunos||0, mentores: mentores||0, atendimentos: atendimentos||0, aulas: aulas||0 })
+      setStats({ alunos: alunosD?.length||0, mentores: mentoresD?.length||0, atendimentos: atendimentosD?.length||0, aulas: aulasD?.length||0 })
       setTurmas(turmasData || [])
 
       // Pega o ciclo mais recente de cada aluno e identifica os em risco
