@@ -115,8 +115,8 @@ export default function UploadSimulados() {
   }
 
   function detectTipo(name: string): { ciclo: string, tipo: string, concurso: string } {
-    // Normaliza para comparação robusta — remove acentos variantes e padroniza case
-    const n = name.normalize('NFC').toLowerCase()
+    // NFD decompõe 'í' em 'i' + acento; strip remove acentos → 'Física' vira 'fisica'
+    const n = name.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
     const isIME = n.includes('ime')
     const concurso = isIME ? 'IME' : 'ITA'
     const numMatch = name.match(/Ciclo\s*(\d+)/i)
@@ -125,8 +125,8 @@ export default function UploadSimulados() {
 
     if (n.includes('1a fase') || n.includes('1ª fase') || n.includes('primeira fase')) return { ciclo: cicloBase, tipo: '1fase', concurso }
     if (n.includes('matem')) return { ciclo: cicloBase, tipo: '2fase_mat', concurso }
-    if (n.includes('f­sic') || n.includes('fisic')) return { ciclo: cicloBase, tipo: '2fase_fis', concurso }
-    if (n.includes('quím') || n.includes('quim')) return { ciclo: cicloBase, tipo: '2fase_qui', concurso }
+    if (n.includes('fisic')) return { ciclo: cicloBase, tipo: '2fase_fis', concurso }
+    if (n.includes('quim')) return { ciclo: cicloBase, tipo: '2fase_qui', concurso }
     if (n.includes('port') || n.includes('lingu') || n.includes('redac')) return { ciclo: cicloBase, tipo: '2fase_port', concurso }
     if (n.includes('ingl')) return { ciclo: cicloBase, tipo: '2fase_ing', concurso }
     if (n.includes('processo')) return { ciclo: name, tipo: '1fase', concurso }
