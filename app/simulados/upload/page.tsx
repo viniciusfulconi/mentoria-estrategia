@@ -13,10 +13,10 @@ function getToken(): string {
   return JSON.parse(raw).access_token
 }
 
-async function dbSelect(table: string, params = ''): Promise<any[]> {
+async function dbSelect(table: string, cols = '*'): Promise<any[]> {
   const token = getToken()
   const resp = await fetch(
-    `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/${table}?${params}&select=*`,
+    `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/${table}?select=${cols}`,
     { headers: { apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, Authorization: `Bearer ${token}` } }
   )
   if (!resp.ok) throw new Error(`Erro ao ler ${table}: ${await resp.text()}`)
@@ -62,6 +62,7 @@ export default function UploadSimulados() {
   const [done, setDone] = useState(false)
   const [preview, setPreview] = useState<PreviewData | null>(null)
   const [etapa, setEtapa] = useState<'idle' | 'parsing' | 'preview' | 'saving' | 'done'>('idle')
+  const [erro, setErro] = useState('')
 
   function addLog(msg: string) { setLog(prev => [...prev, msg]) }
 
@@ -310,7 +311,7 @@ export default function UploadSimulados() {
       // 1. Atualiza alunos
       if (preview.alunosData.length) {
         addLog(`👥 Atualizando ${preview.alunosData.length} alunos...`)
-        const jasCadastrados = await dbSelect('alunos_dados', 'select=id_aluno,cadastrado')
+        const jasCadastrados = await dbSelect('alunos_dados', 'id_aluno,cadastrado')
         const cadastradoMap: Record<string, boolean> = {}
         jasCadastrados.forEach((a: any) => { cadastradoMap[a.id_aluno] = a.cadastrado })
         preview.alunosData.forEach(a => { a.cadastrado = cadastradoMap[a.id_aluno] || false })
@@ -356,8 +357,7 @@ export default function UploadSimulados() {
       addLog(`   📊 ${preview.registros.length} notas + ${totalRankings} rankings`)
       setEtapa('done'); setDone(true)
     } catch (e: any) {
-      addLog(`\n❌ Erro: ${e.message}`)
-      addLog(`Tente novamente. Se o erro persistir, me informe a mensagem acima.`)
+      setErro(e.message || 'Erro desconhecido')
       setEtapa('preview')
     }
   }
@@ -450,12 +450,19 @@ export default function UploadSimulados() {
               ))}
             </div>
 
+            {erro && (
+              <div className="card" style={{ background: '#FEF2F2', borderLeft: '4px solid #DC2626' }}>
+                <div style={{ fontSize: 12, color: '#991B1B', fontWeight: 600, marginBottom: 4 }}>❌ Erro na importação</div>
+                <div style={{ fontSize: 12, color: '#991B1B', fontFamily: 'monospace', whiteSpace: 'pre-wrap' }}>{erro}</div>
+              </div>
+            )}
+
             <div className="card" style={{ background: '#FEF2F2', borderLeft: '4px solid #DC2626' }}>
               <div style={{ fontSize: 12, color: '#991B1B', fontWeight: 600, marginBottom: 4 }}>Atenção — esta ação é irreversível</div>
               <div style={{ fontSize: 12, color: '#991B1B' }}>Todos os resultados anteriores serão apagados e substituídos pelos dados desta planilha.</div>
             </div>
 
-            <button className="btn-primary" onClick={confirmarImportacao}>
+            <button className="btn-primary" onClick={() => { setErro(''); confirmarImportacao() }}>
               Confirmar importação →
             </button>
             <button className="btn-secondary" onClick={() => { setEtapa('idle'); setPreview(null) }}>
