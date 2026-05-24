@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import Link from 'next/link'
 import { CORES_MATERIA as CORES_MAT_IMPORT } from '@/lib/cores'
 import { BarChart, GraficoQuestoes, RadarQuestoesChart, GraficoEvolucaoLinhas, RadarSection } from '@/components/aluno/AlunoCharts'
+import { FileDown } from 'lucide-react'
 import { BannerRisco, DiagnosticoCorte } from '@/components/aluno/AlunoRisco'
 
 type AlunoCache = {
@@ -426,6 +427,15 @@ export default function AlunoPage() {
         {isOwn && (
           <Link href="/dados-pessoais" style={{ textDecoration: 'none', fontSize: 11, color: '#2563EB', border: '0.5px solid #2563EB', borderRadius: 8, padding: '5px 10px' }}>
             ✎ Meus dados
+          </Link>
+        )}
+        {!isOwn && (
+          <Link
+            href={`/aluno/${targetId}/relatorio`}
+            target="_blank"
+            style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#7C3AED', border: '0.5px solid rgba(124,58,237,0.4)', borderRadius: 8, padding: '5px 10px' }}
+          >
+            <FileDown size={13} strokeWidth={2} /> PDF
           </Link>
         )}
       </div>
