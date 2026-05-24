@@ -8,7 +8,7 @@ import { dbQuery, dbUpdate } from '@/lib/supabase'
 import {
   LayoutDashboard, Users, Handshake, Calendar,
   GraduationCap, Star, ClipboardList, FileText, KeyRound,
-  PlayCircle, LogOut, MoreHorizontal, Menu, X, Bell,
+  PlayCircle, LogOut, MoreHorizontal, Menu, X, Bell, UserCircle,
 } from 'lucide-react'
 
 type LucideIcon = React.ComponentType<{ size?: number; strokeWidth?: number; color?: string }>
@@ -29,10 +29,11 @@ const tabsCoordenadorSecundario = [
 ]
 
 const tabsMentor = [
-  { href: '/mentor',       label: 'Alunos',   icon: Users },
-  { href: '/atendimentos', label: 'Atend.',   icon: Handshake },
-  { href: '/horario',      label: 'Horário',  icon: Calendar },
-  { href: '/aulas',        label: 'Aulas',    icon: PlayCircle },
+  { href: '/mentor',        label: 'Alunos',  icon: Users },
+  { href: '/atendimentos',  label: 'Atend.',  icon: Handshake },
+  { href: '/horario',       label: 'Horário', icon: Calendar },
+  { href: '/aulas',         label: 'Aulas',   icon: PlayCircle },
+  { href: '/mentor/perfil', label: 'Perfil',  icon: UserCircle },
 ]
 
 const tabsAluno = [
@@ -480,7 +481,8 @@ export default function Nav() {
             <MoreHorizontal size={20} strokeWidth={drawerAberto || secundarioAtivo ? 2.5 : 2} />
             Mais
           </button>
-        ) : papel === 'aluno' ? (
+        ) : papel === 'mentor' ? null
+        : papel === 'aluno' ? (
           <button
             onClick={() => { setNotifAberto(v => !v); if (naoLidas > 0 && !notifAberto) marcarTodasLidas() }}
             style={{
