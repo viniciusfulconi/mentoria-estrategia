@@ -4,6 +4,7 @@ import { supabase, dbQuery } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import Nav from '@/components/Nav'
 import Link from 'next/link'
+import { Clock, Brain, CalendarCheck } from 'lucide-react'
 
 export default function MentorDashboard() {
   const { perfil, signOut } = useAuth()
@@ -12,11 +13,28 @@ export default function MentorDashboard() {
   const [cicloAtivo, setCicloAtivo] = useState('')
   const [loading, setLoading] = useState(true)
   const [erro, setErro] = useState<string | null>(null)
+  const [metricas, setMetricas] = useState<{ sessoes: number; horas: number; psico: number } | null>(null)
 
   useEffect(() => {
     if (!perfil?.mentor_nome) return
     carregar()
+    carregarMetricas()
   }, [perfil])
+
+  async function carregarMetricas() {
+    const hoje = new Date()
+    const inicioMes = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-01`
+    const { data } = await dbQuery(
+      'atendimentos_mentoria',
+      { mentor: `eq.${perfil!.mentor_nome!}`, data_atendimento: `gte.${inicioMes}` },
+      'duracao_minutos,encaminhamento_psico'
+    )
+    if (!data) return
+    const sessoes = data.length
+    const horas = Math.round(data.reduce((a: number, d: any) => a + (d.duracao_minutos || 0), 0) / 60 * 10) / 10
+    const psico = data.filter((d: any) => d.encaminhamento_psico).length
+    setMetricas({ sessoes, horas, psico })
+  }
 
   async function carregar() {
     setErro(null)
@@ -66,6 +84,27 @@ export default function MentorDashboard() {
           <button onClick={signOut} style={{ background: 'none', border: '0.5px solid rgba(0,0,0,0.12)', borderRadius: 8, padding: '6px 12px', fontSize: 12, cursor: 'pointer', color: '#999' }}>Sair</button>
         </div>
       </div>
+
+      {/* Métricas do mês */}
+      {metricas !== null && (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, padding: '12px 16px', background: 'white', borderBottom: '0.5px solid rgba(0,0,0,0.06)' }}>
+          <div style={{ textAlign: 'center', padding: '10px 8px', borderRadius: 12, background: '#EFF6FF' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 4 }}><CalendarCheck size={16} color="#2563EB" strokeWidth={2} /></div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: '#2563EB' }}>{metricas.sessoes}</div>
+            <div style={{ fontSize: 10, color: '#64748B' }}>sessões/mês</div>
+          </div>
+          <div style={{ textAlign: 'center', padding: '10px 8px', borderRadius: 12, background: '#F0FDF4' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 4 }}><Clock size={16} color="#16A34A" strokeWidth={2} /></div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: '#16A34A' }}>{metricas.horas}h</div>
+            <div style={{ fontSize: 10, color: '#64748B' }}>horas/mês</div>
+          </div>
+          <div style={{ textAlign: 'center', padding: '10px 8px', borderRadius: 12, background: metricas.psico > 0 ? '#FFF7ED' : '#F8FAFC' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 4 }}><Brain size={16} color={metricas.psico > 0 ? '#EA580C' : '#94A3B8'} strokeWidth={2} /></div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: metricas.psico > 0 ? '#EA580C' : '#94A3B8' }}>{metricas.psico}</div>
+            <div style={{ fontSize: 10, color: '#64748B' }}>encam. psico</div>
+          </div>
+        </div>
+      )}
 
       {/* Seletor ciclo */}
       <div style={{ display: 'flex', gap: 6, overflowX: 'auto', padding: '10px 16px', background: 'white', borderBottom: '0.5px solid rgba(0,0,0,0.06)' }}>

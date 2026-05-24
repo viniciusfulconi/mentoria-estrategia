@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { dbQuery, dbInsert } from '@/lib/supabase'
+import { dbQuery, dbInsert, dbUpdate } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
 import Nav from '@/components/Nav'
@@ -51,7 +51,16 @@ export default function NovaProvaAntigaHorario() {
       criado_por_id: perfil?.id,
     }])
     if (error) { setErro(error); setSaving(false) }
-    else router.push('/horario')
+    else {
+      const dataFormatada = new Date(form.data + 'T12:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' })
+      await dbInsert('notificacoes', [{
+        aluno_id: form.aluno_id,
+        tipo: 'prova_atribuida',
+        titulo: `Nova prova agendada`,
+        mensagem: `${provaSelecionada?.nome || 'Prova'} · ${dataFormatada} das ${form.hora_inicio} às ${form.hora_fim}`,
+      }])
+      router.push('/horario')
+    }
   }
 
   return (

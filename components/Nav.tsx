@@ -4,10 +4,11 @@ import { usePathname } from 'next/navigation'
 import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useSidebar } from '@/components/AppShell'
+import { dbQuery, dbUpdate } from '@/lib/supabase'
 import {
   LayoutDashboard, Users, Handshake, Calendar,
   GraduationCap, Star, ClipboardList, FileText, KeyRound,
-  PlayCircle, LogOut, MoreHorizontal, Menu, X,
+  PlayCircle, LogOut, MoreHorizontal, Menu, X, Bell,
 } from 'lucide-react'
 
 type LucideIcon = React.ComponentType<{ size?: number; strokeWidth?: number; color?: string }>
@@ -73,9 +74,32 @@ export default function Nav() {
   const { perfil, signOut, loading } = useAuth()
   const { open: sidebarOpen, toggle: toggleSidebar } = useSidebar()
   const [drawerAberto, setDrawerAberto] = useState(false)
+  const [notifAberto, setNotifAberto] = useState(false)
   const [navVisible, setNavVisible] = useState(true)
+  const [notificacoes, setNotificacoes] = useState<any[]>([])
+  const [naoLidas, setNaoLidas] = useState(0)
   const lastScrollY = useRef(0)
   const ticking = useRef(false)
+
+  useEffect(() => {
+    if (!perfil?.aluno_id) return
+    dbQuery(
+      'notificacoes',
+      { aluno_id: `eq.${perfil.aluno_id}`, order: 'criado_em.desc' },
+      'id,tipo,titulo,mensagem,lida,criado_em'
+    ).then(({ data }) => {
+      const items = data || []
+      setNotificacoes(items)
+      setNaoLidas(items.filter((n: any) => !n.lida).length)
+    })
+  }, [perfil])
+
+  async function marcarTodasLidas() {
+    if (!perfil?.aluno_id) return
+    await dbUpdate('notificacoes', { aluno_id: `eq.${perfil.aluno_id}`, lida: 'eq.false' }, { lida: true })
+    setNotificacoes(prev => prev.map(n => ({ ...n, lida: true })))
+    setNaoLidas(0)
+  }
 
   useEffect(() => {
     function handleScroll() {
@@ -88,6 +112,7 @@ export default function Nav() {
         } else if (currentY > lastScrollY.current + 4) {
           setNavVisible(false)
           setDrawerAberto(false)
+          setNotifAberto(false)
         } else if (currentY < lastScrollY.current - 4) {
           setNavVisible(true)
         }
@@ -211,7 +236,56 @@ export default function Nav() {
                 {PAPEL_LABEL[papel || ''] || ''}
               </div>
             </div>
+            {papel === 'aluno' && (
+              <button
+                onClick={() => { setNotifAberto(v => !v); if (naoLidas > 0) marcarTodasLidas() }}
+                style={{
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  color: naoLidas > 0 ? '#EF4444' : 'var(--text-hint)',
+                  padding: 4, borderRadius: 6, position: 'relative',
+                  display: 'flex', alignItems: 'center',
+                }}
+                title="Avisos"
+              >
+                <Bell size={16} strokeWidth={2} />
+                {naoLidas > 0 && (
+                  <span style={{
+                    position: 'absolute', top: -2, right: -2,
+                    background: '#EF4444', color: 'white',
+                    borderRadius: '50%', width: 12, height: 12,
+                    fontSize: 7, fontWeight: 700,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    {naoLidas > 9 ? '9+' : naoLidas}
+                  </span>
+                )}
+              </button>
+            )}
           </div>
+
+          {/* Painel de notificações (desktop sidebar) */}
+          {papel === 'aluno' && notifAberto && (
+            <div style={{
+              background: '#F8FAFC', borderRadius: 12, padding: 12, marginBottom: 8,
+              border: '0.5px solid rgba(0,0,0,0.08)', maxHeight: 240, overflowY: 'auto',
+            }}>
+              {notificacoes.length === 0 ? (
+                <div style={{ fontSize: 12, color: '#999', textAlign: 'center', padding: 12 }}>Nenhum aviso.</div>
+              ) : notificacoes.map(n => (
+                <div key={n.id} style={{
+                  padding: '8px 10px', borderRadius: 10, marginBottom: 6,
+                  background: n.lida ? 'white' : '#EFF6FF',
+                  border: `0.5px solid ${n.lida ? 'rgba(0,0,0,0.06)' : 'rgba(37,99,235,0.15)'}`,
+                }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: '#1a1a1a' }}>{n.titulo}</div>
+                  <div style={{ fontSize: 11, color: '#666', marginTop: 2 }}>{n.mensagem}</div>
+                  <div style={{ fontSize: 10, color: '#999', marginTop: 3 }}>
+                    {new Date(n.criado_em).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
           <button
             onClick={signOut}
             style={{
@@ -257,10 +331,10 @@ export default function Nav() {
       ══════════════════════════════════════ */}
 
       {/* Overlay do drawer */}
-      {drawerAberto && (
+      {(drawerAberto || notifAberto) && (
         <div
           className="nav-mobile-only"
-          onClick={() => setDrawerAberto(false)}
+          onClick={() => { setDrawerAberto(false); setNotifAberto(false) }}
           style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 98 }}
         />
       )}
@@ -303,6 +377,52 @@ export default function Nav() {
           </div>
           <button
             onClick={() => { setDrawerAberto(false); signOut() }}
+            style={{
+              width: '100%', padding: '13px', borderRadius: 12,
+              border: '1px solid rgba(0,0,0,0.09)', background: 'white',
+              color: 'var(--red)', fontSize: 14, fontWeight: 500,
+              cursor: 'pointer', fontFamily: 'DM Sans, sans-serif',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            }}
+          >
+            <LogOut size={15} strokeWidth={2} /> Sair
+          </button>
+        </div>
+      )}
+
+      {/* Drawer de notificações (aluno) */}
+      {papel === 'aluno' && (
+        <div className="nav-mobile-only" style={{
+          position: 'fixed', bottom: 'var(--nav-h)', left: 0, right: 0, zIndex: 99,
+          background: 'white', borderRadius: '20px 20px 0 0',
+          borderTop: '1px solid var(--border)',
+          padding: '16px 16px 8px',
+          transform: notifAberto && navVisible ? 'translateY(0)' : 'translateY(100%)',
+          transition: 'transform 0.25s ease',
+          boxShadow: '0 -4px 24px rgba(0,0,0,0.10)',
+          maxHeight: '70vh', display: 'flex', flexDirection: 'column',
+        }}>
+          <div style={{ width: 36, height: 4, borderRadius: 2, background: '#E0E0E0', margin: '0 auto 16px' }} />
+          <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 12 }}>Avisos</div>
+          <div style={{ flex: 1, overflowY: 'auto', marginBottom: 10 }}>
+            {notificacoes.length === 0 ? (
+              <div style={{ textAlign: 'center', color: '#999', padding: 32, fontSize: 13 }}>Nenhum aviso ainda.</div>
+            ) : notificacoes.map(n => (
+              <div key={n.id} style={{
+                padding: '12px', borderRadius: 12, marginBottom: 8,
+                background: n.lida ? '#F8FAFC' : '#EFF6FF',
+                border: `0.5px solid ${n.lida ? 'rgba(0,0,0,0.06)' : 'rgba(37,99,235,0.15)'}`,
+              }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: '#1a1a1a' }}>{n.titulo}</div>
+                <div style={{ fontSize: 12, color: '#666', marginTop: 2 }}>{n.mensagem}</div>
+                <div style={{ fontSize: 10, color: '#999', marginTop: 4 }}>
+                  {new Date(n.criado_em).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                </div>
+              </div>
+            ))}
+          </div>
+          <button
+            onClick={() => { setNotifAberto(false); signOut() }}
             style={{
               width: '100%', padding: '13px', borderRadius: 12,
               border: '1px solid rgba(0,0,0,0.09)', background: 'white',
@@ -359,6 +479,35 @@ export default function Nav() {
           >
             <MoreHorizontal size={20} strokeWidth={drawerAberto || secundarioAtivo ? 2.5 : 2} />
             Mais
+          </button>
+        ) : papel === 'aluno' ? (
+          <button
+            onClick={() => { setNotifAberto(v => !v); if (naoLidas > 0 && !notifAberto) marcarTodasLidas() }}
+            style={{
+              flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
+              justifyContent: 'center', padding: '6px 4px',
+              background: 'none', border: 'none',
+              color: notifAberto ? 'var(--purple)' : naoLidas > 0 ? '#EF4444' : 'var(--text-hint)',
+              fontSize: 9, fontWeight: notifAberto ? 600 : 400,
+              gap: 4, cursor: 'pointer', position: 'relative',
+            }}
+          >
+            <div style={{ position: 'relative' }}>
+              <Bell size={20} strokeWidth={notifAberto ? 2.5 : 2} />
+              {naoLidas > 0 && (
+                <span style={{
+                  position: 'absolute', top: -4, right: -4,
+                  background: '#EF4444', color: 'white',
+                  borderRadius: '50%', minWidth: 14, height: 14,
+                  fontSize: 8, fontWeight: 700,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  padding: '0 2px',
+                }}>
+                  {naoLidas > 9 ? '9+' : naoLidas}
+                </span>
+              )}
+            </div>
+            Avisos
           </button>
         ) : (
           <button
