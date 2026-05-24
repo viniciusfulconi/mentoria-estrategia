@@ -69,7 +69,24 @@ export default function Login() {
         refresh_token: data.refresh_token,
         user: data.user,
       }))
-      window.location.href = '/'
+      // Busca o perfil para redirecionar para a tela correta de cada papel
+      try {
+        const perfilResp = await fetch(
+          `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/perfis?id=eq.${data.user.id}&select=papel,aluno_id`,
+          { headers: { apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, Authorization: `Bearer ${data.access_token}` } }
+        )
+        const perfilData = await perfilResp.json()
+        const p = Array.isArray(perfilData) ? perfilData[0] : null
+        if (p?.papel === 'aluno' && p?.aluno_id) {
+          window.location.href = `/aluno/${p.aluno_id}`
+        } else if (p?.papel === 'mentor') {
+          window.location.href = '/mentor'
+        } else {
+          window.location.href = '/'
+        }
+      } catch {
+        window.location.href = '/'
+      }
     } catch {
       setErro('Erro ao conectar. Tente novamente.')
       setLoading(false)

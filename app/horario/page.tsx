@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import Nav from '@/components/Nav'
 import Link from 'next/link'
 import { corAtividade, formatHora, diasParaData, expandirRecorrentes, MESES, DIAS_SEMANA } from '@/lib/agenda'
+import { Clock, BookOpen, User, ExternalLink, Trash2, CalendarX } from 'lucide-react'
 
 type Visualizacao = 'dia' | 'semana' | 'mes' | 'ano'
 
@@ -221,7 +222,7 @@ export default function Horario() {
             {/* Resumo horas de estudo */}
             {isAluno && Object.keys(horasEstudo).length > 0 && (
               <div className="card" style={{ marginTop: 16 }}>
-                <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 10 }}>⏱ Horas de estudo esta semana</div>
+                <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}><Clock size={13} strokeWidth={2} color="#2563EB" />Horas de estudo esta semana</div>
                 {Object.entries(horasEstudo).sort((a, b) => b[1] - a[1]).map(([mat, h]) => (
                   <div key={mat} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 4 }}>
                     <span style={{ color: '#666' }}>{mat}</span>
@@ -243,11 +244,11 @@ export default function Horario() {
               <div style={{ width: 16, height: 16, borderRadius: 4, background: corAtividade(atividadeSelecionada).bg, flexShrink: 0 }} />
               <div style={{ fontSize: 16, fontWeight: 700, flex: 1 }}>{atividadeSelecionada.titulo}</div>
             </div>
-            {atividadeSelecionada.materia && <div style={{ fontSize: 13, color: '#666', marginBottom: 8 }}>📚 {atividadeSelecionada.materia}</div>}
-            {atividadeSelecionada.professor && <div style={{ fontSize: 13, color: '#666', marginBottom: 8 }}>👤 {atividadeSelecionada.professor}</div>}
+            {atividadeSelecionada.materia && <div style={{ fontSize: 13, color: '#666', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}><BookOpen size={13} strokeWidth={2} />{atividadeSelecionada.materia}</div>}
+            {atividadeSelecionada.professor && <div style={{ fontSize: 13, color: '#666', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}><User size={13} strokeWidth={2} />{atividadeSelecionada.professor}</div>}
             {atividadeSelecionada.data_inicio && (
-              <div style={{ fontSize: 13, color: '#666', marginBottom: 8 }}>
-                🕐 {formatHora(atividadeSelecionada.data_inicio)}{atividadeSelecionada.data_fim ? ` – ${formatHora(atividadeSelecionada.data_fim)}` : ''}
+              <div style={{ fontSize: 13, color: '#666', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Clock size={13} strokeWidth={2} />{formatHora(atividadeSelecionada.data_inicio)}{atividadeSelecionada.data_fim ? ` – ${formatHora(atividadeSelecionada.data_fim)}` : ''}
               </div>
             )}
             {atividadeSelecionada.descricao && (
@@ -256,8 +257,8 @@ export default function Horario() {
               </div>
             )}
             {atividadeSelecionada.link && (
-              <a href={atividadeSelecionada.link} target="_blank" rel="noopener noreferrer" style={{ display: 'block', marginTop: 10, color: '#2563EB', fontSize: 13, textDecoration: 'none' }}>
-                🔗 Abrir link
+              <a href={atividadeSelecionada.link} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 10, color: '#2563EB', fontSize: 13, textDecoration: 'none' }}>
+                <ExternalLink size={13} strokeWidth={2} />Abrir link
               </a>
             )}
             <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
@@ -270,8 +271,8 @@ export default function Horario() {
                   await dbDelete('atividades', { id: `eq.${id}` })
                   setAtividades(prev => prev.filter(a => a.id !== id))
                   setAtividadeSelecionada(null)
-                }} style={{ flex: 1, padding: 10, borderRadius: 10, border: '1px solid #DC2626', background: 'white', color: '#DC2626', fontSize: 13, cursor: 'pointer', fontFamily: 'DM Sans,sans-serif', fontWeight: 500 }}>
-                  🗑 Apagar
+                }} style={{ flex: 1, padding: 10, borderRadius: 10, border: '1px solid #DC2626', background: 'white', color: '#DC2626', fontSize: 13, cursor: 'pointer', fontFamily: 'DM Sans,sans-serif', fontWeight: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                  <Trash2 size={14} strokeWidth={2} />Apagar
                 </button>
               )}
               <button onClick={() => setAtividadeSelecionada(null)} style={{ flex: 1, padding: 10, borderRadius: 10, border: 'none', background: '#F1F5F9', color: '#666', fontSize: 13, cursor: 'pointer', fontFamily: 'DM Sans,sans-serif' }}>
@@ -295,7 +296,7 @@ function ViewDia({ data, atividades, onSelect, isAluno, perfil, onDelete }: any)
     <div>
       {atividades.length === 0 ? (
         <div style={{ textAlign: 'center', color: '#999', padding: 40 }}>
-          <div style={{ fontSize: 32, marginBottom: 8 }}>📅</div>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}><CalendarX size={36} strokeWidth={1.5} color="#CBD5E1" /></div>
           <div>Nenhuma atividade neste dia</div>
         </div>
       ) : (

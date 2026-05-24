@@ -4,34 +4,41 @@ import { usePathname } from 'next/navigation'
 import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useSidebar } from '@/components/AppShell'
+import {
+  LayoutDashboard, Users, Handshake, Calendar,
+  GraduationCap, Star, ClipboardList, FileText, KeyRound,
+  PlayCircle, LogOut, MoreHorizontal, Menu, X,
+} from 'lucide-react'
+
+type LucideIcon = React.ComponentType<{ size?: number; strokeWidth?: number; color?: string }>
 
 const tabsCoordenadorPrimario = [
-  { href: '/',             label: 'Início',        icon: '⬡' },
-  { href: '/simulados',    label: 'Alunos',         icon: '◎' },
-  { href: '/atendimentos', label: 'Atendimentos',   icon: '🤝' },
-  { href: '/horario',      label: 'Horário',        icon: '📅' },
+  { href: '/',             label: 'Início',       icon: LayoutDashboard },
+  { href: '/simulados',    label: 'Alunos',        icon: Users },
+  { href: '/atendimentos', label: 'Atendimentos',  icon: Handshake },
+  { href: '/horario',      label: 'Horário',       icon: Calendar },
 ]
 
 const tabsCoordenadorSecundario = [
-  { href: '/turma',           label: 'Turma',      icon: '◈' },
-  { href: '/csat',            label: 'CSAT',       icon: '⭐' },
-  { href: '/cronograma',      label: 'Cronograma', icon: '📋' },
-  { href: '/provas-antigas',  label: 'Provas',     icon: '📄' },
-  { href: '/admin',           label: 'Acessos',    icon: '🔑' },
+  { href: '/turma',          label: 'Turma',      icon: GraduationCap },
+  { href: '/csat',           label: 'CSAT',       icon: Star },
+  { href: '/cronograma',     label: 'Cronograma', icon: ClipboardList },
+  { href: '/provas-antigas', label: 'Provas',     icon: FileText },
+  { href: '/admin',          label: 'Acessos',    icon: KeyRound },
 ]
 
 const tabsMentor = [
-  { href: '/mentor',       label: 'Alunos',    icon: '◎' },
-  { href: '/atendimentos', label: 'Atend.',    icon: '🤝' },
-  { href: '/horario',      label: 'Horário',   icon: '📅' },
-  { href: '/aulas',        label: 'Aulas',     icon: '▶' },
+  { href: '/mentor',       label: 'Alunos',   icon: Users },
+  { href: '/atendimentos', label: 'Atend.',   icon: Handshake },
+  { href: '/horario',      label: 'Horário',  icon: Calendar },
+  { href: '/aulas',        label: 'Aulas',    icon: PlayCircle },
 ]
 
 const tabsAluno = [
-  { href: '/meu-perfil',    label: 'Início',     icon: '◎' },
-  { href: '/cronograma/meu', label: 'Cronograma', icon: '📋' },
-  { href: '/horario',       label: 'Horário',    icon: '📅' },
-  { href: '/aulas',         label: 'Aulas',      icon: '▶' },
+  { href: '/meu-perfil',    label: 'Início',     icon: LayoutDashboard },
+  { href: '/cronograma/meu', label: 'Cronograma', icon: ClipboardList },
+  { href: '/horario',        label: 'Horário',    icon: Calendar },
+  { href: '/aulas',          label: 'Aulas',      icon: PlayCircle },
 ]
 
 const PAPEL_LABEL: Record<string, string> = {
@@ -40,7 +47,7 @@ const PAPEL_LABEL: Record<string, string> = {
   aluno: 'Aluno',
 }
 
-function NavItem({ href, icon, label, active }: { href: string; icon: string; label: string; active: boolean }) {
+function NavItem({ href, icon: Icon, label, active }: { href: string; icon: LucideIcon; label: string; active: boolean }) {
   return (
     <Link href={href} style={{
       display: 'flex', alignItems: 'center', gap: 12,
@@ -50,10 +57,12 @@ function NavItem({ href, icon, label, active }: { href: string; icon: string; la
       fontWeight: active ? 600 : 400, fontSize: 14,
       transition: 'background 0.15s, color 0.15s',
     }}
-    onMouseEnter={e => { if (!active) e.currentTarget.style.background = 'var(--bg)' }}
+    onMouseEnter={e => { if (!active) e.currentTarget.style.background = '#F1F3F7' }}
     onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent' }}
     >
-      <span style={{ fontSize: 17, width: 22, textAlign: 'center', flexShrink: 0 }}>{icon}</span>
+      <span style={{ width: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+        <Icon size={18} strokeWidth={active ? 2.5 : 2} />
+      </span>
       {label}
     </Link>
   )
@@ -107,7 +116,9 @@ export default function Nav() {
 
   const papel = perfil?.papel
   const isCoordenador = papel === 'coordenador'
-  const tabs = isCoordenador ? tabsCoordenadorPrimario : papel === 'mentor' ? tabsMentor : tabsAluno
+  const alunoHome = perfil?.aluno_id ? `/aluno/${perfil.aluno_id}` : '/meu-perfil'
+  const tabsAlunoFinal = tabsAluno.map(t => t.href === '/meu-perfil' ? { ...t, href: alunoHome } : t)
+  const tabs = isCoordenador ? tabsCoordenadorPrimario : papel === 'mentor' ? tabsMentor : tabsAlunoFinal
   const iniciais = perfil?.nome?.split(' ').map(w => w[0]).slice(0, 2).join('') || '?'
   const secundarioAtivo = isCoordenador && tabsCoordenadorSecundario.some(t => path.startsWith(t.href))
 
@@ -143,10 +154,12 @@ export default function Nav() {
             title="Recolher menu"
             style={{
               background: 'none', border: 'none', cursor: 'pointer',
-              color: 'var(--text-hint)', fontSize: 18, padding: 4, borderRadius: 6,
-              lineHeight: 1,
+              color: 'var(--text-hint)', padding: 6, borderRadius: 6,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}
-          >✕</button>
+          >
+            <X size={17} strokeWidth={2} />
+          </button>
         </div>
 
         {/* Itens de navegação */}
@@ -211,7 +224,9 @@ export default function Nav() {
             onMouseEnter={e => { e.currentTarget.style.background = '#FFF0F0'; e.currentTarget.style.color = 'var(--red)' }}
             onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-hint)' }}
           >
-            <span style={{ fontSize: 15, width: 22, textAlign: 'center' }}>↩</span>
+            <span style={{ width: 22, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <LogOut size={15} strokeWidth={2} />
+            </span>
             Sair
           </button>
         </div>
@@ -227,11 +242,14 @@ export default function Nav() {
             position: 'fixed', top: 16, left: 16, zIndex: 101,
             background: 'white', border: '1px solid var(--border)',
             borderRadius: 10, padding: '8px 10px',
-            cursor: 'pointer', fontSize: 18,
+            cursor: 'pointer',
             boxShadow: 'var(--shadow-sm)',
             color: 'var(--purple)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}
-        >☰</button>
+        >
+          <Menu size={18} strokeWidth={2} />
+        </button>
       )}
 
       {/* ══════════════════════════════════════
@@ -262,6 +280,7 @@ export default function Nav() {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
             {tabsCoordenadorSecundario.map(t => {
               const active = path.startsWith(t.href)
+              const Icon = t.icon
               return (
                 <Link
                   key={t.href}
@@ -274,7 +293,7 @@ export default function Nav() {
                     border: `1px solid ${active ? 'var(--purple)' : 'transparent'}`,
                   }}
                 >
-                  <span style={{ fontSize: 20 }}>{t.icon}</span>
+                  <Icon size={20} strokeWidth={active ? 2.5 : 2} color={active ? 'var(--purple)' : 'var(--text-muted)'} />
                   <span style={{ fontSize: 14, fontWeight: active ? 600 : 400, color: active ? 'var(--purple)' : 'var(--text)' }}>
                     {t.label}
                   </span>
@@ -292,7 +311,7 @@ export default function Nav() {
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
             }}
           >
-            <span>↩</span> Sair
+            <LogOut size={15} strokeWidth={2} /> Sair
           </button>
         </div>
       )}
@@ -310,6 +329,7 @@ export default function Nav() {
       }}>
         {tabs.map(t => {
           const active = t.href === '/' ? path === '/' : path.startsWith(t.href)
+          const Icon = t.icon
           return (
             <Link key={t.href} href={t.href} style={{
               flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
@@ -317,9 +337,9 @@ export default function Nav() {
               textDecoration: 'none',
               color: active ? 'var(--purple)' : 'var(--text-hint)',
               fontSize: 9, fontWeight: active ? 600 : 400,
-              gap: 3, transition: 'color 0.15s',
+              gap: 4, transition: 'color 0.15s',
             }}>
-              <span style={{ fontSize: 19 }}>{t.icon}</span>
+              <Icon size={20} strokeWidth={active ? 2.5 : 2} />
               {t.label}
             </Link>
           )
@@ -334,10 +354,10 @@ export default function Nav() {
               background: 'none', border: 'none',
               color: drawerAberto || secundarioAtivo ? 'var(--purple)' : 'var(--text-hint)',
               fontSize: 9, fontWeight: drawerAberto || secundarioAtivo ? 600 : 400,
-              gap: 3, cursor: 'pointer',
+              gap: 4, cursor: 'pointer',
             }}
           >
-            <span style={{ fontSize: 19 }}>⋯</span>
+            <MoreHorizontal size={20} strokeWidth={drawerAberto || secundarioAtivo ? 2.5 : 2} />
             Mais
           </button>
         ) : (
@@ -347,10 +367,10 @@ export default function Nav() {
               flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
               justifyContent: 'center', padding: '6px 4px',
               background: 'none', border: 'none',
-              color: 'var(--text-hint)', fontSize: 9, gap: 3, cursor: 'pointer',
+              color: 'var(--text-hint)', fontSize: 9, gap: 4, cursor: 'pointer',
             }}
           >
-            <span style={{ fontSize: 19 }}>↩</span>
+            <LogOut size={20} strokeWidth={2} />
             Sair
           </button>
         )}

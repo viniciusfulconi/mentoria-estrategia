@@ -4,15 +4,27 @@ import { dbQuery } from '@/lib/supabase'
 import Nav from '@/components/Nav'
 import PageLoader from '@/components/PageLoader'
 import Link from 'next/link'
+import { BarChart3, AlertTriangle } from 'lucide-react'
+import { useAuth } from '@/contexts/AuthContext'
+import { useRouter } from 'next/navigation'
 
 export default function Simulados() {
+  const { perfil, loading: authLoading } = useAuth()
+  const router = useRouter()
   const [alunos, setAlunos] = useState<any[]>([])
   const [ciclos, setCiclos] = useState<string[]>([])
   const [busca, setBusca] = useState('')
   const [loading, setLoading] = useState(true)
   const [erro, setErro] = useState<string | null>(null)
 
-  useEffect(() => { load() }, [])
+  useEffect(() => {
+    if (authLoading) return
+    if (perfil?.papel === 'aluno') {
+      router.replace(perfil.aluno_id ? `/aluno/${perfil.aluno_id}` : '/meu-perfil')
+      return
+    }
+    load()
+  }, [authLoading, perfil])
 
   async function load() {
     setErro(null)
@@ -83,7 +95,7 @@ export default function Simulados() {
           </div>
         ) : filtrados.length === 0 ? (
           <div className="card" style={{ textAlign: 'center', color: '#999', padding: 40 }}>
-            <div style={{ fontSize: 32, marginBottom: 10 }}>📊</div>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}><BarChart3 size={36} strokeWidth={1.5} color="#CBD5E1" /></div>
             <div style={{ marginBottom: 12 }}>Nenhum dado ainda.</div>
             <Link href="/simulados/upload" style={{ textDecoration: 'none', display: 'inline-block', background: '#2563EB', color: 'white', borderRadius: 12, padding: '10px 20px', fontSize: 14 }}>Importar planilha</Link>
           </div>
@@ -120,7 +132,7 @@ export default function Simulados() {
                       {c.ciclo_nome.replace('Ciclo ', 'C').replace(' - ITA', '').replace(' - IME', '')}
                     </span>
                   ))}
-                  {reprovados > 0 && <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 10, background: '#FFFBEB', color: '#78350F', fontWeight: 500 }}>⚠ {reprovados} reprovação{reprovados > 1 ? 'ões' : ''}</span>}
+                  {reprovados > 0 && <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 10, background: '#FFFBEB', color: '#78350F', fontWeight: 500, display: 'inline-flex', alignItems: 'center', gap: 4 }}><AlertTriangle size={10} strokeWidth={2} />{reprovados} reprovação{reprovados > 1 ? 'ões' : ''}</span>}
                 </div>
               </div>
             </Link>

@@ -3,14 +3,28 @@ import { useEffect, useState } from 'react'
 import { dbQuery } from '@/lib/supabase'
 import Nav from '@/components/Nav'
 import Link from 'next/link'
+import { useAuth } from '@/contexts/AuthContext'
+import { useRouter } from 'next/navigation'
 
 export default function Home() {
+  const { perfil, loading: authLoading } = useAuth()
+  const router = useRouter()
   const [stats, setStats] = useState({ alunos: 0, mentores: 0, atendimentos: 0, aulas: 0 })
   const [turmas, setTurmas] = useState<any[]>([])
   const [emRisco, setEmRisco] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    if (authLoading) return
+    if (perfil?.papel === 'mentor') { router.replace('/mentor'); return }
+    if (perfil?.papel === 'aluno') {
+      router.replace(perfil.aluno_id ? `/aluno/${perfil.aluno_id}` : '/meu-perfil')
+      return
+    }
+  }, [perfil, authLoading])
+
+  useEffect(() => {
+    if (authLoading || perfil?.papel !== 'coordenador') return
     async function load() {
       const [{ data: alunosD }, { data: mentoresD }, { data: atendimentosD }, { data: aulasD }, { data: turmasData }, { data: rankings }] = await Promise.all([
         dbQuery('alunos', {}, 'id'),
@@ -47,7 +61,9 @@ export default function Home() {
       setLoading(false)
     }
     load()
-  }, [])
+  }, [authLoading, perfil])
+
+  if (authLoading || perfil?.papel !== 'coordenador') return null
 
   return (
     <div style={{ paddingBottom: 80 }}>

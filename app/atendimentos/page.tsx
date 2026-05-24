@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import Nav from '@/components/Nav'
 import Link from 'next/link'
 import type { AtendimentoMentoria } from '@/lib/supabase'
+import { List, DollarSign, Brain, CheckCircle2, Pin, FileText, Link2, Play } from 'lucide-react'
 
 export default function Atendimentos() {
   const { perfil } = useAuth()
@@ -103,17 +104,21 @@ export default function Atendimentos() {
 
         {/* Abas */}
         <div style={{ display: 'flex', gap: 4 }}>
-          {[
-            { id: 'lista', label: `📋 Lista (${filtrados.length})` },
-            { id: 'financeiro', label: '💰 Financeiro' },
-            { id: 'psico', label: `🧠 Psico (${psico.length})` },
-          ].map(a => (
+          {([
+            { id: 'lista', label: `Lista (${filtrados.length})`, Icon: List },
+            { id: 'financeiro', label: 'Financeiro', Icon: DollarSign },
+            { id: 'psico', label: `Psico (${psico.length})`, Icon: Brain },
+          ] as const).map(a => (
             <button key={a.id} onClick={() => setAba(a.id as any)} style={{
               padding: '4px 12px', borderRadius: 14, fontSize: 11, border: 'none',
               background: aba === a.id ? '#1a1a1a' : '#F1F5F9',
               color: aba === a.id ? 'white' : '#666',
-              cursor: 'pointer', fontFamily: 'DM Sans,sans-serif'
-            }}>{a.label}</button>
+              cursor: 'pointer', fontFamily: 'DM Sans,sans-serif',
+              display: 'inline-flex', alignItems: 'center', gap: 5,
+            }}>
+              <a.Icon size={11} strokeWidth={2} />
+              {a.label}
+            </button>
           ))}
         </div>
       </div>
@@ -142,10 +147,10 @@ export default function Atendimentos() {
                 </div>
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                   <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 8, background: d.tipo === 'Individual' ? '#EFF6FF' : '#DCFCE7', color: d.tipo === 'Individual' ? '#1E40AF' : '#14532D' }}>{d.tipo}</span>
-                  {d.encaminhamento_psico && <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 8, background: '#FEF2F2', color: '#991B1B' }}>🧠 Psico</span>}
-                  {d.arquivo_gemini_url && <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 8, background: '#DCFCE7', color: '#14532D' }}>📄 Docx</span>}
-                  {d.link_gemini && !d.arquivo_gemini_url && <a href={d.link_gemini} target="_blank" rel="noopener noreferrer" style={{ fontSize: 10, padding: '2px 8px', borderRadius: 8, background: '#F1F5F9', color: '#2563EB', textDecoration: 'none' }}>🔗 Gemini</a>}
-                  {d.link_gravacao && <a href={d.link_gravacao} target="_blank" rel="noopener noreferrer" style={{ fontSize: 10, padding: '2px 8px', borderRadius: 8, background: '#F1F5F9', color: '#2563EB', textDecoration: 'none' }}>▶ Gravação</a>}
+                  {d.encaminhamento_psico && <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 8, background: '#FEF2F2', color: '#991B1B', display: 'inline-flex', alignItems: 'center', gap: 4 }}><Brain size={10} strokeWidth={2} />Psico</span>}
+                  {d.arquivo_gemini_url && <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 8, background: '#DCFCE7', color: '#14532D', display: 'inline-flex', alignItems: 'center', gap: 4 }}><FileText size={10} strokeWidth={2} />Docx</span>}
+                  {d.link_gemini && !d.arquivo_gemini_url && <a href={d.link_gemini} target="_blank" rel="noopener noreferrer" style={{ fontSize: 10, padding: '2px 8px', borderRadius: 8, background: '#F1F5F9', color: '#2563EB', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}><Link2 size={10} strokeWidth={2} />Gemini</a>}
+                  {d.link_gravacao && <a href={d.link_gravacao} target="_blank" rel="noopener noreferrer" style={{ fontSize: 10, padding: '2px 8px', borderRadius: 8, background: '#F1F5F9', color: '#2563EB', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}><Play size={10} strokeWidth={2} />Gravação</a>}
                 </div>
                 {d.descricao && <div style={{ fontSize: 12, color: '#666', marginTop: 8, lineHeight: 1.5, borderTop: '0.5px solid rgba(0,0,0,0.06)', paddingTop: 8 }}>{d.descricao}</div>}
               </div>
@@ -189,7 +194,7 @@ export default function Atendimentos() {
             {aba === 'psico' && (
               psico.length === 0 ? (
                 <div className="card" style={{ textAlign: 'center', padding: 40, color: '#999' }}>
-                  <div style={{ fontSize: 32, marginBottom: 8 }}>✅</div>
+                  <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}><CheckCircle2 size={36} strokeWidth={1.5} color="#86EFAC" /></div>
                   <div>Nenhum encaminhamento psicológico neste período</div>
                 </div>
               ) : psico.map(d => (
@@ -198,7 +203,7 @@ export default function Atendimentos() {
                   <div style={{ fontSize: 11, color: '#999', marginBottom: 6 }}>
                     {d.mentor} · {new Date(d.data_atendimento).toLocaleDateString('pt-BR')}
                   </div>
-                  {d.solicitacao_aluno && <div style={{ fontSize: 12, color: '#DC2626', marginBottom: 4 }}>📌 {d.solicitacao_aluno}</div>}
+                  {d.solicitacao_aluno && <div style={{ fontSize: 12, color: '#DC2626', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 4 }}><Pin size={11} strokeWidth={2} />{d.solicitacao_aluno}</div>}
                   {d.descricao && <div style={{ fontSize: 12, color: '#666', lineHeight: 1.5 }}>{d.descricao}</div>}
                 </div>
               ))

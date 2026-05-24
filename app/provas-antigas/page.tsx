@@ -4,6 +4,7 @@ import { dbQuery } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import Nav from '@/components/Nav'
 import Link from 'next/link'
+import { FileText } from 'lucide-react'
 
 const TIPO_LABEL: Record<string, string> = { ime: 'IME', ita: 'ITA' }
 const FASE_LABEL: Record<number, string> = { 1: '1ª Fase', 2: '2ª Fase' }
@@ -48,7 +49,7 @@ export default function ProvasAntigas() {
           </div>
         ) : provas.length === 0 ? (
           <div className="card" style={{ textAlign: 'center', color: '#999', padding: 40 }}>
-            <div style={{ fontSize: 32, marginBottom: 10 }}>📄</div>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}><FileText size={36} strokeWidth={1.5} color="#CBD5E1" /></div>
             <div style={{ marginBottom: 12 }}>Nenhuma prova cadastrada ainda.</div>
             {isCoordenador && (
               <Link href="/provas-antigas/nova" style={{ textDecoration: 'none', display: 'inline-block', background: '#7C3AED', color: 'white', borderRadius: 12, padding: '10px 20px', fontSize: 14 }}>
@@ -59,8 +60,8 @@ export default function ProvasAntigas() {
         ) : provas.map(p => (
           <div key={p.id} className="card" style={{ marginBottom: 10 }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-              <div style={{ width: 40, height: 40, borderRadius: 10, background: '#F3F0FF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>
-                📄
+              <div style={{ width: 40, height: 40, borderRadius: 10, background: '#F3F0FF', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <FileText size={18} strokeWidth={2} color="#7C3AED" />
               </div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontWeight: 600, fontSize: 14, color: '#1a1a1a', marginBottom: 4 }}>{p.nome}</div>

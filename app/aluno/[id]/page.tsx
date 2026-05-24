@@ -44,6 +44,15 @@ export default function AlunoPage() {
   const [questoesProvas, setQuestoesProvas] = useState<any[]>([])
   const [provasLoaded, setProvasLoaded] = useState(false)
 
+  // Aluno só pode ver o próprio perfil
+  useEffect(() => {
+    if (!meuPerfil || meuPerfil.papel !== 'aluno') return
+    const meuId = meuPerfil.aluno_id
+    if (meuId && id !== meuId) {
+      router.replace(`/aluno/${meuId}`)
+    }
+  }, [meuPerfil, id])
+
   // Para aluno, usa o próprio id
   const targetId = meuPerfil?.papel === 'aluno' ? meuPerfil.aluno_id! : id
 
