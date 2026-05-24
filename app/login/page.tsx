@@ -87,7 +87,7 @@ export default function Login() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex' }}>
+    <div style={{ position: 'fixed', inset: 0, display: 'flex', zIndex: 50 }}>
 
       {/* LADO ESQUERDO */}
       <div style={{
