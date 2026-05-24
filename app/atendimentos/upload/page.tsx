@@ -4,6 +4,59 @@ import { dbInsert, dbDelete } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Nav from '@/components/Nav'
 
+// Parser CSV robusto: suporta campos com aspas, quebras de linha e separador `;`
+function parseCSV(text: string, sep = ';'): string[][] {
+  const rows: string[][] = []
+  let row: string[] = []
+  let field = ''
+  let inQuotes = false
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i]
+    if (inQuotes) {
+      if (c === '"' && text[i + 1] === '"') { field += '"'; i++ }
+      else if (c === '"') { inQuotes = false }
+      else { field += c }
+    } else {
+      if (c === '"') { inQuotes = true }
+      else if (c === sep) { row.push(field.trim()); field = '' }
+      else if (c === '\n') { row.push(field.trim()); field = ''; if (row.some(v => v)) rows.push(row); row = [] }
+      else if (c !== '\r') { field += c }
+    }
+  }
+  if (field.trim() || row.length) { row.push(field.trim()); if (row.some(v => v)) rows.push(row) }
+  return rows
+}
+
+// Mapeamento dos nomes de coluna do AppSheet para índices
+const COL_MAP: Record<string, string[]> = {
+  mentor:       ['Quem é o mentor (a)?', 'Mentor'],
+  tipo:         ['A mentoria foi individual ou coletiva?', 'Individual / Coletiva'],
+  aluno:        ['Qual foi o aluno atendido?', 'Aluno'],
+  data:         ['Qual foi a data do atendimento?', 'Data Mentoria'],
+  hora_inicio:  ['Qual foi o horário de início do atendimento?', 'Hora Inicio'],
+  hora_fim:     ['Qual foi o horário de término do atendimento?', 'Hora Fim'],
+  psico:        ['Há a necessidade de encaminhamento para o atendimento psicológico?', 'Encaminhamento Psicologico'],
+  solicitacao:  ['O aluno fez alguma solicitação (lista extra, teste de velocidade etc.)?', 'Solicitacao Aluno'],
+  descricao:    ['Descreva o atendimento com suas próprias palavras. Este registro será usado para o seu controle e para o da coordenação. Caso não haja necessidade, deixe em branco.', 'Descricao Atendimento'],
+  gravacao:     ['Anexe o link da gravação da chamada.', 'Link da gravação da chamada'],
+  gemini:       ['Adicione o relatório do Gemini da chamada.', 'Link do Relatório do Gemini'],
+  duracao:      ['Duração Real', 'Duração Real'],
+  ano:          ['Ano', 'Ano'],
+  mes:          ['Mês', 'Mês'],
+  id_original:  ['idMentoria', 'idMentoria'],
+}
+
+function findColIdx(headers: string[], aliases: string[]): number {
+  for (const alias of aliases) {
+    // Busca exata primeiro, depois por inclusão parcial
+    const exact = headers.findIndex(h => h.toLowerCase().trim() === alias.toLowerCase().trim())
+    if (exact !== -1) return exact
+    const partial = headers.findIndex(h => h.toLowerCase().includes(alias.toLowerCase().slice(0, 30)))
+    if (partial !== -1) return partial
+  }
+  return -1
+}
+
 function parseDuracao(dur: string): number {
   if (!dur) return 0
   const parts = dur.split(':').map(Number)
@@ -14,8 +67,10 @@ function parseDuracao(dur: string): number {
 
 function parseData(d: string): string | null {
   if (!d) return null
-  const parts = d.split('/')
-  if (parts.length === 3) return `${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`
+  // Aceita tanto dd/mm/yyyy quanto dd/mm/yyyy HH:MM:SS (DataHoraEnvio)
+  const parteData = d.split(' ')[0]
+  const parts = parteData.split('/')
+  if (parts.length === 3) return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`
   return null
 }
 
@@ -31,24 +86,50 @@ export default function UploadAtendimentos() {
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
+    setLog([])
+    setPreview([])
+    setDone(false)
 
     const text = await file.text()
-    const lines = text.split('\n').filter(l => l.trim())
-    const headers = lines[0].split(',').map(h => h.replace(/"/g, '').trim())
+    const allRows = parseCSV(text, ';')
+    if (!allRows.length) { addLog('❌ Arquivo vazio ou formato inválido.'); return }
 
-    const rows = lines.slice(1).map(line => {
-      const vals = line.split(',').map(v => v.replace(/"/g, '').trim())
-      const obj: any = {}
-      headers.forEach((h, i) => { obj[h] = vals[i] || '' })
-      return obj
-    }).filter(r => r['Mentor'] && r['Mentor'] !== '#N/A' && r['Data Mentoria'])
+    // Encontra a linha de header (contém "Mentor" ou "DataHoraEnvio")
+    const headerIdx = allRows.findIndex(r =>
+      r.some(c => c.includes('Mentor') || c.includes('DataHoraEnvio') || c.includes('mentor'))
+    )
+    if (headerIdx === -1) { addLog('❌ Cabeçalho não encontrado. Verifique se o arquivo é do AppSheet.'); return }
+
+    const headers = allRows[headerIdx]
+    addLog(`📋 ${headers.length} colunas detectadas`)
+
+    // Mapeia colunas
+    const cols: Record<string, number> = {}
+    for (const [key, aliases] of Object.entries(COL_MAP)) {
+      cols[key] = findColIdx(headers, aliases)
+    }
+
+    const get = (row: string[], key: string) => cols[key] >= 0 ? (row[cols[key]] || '') : ''
+
+    const dataRows = allRows.slice(headerIdx + 1)
+    const rows = dataRows
+      .filter(row => {
+        const mentor = get(row, 'mentor')
+        const data = get(row, 'data')
+        return mentor && mentor !== '#N/A' && data
+      })
 
     setPreview(rows)
     addLog(`✅ ${rows.length} registros detectados`)
-    const mentores = [...new Set(rows.map(r => r['Mentor']))].sort()
+
+    const mentores = [...new Set(rows.map(r => get(r, 'mentor')))].sort()
     addLog(`👥 Mentores: ${mentores.join(', ')}`)
-    const psico = rows.filter(r => r['Encaminhamento Psicologico'] === 'Sim').length
+    const psico = rows.filter(r => get(r, 'psico').toLowerCase().includes('sim')).length
     addLog(`🧠 Encaminhamentos psicológicos: ${psico}`)
+
+    // Guarda mapeamento para uso no importar
+    ;(window as any).__atendimentosCols = cols
+    ;(window as any).__atendimentosHeaders = headers
   }
 
   async function importar() {
@@ -57,37 +138,39 @@ export default function UploadAtendimentos() {
     addLog('\n🗑 Limpando dados anteriores...')
     await dbDelete('atendimentos_mentoria', { id: 'neq.00000000-0000-0000-0000-000000000000' })
 
+    const cols: Record<string, number> = (window as any).__atendimentosCols || {}
+    const get = (row: string[], key: string) => cols[key] >= 0 ? (row[cols[key]] || '') : ''
+
     const records = preview.map(r => {
-      const min = parseDuracao(r['Duração Real'])
+      const min = parseDuracao(get(r, 'duracao'))
       const valor = Math.round((min / 60) * 200 * 100) / 100
       return {
-        id_original: Number(r['idMentoria']) || null,
-        mentor: r['Mentor'],
-        tipo: r['Individual / Coletiva'] || 'Individual',
-        aluno: r['Aluno'] || null,
-        data_atendimento: parseData(r['Data Mentoria']),
-        hora_inicio: r['Hora Inicio'] || null,
-        hora_fim: r['Hora Fim'] || null,
+        id_original: Number(get(r, 'id_original')) || null,
+        mentor: get(r, 'mentor'),
+        tipo: get(r, 'tipo') || 'Individual',
+        aluno: get(r, 'aluno') || null,
+        data_atendimento: parseData(get(r, 'data')),
+        hora_inicio: get(r, 'hora_inicio') || null,
+        hora_fim: get(r, 'hora_fim') || null,
         duracao_minutos: min,
-        encaminhamento_psico: r['Encaminhamento Psicologico'] === 'Sim',
-        solicitacao_aluno: r['Solicitacao Aluno'] || null,
-        descricao: r['Descricao Atendimento'] || null,
-        link_gravacao: r['Link da gravação da chamada'] || null,
-        link_gemini: r['Link do Relatório do Gemini'] || null,
-        mes: r['Mês'] || null,
-        ano: Number(r['Ano']) || null,
+        encaminhamento_psico: get(r, 'psico').toLowerCase().includes('sim'),
+        solicitacao_aluno: get(r, 'solicitacao') || null,
+        descricao: get(r, 'descricao') || null,
+        link_gravacao: get(r, 'gravacao') || null,
+        link_gemini: get(r, 'gemini') || null,
+        mes: get(r, 'mes') || null,
+        ano: Number(get(r, 'ano')) || null,
         valor_pago: valor,
       }
     }).filter(r => r.data_atendimento)
 
     addLog(`📊 Importando ${records.length} atendimentos...`)
 
-    // Insere em lotes de 100
     for (let i = 0; i < records.length; i += 100) {
       const lote = records.slice(i, i + 100)
       const { error } = await dbInsert('atendimentos_mentoria', lote)
-      if (error) { addLog(`❌ Erro no lote ${i/100 + 1}: ${error}`); break }
-      addLog(`  ✅ Lote ${Math.floor(i/100) + 1}/${Math.ceil(records.length/100)} importado`)
+      if (error) { addLog(`❌ Erro no lote ${Math.floor(i / 100) + 1}: ${error}`); break }
+      addLog(`  ✅ Lote ${Math.floor(i / 100) + 1}/${Math.ceil(records.length / 100)} importado`)
     }
 
     const valorTotal = records.reduce((a, r) => a + r.valor_pago, 0)
