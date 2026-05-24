@@ -91,27 +91,16 @@ export default function Login() {
 
       {/* LADO ESQUERDO */}
       <div style={{
-        flex: 1, display: 'flex', flexDirection: 'column',
-        alignItems: 'center', justifyContent: 'center',
-        background: 'linear-gradient(160deg, #0A1628 0%, #0D2147 50%, #0A3060 100%)',
-        padding: '40px 32px', position: 'relative', overflow: 'hidden',
+        flex: 1, position: 'relative', overflow: 'hidden',
+        background: '#0A1628',
       }}>
-        <div style={{ position: 'absolute', width: 400, height: 400, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.05)', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }} />
-        <div style={{ position: 'absolute', width: 600, height: 600, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.03)', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }} />
-        <div style={{ position: 'absolute', width: 200, height: 200, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.07)', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }} />
-        <div style={{ position: 'absolute', width: 320, height: 320, borderRadius: '50%', background: 'radial-gradient(circle, rgba(37,99,235,0.3) 0%, transparent 70%)', top: '50%', left: '50%', transform: 'translate(-50%, -55%)' }} />
-
-        <div style={{ position: 'relative', zIndex: 1, marginBottom: 32 }}>
-          <CorujaLogo size={180} />
-        </div>
-
-        <div style={{ textAlign: 'center', position: 'relative', zIndex: 1 }}>
-          <div style={{ fontSize: 28, fontWeight: 700, color: 'white', letterSpacing: '-0.5px', marginBottom: 8 }}>Mentoria</div>
-          <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>Estratégia Concursos</div>
-        </div>
-
-        <div style={{ position: 'absolute', bottom: 28, textAlign: 'center', zIndex: 1 }}>
-          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)', letterSpacing: '0.06em' }}>ITA · IME · Medicina</div>
+        <img
+          src="/login-bg.png"
+          alt=""
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }}
+        />
+        <div style={{ position: 'absolute', bottom: 28, left: 0, right: 0, textAlign: 'center', zIndex: 1 }}>
+          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', letterSpacing: '0.06em' }}>Estratégia Concursos</div>
         </div>
       </div>
 
