@@ -13,20 +13,28 @@ export default function Cadastro() {
   const [erro, setErro] = useState('')
 
   useEffect(() => {
-    // Busca mentores únicos da planilha
-    dbQuery('resultados', { fase: 'eq.ranking' }, 'mentor').then(({ data }) => {
-      const ms = [...new Set((data || []).map((r: any) => r.mentor).filter(Boolean))].sort() as string[]
-      setMentores(ms)
-    })
-    // Busca alunos únicos
-    dbQuery('resultados', { fase: 'eq.ranking' }, 'id_aluno,nome_aluno').then(({ data }) => {
-      const seen = new Set()
-      const unique = (data || []).filter((r: any) => {
-        if (seen.has(r.id_aluno)) return false
-        seen.add(r.id_aluno); return true
-      }).sort((a: any, b: any) => a.nome_aluno.localeCompare(b.nome_aluno))
-      setAlunos(unique)
-    })
+    // Usa anon key diretamente — página acessada sem login
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL!
+    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    const headers = { apikey: key, Authorization: `Bearer ${key}` }
+
+    fetch(`${url}/rest/v1/resultados?fase=eq.ranking&select=mentor`, { headers })
+      .then(r => r.json()).then(data => {
+        if (!Array.isArray(data)) return
+        const ms = [...new Set(data.map((r: any) => r.mentor).filter(Boolean))].sort() as string[]
+        setMentores(ms)
+      })
+
+    fetch(`${url}/rest/v1/resultados?fase=eq.ranking&select=id_aluno,nome_aluno`, { headers })
+      .then(r => r.json()).then(data => {
+        if (!Array.isArray(data)) return
+        const seen = new Set()
+        const unique = data.filter((r: any) => {
+          if (seen.has(r.id_aluno)) return false
+          seen.add(r.id_aluno); return true
+        }).sort((a: any, b: any) => a.nome_aluno.localeCompare(b.nome_aluno))
+        setAlunos(unique)
+      })
   }, [])
 
   async function cadastrar() {
