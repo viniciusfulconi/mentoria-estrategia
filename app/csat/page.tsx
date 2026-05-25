@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { dbQuery } from '@/lib/supabase'
+import { useAuth } from '@/contexts/AuthContext'
 import Nav from '@/components/Nav'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -84,6 +85,7 @@ function LineChart({ pesquisas, dados }: { pesquisas: string[], dados: number[] 
 
 export default function CSAT() {
   const router = useRouter()
+  const { perfil } = useAuth()
   const [pesquisas, setPesquisas] = useState<PesquisaCsat[]>([])
   const [respostas, setRespostas] = useState<RespostaCsat[]>([])
   const [pesquisaAtiva, setPesquisaAtiva] = useState<string>('todas')
@@ -123,7 +125,9 @@ export default function CSAT() {
       <div style={{ background: 'white', borderBottom: '0.5px solid rgba(0,0,0,0.08)', padding: '16px', position: 'sticky', top: 0, zIndex: 10 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
           <div style={{ fontSize: 17, fontWeight: 600 }}>CSAT — Satisfação</div>
-          <Link href="/csat/upload" style={{ textDecoration: 'none', background: '#2563EB', color: 'white', borderRadius: 10, padding: '7px 14px', fontSize: 13, fontWeight: 500 }}>↑ Upload</Link>
+          {perfil?.papel === 'coordenador' && (
+            <Link href="/csat/upload" style={{ textDecoration: 'none', background: '#2563EB', color: 'white', borderRadius: 10, padding: '7px 14px', fontSize: 13, fontWeight: 500 }}>↑ Upload</Link>
+          )}
         </div>
         {/* Seletor de pesquisa */}
         <div style={{ display: 'flex', gap: 6, overflowX: 'auto' }}>
@@ -156,9 +160,11 @@ export default function CSAT() {
           <div className="card" style={{ textAlign: 'center', padding: 40, color: '#999' }}>
             <div style={{ fontSize: 40, marginBottom: 12 }}>📊</div>
             <div style={{ marginBottom: 16 }}>Nenhuma pesquisa importada ainda.</div>
-            <Link href="/csat/upload" style={{ textDecoration: 'none', background: '#2563EB', color: 'white', borderRadius: 12, padding: '10px 20px', fontSize: 14 }}>
-              Importar primeira pesquisa
-            </Link>
+            {perfil?.papel === 'coordenador' && (
+              <Link href="/csat/upload" style={{ textDecoration: 'none', background: '#2563EB', color: 'white', borderRadius: 12, padding: '10px 20px', fontSize: 14 }}>
+                Importar primeira pesquisa
+              </Link>
+            )}
           </div>
         ) : (
           <>

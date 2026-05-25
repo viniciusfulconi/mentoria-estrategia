@@ -13,9 +13,11 @@ export default function Admin() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (perfil && perfil.papel !== 'coordenador') router.push('/')
+    if (perfil && perfil.papel !== 'coordenador' && perfil.papel !== 'direcao') router.push('/')
     load()
   }, [perfil])
+
+  const isDirecao = perfil?.papel === 'direcao'
 
   async function load() {
     const { data } = await dbQuery('perfis', { order: 'created_at.desc' })
@@ -34,8 +36,13 @@ export default function Admin() {
     load()
   }
 
-  const papelLabel = (p: string) => p === 'mentor' ? '◉ Mentor' : p === 'aluno' ? '◎ Aluno' : '⬡ Coord.'
-  const papelCor = (p: string) => p === 'mentor' ? '#2563EB' : p === 'aluno' ? '#16A34A' : '#D97706'
+  async function alterarPapel(id: string, novoPapel: string) {
+    await dbUpdate('perfis', { id: `eq.${id}` }, { papel: novoPapel })
+    load()
+  }
+
+  const papelLabel = (p: string) => p === 'mentor' ? '◉ Mentor' : p === 'aluno' ? '◎ Aluno' : p === 'direcao' ? '◈ Direção' : '⬡ Coord.'
+  const papelCor = (p: string) => p === 'mentor' ? '#2563EB' : p === 'aluno' ? '#16A34A' : p === 'direcao' ? '#0891B2' : '#D97706'
 
   return (
     <div style={{ paddingBottom: 80 }}>
@@ -58,10 +65,12 @@ export default function Admin() {
                       <span style={{ color: papelCor(p.papel), fontWeight: 500 }}>{papelLabel(p.papel)}</span>
                       {p.mentor_nome && <span style={{ color: '#999' }}> · {p.mentor_nome}</span>}
                     </div>
-                    <div style={{ display: 'flex', gap: 8 }}>
-                      <button onClick={() => aprovar(p.id)} style={{ flex: 1, padding: '8px', borderRadius: 10, border: 'none', background: '#16A34A', color: 'white', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>✓ Aprovar</button>
-                      <button onClick={() => bloquear(p.id)} style={{ flex: 1, padding: '8px', borderRadius: 10, border: '0.5px solid rgba(0,0,0,0.12)', background: 'transparent', color: '#DC2626', fontSize: 13, cursor: 'pointer' }}>✗ Recusar</button>
-                    </div>
+                    {!isDirecao && (
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <button onClick={() => aprovar(p.id)} style={{ flex: 1, padding: '8px', borderRadius: 10, border: 'none', background: '#16A34A', color: 'white', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>✓ Aprovar</button>
+                        <button onClick={() => bloquear(p.id)} style={{ flex: 1, padding: '8px', borderRadius: 10, border: '0.5px solid rgba(0,0,0,0.12)', background: 'transparent', color: '#DC2626', fontSize: 13, cursor: 'pointer' }}>✗ Recusar</button>
+                      </div>
+                    )}
                   </div>
                 ))}
               </>
@@ -77,7 +86,25 @@ export default function Admin() {
                   <div style={{ fontSize: 13, fontWeight: 500 }}>{p.nome}</div>
                   <div style={{ fontSize: 11, color: '#999' }}>{p.email}</div>
                 </div>
-                <span style={{ fontSize: 10, color: papelCor(p.papel), fontWeight: 500 }}>{papelLabel(p.papel)}</span>
+                {isDirecao ? (
+                  <span style={{ fontSize: 10, color: papelCor(p.papel), fontWeight: 500 }}>{papelLabel(p.papel)}</span>
+                ) : (
+                  <select
+                    value={p.papel}
+                    onChange={e => alterarPapel(p.id, e.target.value)}
+                    style={{
+                      fontSize: 11, fontWeight: 500, color: papelCor(p.papel),
+                      border: '0.5px solid rgba(0,0,0,0.12)', borderRadius: 8,
+                      padding: '4px 6px', background: '#F7F6F3',
+                      fontFamily: 'DM Sans, sans-serif', cursor: 'pointer',
+                    }}
+                  >
+                    <option value="coordenador">⬡ Coord.</option>
+                    <option value="direcao">◈ Direção</option>
+                    <option value="mentor">◉ Mentor</option>
+                    <option value="aluno">◎ Aluno</option>
+                  </select>
+                )}
               </div>
             ))}
           </>

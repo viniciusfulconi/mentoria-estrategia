@@ -78,7 +78,9 @@ export default function Simulados() {
     <div style={{ paddingBottom: 80 }}>
       <div style={{ background: 'white', borderBottom: '0.5px solid rgba(0,0,0,0.08)', padding: '16px', position: 'sticky', top: 0, zIndex: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ fontSize: 17, fontWeight: 600 }}>Alunos</div>
-        <Link href="/simulados/upload" style={{ textDecoration: 'none', background: '#2563EB', color: 'white', borderRadius: 10, padding: '7px 14px', fontSize: 13, fontWeight: 500 }}>↑ Upload</Link>
+        {perfil?.papel === 'coordenador' && (
+          <Link href="/simulados/upload" style={{ textDecoration: 'none', background: '#2563EB', color: 'white', borderRadius: 10, padding: '7px 14px', fontSize: 13, fontWeight: 500 }}>↑ Upload</Link>
+        )}
       </div>
 
       <div style={{ padding: '10px 16px', background: 'white', borderBottom: '0.5px solid rgba(0,0,0,0.06)' }}>
@@ -97,7 +99,9 @@ export default function Simulados() {
           <div className="card" style={{ textAlign: 'center', color: '#999', padding: 40 }}>
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}><BarChart3 size={36} strokeWidth={1.5} color="#CBD5E1" /></div>
             <div style={{ marginBottom: 12 }}>Nenhum dado ainda.</div>
-            <Link href="/simulados/upload" style={{ textDecoration: 'none', display: 'inline-block', background: '#2563EB', color: 'white', borderRadius: 12, padding: '10px 20px', fontSize: 14 }}>Importar planilha</Link>
+            {perfil?.papel === 'coordenador' && (
+              <Link href="/simulados/upload" style={{ textDecoration: 'none', display: 'inline-block', background: '#2563EB', color: 'white', borderRadius: 12, padding: '10px 20px', fontSize: 14 }}>Importar planilha</Link>
+            )}
           </div>
         ) : filtrados.map(a => {
           const media = mediaGeral(a)

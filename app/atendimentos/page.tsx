@@ -78,17 +78,19 @@ export default function Atendimentos() {
       <div style={{ background: 'white', borderBottom: '0.5px solid rgba(0,0,0,0.08)', padding: '16px', position: 'sticky', top: 0, zIndex: 10 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
           <div style={{ fontSize: 17, fontWeight: 600 }}>Atendimentos</div>
-          <div style={{ display: 'flex', gap: 6 }}>
-            {perfil?.papel === 'coordenador' && (
-              <Link href="/atendimentos/upload" style={{ textDecoration: 'none', background: '#F1F5F9', color: '#666', borderRadius: 10, padding: '6px 12px', fontSize: 12 }}>↑ Import</Link>
-            )}
-            <Link href="/atendimentos/novo" style={{ textDecoration: 'none', background: '#2563EB', color: 'white', borderRadius: 10, padding: '6px 12px', fontSize: 12, fontWeight: 500 }}>+ Novo</Link>
-          </div>
+          {perfil?.papel !== 'direcao' && (
+            <div style={{ display: 'flex', gap: 6 }}>
+              {perfil?.papel === 'coordenador' && (
+                <Link href="/atendimentos/upload" style={{ textDecoration: 'none', background: '#F1F5F9', color: '#666', borderRadius: 10, padding: '6px 12px', fontSize: 12 }}>↑ Import</Link>
+              )}
+              <Link href="/atendimentos/novo" style={{ textDecoration: 'none', background: '#2563EB', color: 'white', borderRadius: 10, padding: '6px 12px', fontSize: 12, fontWeight: 500 }}>+ Novo</Link>
+            </div>
+          )}
         </div>
 
         {/* Filtros */}
         <div style={{ display: 'flex', gap: 6, overflowX: 'auto', marginBottom: 8 }}>
-          {perfil?.papel === 'coordenador' && (
+          {(perfil?.papel === 'coordenador' || perfil?.papel === 'direcao') && (
             <select value={filtroMentor} onChange={e => setFiltroMentor(e.target.value)}
               style={{ fontSize: 11, padding: '4px 8px', borderRadius: 8, border: '0.5px solid rgba(0,0,0,0.12)', background: '#F7F6F3', fontFamily: 'DM Sans,sans-serif' }}>
               <option value="todos">Todos os mentores</option>

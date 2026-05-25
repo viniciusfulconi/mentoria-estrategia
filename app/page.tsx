@@ -40,7 +40,8 @@ export default function Home() {
   }, [perfil, authLoading])
 
   useEffect(() => {
-    if (authLoading || perfil?.papel !== 'coordenador') return
+    if (authLoading) return
+    if (perfil?.papel !== 'coordenador' && perfil?.papel !== 'direcao') return
     load()
   }, [authLoading, perfil])
 
@@ -170,7 +171,8 @@ export default function Home() {
     return `R$ ${v.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
   }
 
-  if (authLoading || perfil?.papel !== 'coordenador') return null
+  const isDirecao = perfil?.papel === 'direcao'
+  if (authLoading || (perfil?.papel !== 'coordenador' && perfil?.papel !== 'direcao')) return null
 
   const statCards = [
     { label: 'Alunos ativos', value: stats.alunos, sub: 'ITA + Medicina', icon: Users, color: '#2563EB', bg: '#EFF6FF' },
@@ -471,12 +473,14 @@ export default function Home() {
         {/* Acesso rápido */}
         <div style={{ marginBottom: 8, fontSize: 11, fontWeight: 600, color: '#999', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Acesso rápido</div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-          {[
-            { href: '/simulados/upload', label: 'Importar resultados', icon: BarChart2 },
-            { href: '/aulas/nova', label: 'Nova aula', icon: PlayCircle },
+          {([
+            ...(!isDirecao ? [
+              { href: '/simulados/upload', label: 'Importar resultados', icon: BarChart2 },
+              { href: '/aulas/nova', label: 'Nova aula', icon: PlayCircle },
+            ] : []),
             { href: '/atendimentos', label: 'Atendimentos', icon: Handshake },
             { href: '/provas-antigas', label: 'Provas antigas', icon: BookOpen },
-          ].map(l => {
+          ] as { href: string; label: string; icon: React.ComponentType<any> }[]).map(l => {
             const Icon = l.icon
             return (
               <Link key={l.href} href={l.href} style={{ textDecoration: 'none' }}>

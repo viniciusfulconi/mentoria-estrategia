@@ -45,6 +45,7 @@ const tabsAluno = [
 
 const PAPEL_LABEL: Record<string, string> = {
   coordenador: 'Coordenador',
+  direcao: 'Direção',
   mentor: 'Mentor',
   aluno: 'Aluno',
 }
@@ -141,12 +142,12 @@ export default function Nav() {
   )
 
   const papel = perfil?.papel
-  const isCoordenador = papel === 'coordenador'
+  const isGestor = papel === 'coordenador' || papel === 'direcao'
   const alunoHome = perfil?.aluno_id ? `/aluno/${perfil.aluno_id}` : '/meu-perfil'
   const tabsAlunoFinal = tabsAluno.map(t => t.href === '/meu-perfil' ? { ...t, href: alunoHome } : t)
-  const tabs = isCoordenador ? tabsCoordenadorPrimario : papel === 'mentor' ? tabsMentor : tabsAlunoFinal
+  const tabs = isGestor ? tabsCoordenadorPrimario : papel === 'mentor' ? tabsMentor : tabsAlunoFinal
   const iniciais = perfil?.nome?.split(' ').map(w => w[0]).slice(0, 2).join('') || '?'
-  const secundarioAtivo = isCoordenador && tabsCoordenadorSecundario.some(t => path.startsWith(t.href))
+  const secundarioAtivo = isGestor && tabsCoordenadorSecundario.some(t => path.startsWith(t.href))
 
   return (
     <>
@@ -195,7 +196,7 @@ export default function Nav() {
             return <NavItem key={t.href} href={t.href} icon={t.icon} label={t.label} active={active} />
           })}
 
-          {isCoordenador && (
+          {isGestor && (
             <>
               <div style={{
                 fontSize: 10, fontWeight: 600, color: 'var(--text-hint)',
@@ -341,7 +342,7 @@ export default function Nav() {
       )}
 
       {/* Drawer "Mais" (coordenador) */}
-      {isCoordenador && (
+      {isGestor && (
         <div className="nav-mobile-only" style={{
           position: 'fixed', bottom: 'var(--nav-h)', left: 0, right: 0, zIndex: 99,
           background: 'white', borderRadius: '20px 20px 0 0',
@@ -466,7 +467,7 @@ export default function Nav() {
           )
         })}
 
-        {isCoordenador ? (
+        {isGestor ? (
           <button
             onClick={() => setDrawerAberto(v => !v)}
             style={{

@@ -7,7 +7,7 @@ type Perfil = {
   id: string
   email: string
   nome: string
-  papel: 'coordenador' | 'mentor' | 'aluno'
+  papel: 'coordenador' | 'mentor' | 'aluno' | 'direcao'
   status: 'pendente' | 'aprovado' | 'bloqueado'
   mentor_nome?: string
   aluno_id?: string
@@ -130,7 +130,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     if (PUBLIC_ROUTES.includes(pathname) && !NO_REDIRECT_FROM.includes(pathname) && perfil.status !== 'pendente') {
-      if (perfil.papel === 'coordenador') router.push('/')
+      if (perfil.papel === 'coordenador' || perfil.papel === 'direcao') router.push('/')
       else if (perfil.papel === 'mentor') router.push('/mentor')
       else if (perfil.papel === 'aluno') router.push('/meu-perfil')
     }
