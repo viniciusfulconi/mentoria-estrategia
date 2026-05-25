@@ -15,7 +15,7 @@ export default function Aulas() {
   const [pdfAberto, setPdfAberto] = useState(false)
 
   useEffect(() => {
-    dbQuery('aulas', { order: 'created_at.desc' }, '*, turma:turmas(nome,tipo)')
+    dbQuery('aulas', { order: 'created_at.desc' })
       .then(({ data }) => { setAulas(data || []); setLoading(false) })
   }, [])
 
