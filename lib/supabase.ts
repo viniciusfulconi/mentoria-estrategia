@@ -204,8 +204,9 @@ export type Aula = {
   turma_id: string | null
   materia: string
   duracao: string
-  youtube_url: string
-  youtube_id: string
+  youtube_url: string | null
+  youtube_id: string | null
+  pdf_url: string | null
   created_at: string
   turma?: Turma
 }
