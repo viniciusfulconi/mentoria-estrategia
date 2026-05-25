@@ -207,6 +207,7 @@ export type Aula = {
   youtube_url: string | null
   youtube_id: string | null
   pdf_url: string | null
+  imagem_url: string | null
   created_at: string
   turma?: Turma
 }

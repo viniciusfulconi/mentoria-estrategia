@@ -19,8 +19,8 @@ export default function Aulas() {
       .then(({ data }) => { setAulas(data || []); setLoading(false) })
   }, [])
 
-  const filtros = ['todas', 'ITA', 'Medicina', 'Física', 'Matemática', 'Biologia', 'Química', 'Português', 'Mentoria']
-  const aulasFiltradas = filtro === 'todas' ? aulas : aulas.filter(a => a.turma?.tipo === filtro || a.materia === filtro)
+  const filtros = ['todas', 'Física', 'Matemática', 'Química', 'Português', 'Redação', 'Mentoria']
+  const aulasFiltradas = filtro === 'todas' ? aulas : aulas.filter(a => a.materia === filtro)
   const isCoordenador = perfil?.papel === 'coordenador'
 
   function ytThumb(id: string) { return `https://img.youtube.com/vi/${id}/mqdefault.jpg` }
@@ -69,18 +69,23 @@ export default function Aulas() {
               return (
                 <div key={a.id} onClick={() => setPlayerAula(a)} style={{ cursor: 'pointer' }}>
                   <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-                    <div style={{ position: 'relative', background: tipo === 'pdf' ? '#F8F5FF' : '#0f0f1a', height: 88, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      {tipo !== 'pdf' ? (
-                        <>
-                          <img src={ytThumb(a.youtube_id)} alt={a.titulo} style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.85, position: 'absolute', inset: 0 }} onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
-                          <div style={{ position: 'relative', width: 32, height: 32, borderRadius: '50%', background: 'rgba(255,255,255,0.92)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <PlayCircle size={18} color="#2563EB" strokeWidth={2} />
-                          </div>
-                        </>
+                    <div style={{ position: 'relative', background: '#0f0f1a', height: 88, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      {/* Imagem de capa: customizada > YouTube > fundo escuro */}
+                      {a.imagem_url ? (
+                        <img src={a.imagem_url} alt={a.titulo} style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', inset: 0 }} />
+                      ) : tipo !== 'pdf' ? (
+                        <img src={ytThumb(a.youtube_id)} alt={a.titulo} style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.85, position: 'absolute', inset: 0 }} onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
                       ) : (
-                        <FileText size={32} color="#7C3AED" strokeWidth={1.5} />
+                        <div style={{ position: 'absolute', inset: 0, background: '#F3F0FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <FileText size={32} color="#7C3AED" strokeWidth={1.5} />
+                        </div>
                       )}
-                      <span style={{ position: 'absolute', top: 6, left: 6 }} className={a.turma?.tipo === 'ITA' ? 'badge-ita' : 'badge-med'}>{a.turma?.tipo || 'Geral'}</span>
+                      {/* Ícone de play sobre vídeo */}
+                      {tipo !== 'pdf' && (
+                        <div style={{ position: 'relative', width: 32, height: 32, borderRadius: '50%', background: 'rgba(255,255,255,0.92)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <PlayCircle size={18} color="#2563EB" strokeWidth={2} />
+                        </div>
+                      )}
                       {tipo === 'video_pdf' && (
                         <span style={{ position: 'absolute', bottom: 6, right: 6, background: '#7C3AED', color: 'white', fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 6 }}>+ PDF</span>
                       )}

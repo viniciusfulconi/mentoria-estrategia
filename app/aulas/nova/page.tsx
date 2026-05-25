@@ -20,7 +20,7 @@ export default function NovaAula() {
   const { perfil } = useAuth()
   const [turmas, setTurmas] = useState<any[]>([])
   const [tipo, setTipo] = useState<Tipo>('video')
-  const [form, setForm] = useState({ titulo: '', youtube_url: '', turma_id: '', materia: 'Física', duracao: '', pdf_url: '' })
+  const [form, setForm] = useState({ titulo: '', youtube_url: '', turma_id: '', materia: 'Física', duracao: '', pdf_url: '', imagem_url: '' })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [preview, setPreview] = useState('')
@@ -50,6 +50,7 @@ export default function NovaAula() {
       youtube_url: tipo !== 'pdf' ? form.youtube_url : null,
       youtube_id: tipo !== 'pdf' ? youtube_id : null,
       pdf_url: tipo !== 'video' ? form.pdf_url : null,
+      imagem_url: form.imagem_url || null,
       turma_id: form.turma_id || null,
       materia: form.materia,
       duracao: form.duracao || '—',
@@ -58,7 +59,7 @@ export default function NovaAula() {
     else router.push('/aulas')
   }
 
-  const materias = ['Física', 'Matemática', 'Química', 'Biologia', 'Português', 'Redação', 'Inglês', 'Mentoria', 'Outra']
+  const materias = ['Física', 'Matemática', 'Química', 'Português', 'Redação', 'Inglês', 'Mentoria', 'Outra']
 
   const tipoOpcoes: { value: Tipo; label: string; desc: string }[] = [
     { value: 'video', label: 'Vídeo', desc: 'Apenas vídeo do YouTube' },
@@ -122,6 +123,18 @@ export default function NovaAula() {
         )}
 
         <div><label>Título da aula</label><input value={form.titulo} onChange={e => setForm({ ...form, titulo: e.target.value })} placeholder="Ex: Cinemática — revisão completa" /></div>
+
+        <div>
+          <label>Imagem de capa (opcional)</label>
+          <input
+            value={form.imagem_url}
+            onChange={e => setForm(f => ({ ...f, imagem_url: e.target.value }))}
+            placeholder="https://... (substitui o thumbnail do YouTube)"
+          />
+          {form.imagem_url && (
+            <img src={form.imagem_url} alt="preview capa" style={{ width: '100%', borderRadius: 12, aspectRatio: '16/9', objectFit: 'cover', marginTop: 8 }} onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
+          )}
+        </div>
 
         <div>
           <label>Turma (opcional)</label>
