@@ -25,6 +25,7 @@ const tabsCoordenadorSecundario = [
   { href: '/csat',           label: 'CSAT',       icon: Star },
   { href: '/cronograma',     label: 'Cronograma', icon: ClipboardList },
   { href: '/provas-antigas', label: 'Provas',     icon: FileText },
+  { href: '/aulas',          label: 'Aulas',      icon: PlayCircle },
   { href: '/admin',          label: 'Acessos',    icon: KeyRound },
 ]
 
