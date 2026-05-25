@@ -126,8 +126,27 @@ export default function Atendimentos() {
       </div>
 
       <div style={{ padding: 16 }}>
-        {loading ? <div style={{ textAlign: 'center', color: '#999', padding: 40 }}>Carregando...</div>
-        : erro ? (
+        {loading ? (
+          <>
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="card" style={{ marginBottom: 10 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <div className="skeleton" style={{ height: 13, width: '55%' }} />
+                    <div className="skeleton" style={{ height: 11, width: '40%' }} />
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }}>
+                    <div className="skeleton" style={{ height: 13, width: 60 }} />
+                    <div className="skeleton" style={{ height: 10, width: 40 }} />
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <div className="skeleton" style={{ height: 20, width: 64, borderRadius: 8 }} />
+                </div>
+              </div>
+            ))}
+          </>
+        ) : erro ? (
           <div className="card" style={{ textAlign: 'center', padding: 40 }}>
             <div style={{ fontSize: 13, color: '#DC2626', marginBottom: 12 }}>{erro}</div>
             <button onClick={carregar} style={{ padding: '8px 20px', borderRadius: 10, background: '#2563EB', color: 'white', border: 'none', fontSize: 13, cursor: 'pointer', fontFamily: 'DM Sans, sans-serif' }}>Tentar novamente</button>

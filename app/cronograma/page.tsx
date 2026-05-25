@@ -101,7 +101,7 @@ export default function Cronograma() {
             {/* Header do concurso */}
             <div className="card" style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 14 }}>
               {concurso.logo_url && (
-                <img src={concurso.logo_url} alt={concurso.nome} style={{ width: 48, height: 48, borderRadius: 10, objectFit: 'cover' }} />
+                <img src={concurso.logo_url} alt={concurso.nome} loading="lazy" style={{ width: 48, height: 48, borderRadius: 10, objectFit: 'cover' }} />
               )}
               <div>
                 <div style={{ fontWeight: 600, fontSize: 15 }}>{concurso.nome}</div>

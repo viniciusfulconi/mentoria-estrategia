@@ -51,8 +51,19 @@ export default function Aulas() {
       </div>
 
       <div style={{ padding: 16 }}>
-        {loading ? <div style={{ textAlign: 'center', color: '#999', padding: 40 }}>Carregando...</div>
-        : aulasFiltradas.length === 0 ? (
+        {loading ? (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="card" style={{ padding: 0, overflow: 'hidden' }}>
+                <div className="skeleton" style={{ height: 88 }} />
+                <div style={{ padding: '8px 10px 10px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <div className="skeleton" style={{ height: 12, width: '85%' }} />
+                  <div className="skeleton" style={{ height: 10, width: '50%' }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : aulasFiltradas.length === 0 ? (
           <div className="card" style={{ textAlign: 'center', color: '#999', padding: 40 }}>
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}>
               <PlayCircle size={36} strokeWidth={1.5} color="#CBD5E1" />
@@ -72,9 +83,9 @@ export default function Aulas() {
                     <div style={{ position: 'relative', background: '#0f0f1a', height: 88, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       {/* Imagem de capa: customizada > YouTube > fundo escuro */}
                       {a.imagem_url ? (
-                        <img src={a.imagem_url} alt={a.titulo} style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', inset: 0 }} />
+                        <img src={a.imagem_url} alt={a.titulo} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', inset: 0 }} />
                       ) : tipo !== 'pdf' ? (
-                        <img src={ytThumb(a.youtube_id)} alt={a.titulo} style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.85, position: 'absolute', inset: 0 }} onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
+                        <img src={ytThumb(a.youtube_id)} alt={a.titulo} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.85, position: 'absolute', inset: 0 }} onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
                       ) : (
                         <div style={{ position: 'absolute', inset: 0, background: '#F3F0FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                           <FileText size={32} color="#7C3AED" strokeWidth={1.5} />

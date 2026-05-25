@@ -38,7 +38,21 @@ export default function Alunos() {
         <Link href="/alunos/novo" style={{ textDecoration:'none', background:'#2563EB', color:'white', borderRadius:10, padding:'7px 14px', fontSize:13, fontWeight:500 }}>+ Novo</Link>
       </div>
       <div style={{ padding:16 }}>
-        {loading ? <div style={{ textAlign:'center', color:'#999', padding:40 }}>Carregando...</div>
+        {loading ? (
+          <>
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="card" style={{ marginBottom: 10 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div className="skeleton" style={{ width: 36, height: 36, borderRadius: '50%', flexShrink: 0 }} />
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <div className="skeleton" style={{ height: 13, width: '60%' }} />
+                    <div className="skeleton" style={{ height: 11, width: '40%' }} />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </>
+        )
         : alunos.length === 0 ? (
           <div className="card" style={{ textAlign:'center', color:'#999', padding:40 }}>
             <div style={{ fontSize:32, marginBottom:10 }}>◎</div>
