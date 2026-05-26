@@ -251,7 +251,7 @@ export default function AlunoPage() {
   const mediaGeralAluno = mediaAluno(targetId)
 
   // Notas por ciclo para gráfico de evolução
-  function corNota(n: number) { return n >= 7 ? '#16A34A' : n >= 5 ? '#D97706' : '#DC2626' }
+  function corNota(n: number) { return n >= 7 ? '#16A34A' : n >= 4 ? '#D97706' : '#DC2626' }
 
   function NotaBar({ nota, label }: { nota: number, label: string }) {
     const cor = corNota(nota)
