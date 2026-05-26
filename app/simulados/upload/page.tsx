@@ -178,9 +178,10 @@ export default function UploadSimulados() {
           const media2f = pesoTotal > 0 ? soma / pesoTotal : null
           mediaFinal = media2f
 
-          const todasPresentes = notas2f.every(n => n !== null)
+          // Inglês é opcional — o resultado fecha com Mat+Fis+Qui+Port presentes
+          const todasPresentes = [notaMat, notaFis, notaQui, notaPort].every(n => n !== null)
           if (todasPresentes) {
-            const reprovado = notas2f.some(n => n < 4.0)
+            const reprovado = notas2f.some(n => n !== null && n < 4.0)
             resultado = !reprovado ? 'Aprovado' : 'Reprovado'
           } else {
             resultado = 'Em andamento'
