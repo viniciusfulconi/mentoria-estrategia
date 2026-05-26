@@ -554,9 +554,9 @@ export default function AlunoPage() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
                   <span style={{ fontSize: 11, color: '#999', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{cicloAtivo}</span>
                   <span style={{ fontSize: 11, padding: '3px 10px', borderRadius: 10, fontWeight: 500,
-                    background: rankingAtivo.resultado_ciclo === 'Aprovado' ? '#DCFCE7' : '#FEF2F2',
-                    color: rankingAtivo.resultado_ciclo === 'Aprovado' ? '#14532D' : '#991B1B' }}>
-                    {rankingAtivo.resultado_ciclo === 'Aprovado' ? '✓ Aprovado' : '✗ Reprovado'}
+                    background: rankingAtivo.resultado_ciclo === 'Aprovado' ? '#DCFCE7' : rankingAtivo.resultado_ciclo === 'Reprovado' ? '#FEF2F2' : '#F1F5F9',
+                    color: rankingAtivo.resultado_ciclo === 'Aprovado' ? '#14532D' : rankingAtivo.resultado_ciclo === 'Reprovado' ? '#991B1B' : '#5F5E5A' }}>
+                    {rankingAtivo.resultado_ciclo === 'Aprovado' ? '✓ Aprovado' : rankingAtivo.resultado_ciclo === 'Reprovado' ? '✗ Reprovado' : '⏳ Em andamento'}
                   </span>
                 </div>
 
