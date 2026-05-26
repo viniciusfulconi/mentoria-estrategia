@@ -405,7 +405,7 @@ export function GraficoEvolucaoLinhas({ rankings }: { rankings: any[] }) {
             {series.map(s => {
               const v = Number(rankings[cicloSel][s.campo])
               if (!rankings[cicloSel][s.campo] || v <= 0) return null
-              const cor = v >= 7 ? '#16A34A' : v >= 5 ? '#D97706' : '#DC2626'
+              const cor = v >= 7 ? '#16A34A' : v >= 4 ? '#D97706' : '#DC2626'
               return (
                 <div key={s.campo} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
                   <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#666' }}>
