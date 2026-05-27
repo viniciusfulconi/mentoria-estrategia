@@ -106,7 +106,7 @@ export default function Turma() {
   }
 
   function corNota(n: number) {
-    return n >= 7 ? '#16A34A' : n >= 5 ? '#D97706' : '#DC2626'
+    return n >= 7 ? '#16A34A' : n >= 4 ? '#D97706' : '#DC2626'
   }
 
   const abas = [
@@ -165,7 +165,7 @@ export default function Turma() {
                 : mediaAluno(r)
               const cor = cicloAtivo === 'geral'
                 ? (media >= 5 ? '#16A34A' : '#DC2626')
-                : (r.resultado_ciclo === 'Aprovado' ? '#16A34A' : '#DC2626')
+                : (r.resultado_ciclo === 'Aprovado' ? '#16A34A' : r.resultado_ciclo === 'Reprovado' ? '#DC2626' : '#D97706')
               const posicao = cicloAtivo === 'geral' ? i + 1 : (r.classificacao || i + 1)
               return (
                 <Link key={r.id_aluno} href={`/aluno/${r.id_aluno}`} style={{ textDecoration: 'none' }}>
@@ -179,8 +179,8 @@ export default function Turma() {
                     </div>
                     <div style={{ textAlign: 'right' }}>
                       <div style={{ fontSize: 16, fontWeight: 600, color: cor }}>{media.toFixed(1)}</div>
-                      <span style={{ fontSize: 9, padding: '1px 6px', borderRadius: 8, background: r.resultado_ciclo === 'Aprovado' ? '#DCFCE7' : '#FEF2F2', color: r.resultado_ciclo === 'Aprovado' ? '#14532D' : '#991B1B' }}>
-                        {r.resultado_ciclo === 'Aprovado' ? '✓' : '✗'}
+                      <span style={{ fontSize: 9, padding: '1px 6px', borderRadius: 8, background: r.resultado_ciclo === 'Aprovado' ? '#DCFCE7' : r.resultado_ciclo === 'Reprovado' ? '#FEF2F2' : '#FEF9C3', color: r.resultado_ciclo === 'Aprovado' ? '#14532D' : r.resultado_ciclo === 'Reprovado' ? '#991B1B' : '#713F12' }}>
+                        {r.resultado_ciclo === 'Aprovado' ? '✓' : r.resultado_ciclo === 'Reprovado' ? '✗' : '⏳'}
                       </span>
                     </div>
                   </div>
