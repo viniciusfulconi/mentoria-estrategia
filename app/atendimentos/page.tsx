@@ -1,11 +1,13 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { dbQuery } from '@/lib/supabase'
+import { dbQuery, getToken } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import Nav from '@/components/Nav'
 import Link from 'next/link'
 import type { AtendimentoMentoria } from '@/lib/supabase'
-import { List, DollarSign, Brain, CheckCircle2, Pin, FileText, Link2, Play } from 'lucide-react'
+import { List, DollarSign, Brain, CheckCircle2, Pin, FileText, Link2, Play, Sparkles, X, Copy, Check } from 'lucide-react'
+
+type EscopoResumo = 'geral' | 'ultimo' | 'mes'
 
 export default function Atendimentos() {
   const { perfil } = useAuth()
@@ -16,6 +18,15 @@ export default function Atendimentos() {
   const [filtroMes, setFiltroMes] = useState('todos')
   const [aba, setAba] = useState<'lista' | 'financeiro' | 'psico'>('lista')
   const [limite, setLimite] = useState(50)
+
+  // Resumo IA
+  const [showResumo, setShowResumo] = useState(false)
+  const [escopoResumo, setEscopoResumo] = useState<EscopoResumo>('mes')
+  const [mentorResumo, setMentorResumo] = useState('todos')
+  const [resumoLoading, setResumoLoading] = useState(false)
+  const [resumoTexto, setResumoTexto] = useState<string | null>(null)
+  const [resumoErro, setResumoErro] = useState<string | null>(null)
+  const [copiado, setCopiado] = useState(false)
 
   useEffect(() => { carregar() }, [perfil])
 
@@ -73,19 +84,53 @@ export default function Atendimentos() {
     return h > 0 ? `${h}h${m > 0 ? ` ${m}min` : ''}` : `${m}min`
   }
 
+  async function gerarResumo() {
+    setResumoLoading(true)
+    setResumoTexto(null)
+    setResumoErro(null)
+    try {
+      const token = getToken()
+      const resp = await fetch('/api/resumo-atendimentos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ escopo: escopoResumo, mentor: mentorResumo, token }),
+      })
+      const json = await resp.json()
+      if (!resp.ok) setResumoErro(json.error || 'Erro desconhecido')
+      else setResumoTexto(json.resumo)
+    } catch (e: any) {
+      setResumoErro(e.message)
+    } finally {
+      setResumoLoading(false)
+    }
+  }
+
+  function copiarResumo() {
+    if (!resumoTexto) return
+    navigator.clipboard.writeText(resumoTexto)
+    setCopiado(true)
+    setTimeout(() => setCopiado(false), 2000)
+  }
+
   return (
     <div style={{ paddingBottom: 80 }}>
       <div style={{ background: 'white', borderBottom: '0.5px solid rgba(0,0,0,0.08)', padding: '16px', position: 'sticky', top: 0, zIndex: 10 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
           <div style={{ fontSize: 17, fontWeight: 600 }}>Atendimentos</div>
-          {perfil?.papel !== 'direcao' && (
-            <div style={{ display: 'flex', gap: 6 }}>
-              {perfil?.papel === 'coordenador' && (
+          <div style={{ display: 'flex', gap: 6 }}>
+            {perfil?.papel === 'coordenador' && (
+              <>
+                <button onClick={() => { setShowResumo(true); setResumoTexto(null); setResumoErro(null) }}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#F3F0FF', color: '#7C3AED', border: 'none', borderRadius: 10, padding: '6px 12px', fontSize: 12, fontWeight: 500, cursor: 'pointer', fontFamily: 'DM Sans,sans-serif' }}>
+                  <Sparkles size={13} strokeWidth={2} />Resumo IA
+                </button>
                 <Link href="/atendimentos/upload" style={{ textDecoration: 'none', background: '#F1F5F9', color: '#666', borderRadius: 10, padding: '6px 12px', fontSize: 12 }}>↑ Import</Link>
-              )}
+              </>
+            )}
+            {perfil?.papel !== 'direcao' && (
               <Link href="/atendimentos/novo" style={{ textDecoration: 'none', background: '#2563EB', color: 'white', borderRadius: 10, padding: '6px 12px', fontSize: 12, fontWeight: 500 }}>+ Novo</Link>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         {/* Filtros */}
@@ -233,6 +278,100 @@ export default function Atendimentos() {
         )}
       </div>
       <Nav />
+
+      {/* Modal Resumo IA */}
+      {showResumo && (
+        <div onClick={() => setShowResumo(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 60, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: 'white', borderRadius: '20px 20px 0 0', width: '100%', maxWidth: 560, maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
+            {/* Header do modal */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '18px 20px 14px', borderBottom: '0.5px solid rgba(0,0,0,0.08)' }}>
+              <Sparkles size={18} strokeWidth={2} color="#7C3AED" />
+              <div style={{ flex: 1, fontSize: 16, fontWeight: 600 }}>Resumo dos atendimentos</div>
+              <button onClick={() => setShowResumo(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#999', display: 'flex', alignItems: 'center' }}>
+                <X size={20} strokeWidth={2} />
+              </button>
+            </div>
+
+            <div style={{ padding: '16px 20px', overflowY: 'auto', flex: 1 }}>
+              {!resumoTexto && !resumoErro && (
+                <>
+                  {/* Escopo */}
+                  <div style={{ marginBottom: 14 }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, color: '#555' }}>Período</div>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      {([
+                        { id: 'mes',    label: 'Último mês' },
+                        { id: 'ultimo', label: 'Último atendimento' },
+                        { id: 'geral',  label: 'Todos' },
+                      ] as { id: EscopoResumo; label: string }[]).map(o => (
+                        <button key={o.id} onClick={() => setEscopoResumo(o.id)} style={{
+                          flex: 1, padding: '8px 4px', borderRadius: 10, fontSize: 12, fontWeight: 500,
+                          border: `1.5px solid ${escopoResumo === o.id ? '#7C3AED' : 'rgba(0,0,0,0.1)'}`,
+                          background: escopoResumo === o.id ? '#F3F0FF' : 'transparent',
+                          color: escopoResumo === o.id ? '#7C3AED' : '#666',
+                          cursor: 'pointer', fontFamily: 'DM Sans,sans-serif',
+                        }}>{o.label}</button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Mentor */}
+                  <div style={{ marginBottom: 20 }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, color: '#555' }}>Mentor</div>
+                    <select value={mentorResumo} onChange={e => setMentorResumo(e.target.value)}
+                      style={{ width: '100%', fontSize: 13, padding: '9px 12px', borderRadius: 10, border: '0.5px solid rgba(0,0,0,0.15)', background: '#F7F6F3', fontFamily: 'DM Sans,sans-serif' }}>
+                      <option value="todos">Todos os mentores</option>
+                      {mentores.map(m => <option key={m} value={m}>{m}</option>)}
+                    </select>
+                  </div>
+
+                  <button onClick={gerarResumo} disabled={resumoLoading}
+                    style={{ width: '100%', padding: '12px', borderRadius: 12, border: 'none', background: '#7C3AED', color: 'white', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'DM Sans,sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                    <Sparkles size={16} strokeWidth={2} />
+                    {resumoLoading ? 'Gerando resumo...' : 'Gerar resumo com IA'}
+                  </button>
+                  {resumoLoading && (
+                    <div style={{ textAlign: 'center', fontSize: 12, color: '#999', marginTop: 10 }}>
+                      Extraindo relatórios e consultando IA. Pode levar até 30s.
+                    </div>
+                  )}
+                </>
+              )}
+
+              {resumoErro && (
+                <div>
+                  <div style={{ background: '#FEF2F2', borderRadius: 12, padding: 16, marginBottom: 14 }}>
+                    <div style={{ fontSize: 13, color: '#DC2626', fontWeight: 500, marginBottom: 4 }}>Erro ao gerar resumo</div>
+                    <div style={{ fontSize: 12, color: '#991B1B' }}>{resumoErro}</div>
+                  </div>
+                  <button onClick={() => { setResumoErro(null) }}
+                    style={{ width: '100%', padding: 10, borderRadius: 10, border: '0.5px solid rgba(0,0,0,0.12)', background: 'transparent', color: '#666', fontSize: 13, cursor: 'pointer', fontFamily: 'DM Sans,sans-serif' }}>
+                    Tentar novamente
+                  </button>
+                </div>
+              )}
+
+              {resumoTexto && (
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10 }}>
+                    <button onClick={copiarResumo}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: copiado ? '#DCFCE7' : '#F1F5F9', color: copiado ? '#14532D' : '#555', border: 'none', borderRadius: 8, padding: '6px 14px', fontSize: 12, fontWeight: 500, cursor: 'pointer', fontFamily: 'DM Sans,sans-serif' }}>
+                      {copiado ? <><Check size={13} strokeWidth={2.5} />Copiado!</> : <><Copy size={13} strokeWidth={2} />Copiar</>}
+                    </button>
+                  </div>
+                  <div style={{ fontSize: 13, lineHeight: 1.75, color: '#1a1a1a', whiteSpace: 'pre-wrap', background: '#F8FAFC', borderRadius: 12, padding: 16 }}>
+                    {resumoTexto}
+                  </div>
+                  <button onClick={() => { setResumoTexto(null); setResumoErro(null) }}
+                    style={{ width: '100%', marginTop: 14, padding: 10, borderRadius: 10, border: '0.5px solid rgba(0,0,0,0.12)', background: 'transparent', color: '#666', fontSize: 13, cursor: 'pointer', fontFamily: 'DM Sans,sans-serif' }}>
+                    Gerar outro resumo
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
