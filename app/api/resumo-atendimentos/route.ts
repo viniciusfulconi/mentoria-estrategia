@@ -126,26 +126,41 @@ export async function POST(req: NextRequest) {
 
   const prompt = `Você é um assistente especializado em análise de sessões de mentoria para estudantes que se preparam para os vestibulares ITA e IME.
 
-Abaixo estão os relatórios ${mentorLabel}. Gere um resumo executivo em markdown para a coordenação com as seguintes seções:
+Abaixo estão os relatórios ${mentorLabel}. Com base nesses relatórios, gere um resumo estruturado em markdown. Para cada seção, seja específico e cite exemplos concretos dos relatos quando possível. Se não houver informação suficiente para uma seção, escreva "Não identificado nos relatórios."
 
-## Visão geral
-Quantos alunos/atendimentos, mentores, período coberto.
+## 1. Principais dúvidas dos alunos nos atendimentos
+Dúvidas conceituais, de resolução ou de interpretação trazidas pelos alunos durante as sessões.
 
-## Principais demandas dos alunos
-O que os alunos mais trouxeram nas sessões.
+## 2. Pontos fracos por matéria
+Matérias ou tópicos específicos onde o aluno demonstra maior dificuldade.
 
-## Pontos de atenção
-Dificuldades recorrentes, sinais de risco emocional ou acadêmico. Cite alunos quando relevante.
+## 3. Pontos fortes por matéria
+Matérias ou tópicos onde o aluno se destaca ou tem melhor desempenho.
 
-## Destaques positivos
-Evoluções, conquistas, bons momentos mencionados.
+## 4. Dúvidas no processo de estudo
+Dúvidas sobre como estudar, que material usar, como organizar a rotina ou como abordar determinados conteúdos.
 
-## Recomendações para a coordenação
-Ações concretas com base nos relatos.
+## 5. Dificuldades para estudar ou se concentrar
+Relatos de procrastinação, dificuldade de foco, cansaço, falta de motivação ou outros obstáculos práticos ao estudo.
 
-Use linguagem profissional e objetiva. Não repita informações redundantes entre seções.
+## 6. Pontos fortes identificados pelo mentor
+Qualidades, habilidades e características positivas que o mentor observou no aluno ao longo dos atendimentos.
+
+## 7. Pontos fracos identificados pelo mentor
+Comportamentos, hábitos ou características que o mentor identificou como limitadores do desenvolvimento do aluno.
+
+## 8. Possíveis fontes de ansiedade
+Situações, pensamentos ou contextos que parecem gerar ansiedade ou pressão excessiva no aluno.
+
+## 9. Pontos fracos nos simulados
+Padrões de erro, matérias com pior desempenho ou comportamentos problemáticos identificados nos resultados de simulados.
+
+## 10. Outros pontos relevantes
+Qualquer outro aspecto significativo mencionado nos relatórios que não se encaixe nas seções anteriores mas que mereça atenção da coordenação ou do mentor.
 
 ---
+
+Use linguagem direta e profissional. Não repita informações entre seções. Cite o nome do aluno quando a informação for específica de um indivíduo.
 
 ${partes.join('\n\n---\n\n')}`
 
