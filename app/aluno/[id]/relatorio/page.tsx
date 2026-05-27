@@ -16,7 +16,7 @@ function mediaArr(lista: any[], campo: string) {
 }
 
 function corNota(n: number) {
-  return n >= 7 ? '#16A34A' : n >= 5 ? '#2563EB' : '#DC2626'
+  return n >= 7 ? '#16A34A' : n >= 4 ? '#2563EB' : '#DC2626'
 }
 
 export default function RelatorioAluno() {

@@ -34,7 +34,7 @@ function corCSAT(m: number) {
 }
 
 function corNota(m: number) {
-  return m >= 7 ? '#16A34A' : m >= 5 ? '#2563EB' : '#DC2626'
+  return m >= 7 ? '#16A34A' : m >= 4 ? '#2563EB' : '#DC2626'
 }
 
 function calcMedia(r: any) {
