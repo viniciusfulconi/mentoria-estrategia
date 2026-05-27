@@ -7,8 +7,6 @@ import Link from 'next/link'
 import type { AtendimentoMentoria } from '@/lib/supabase'
 import { List, DollarSign, Brain, CheckCircle2, Pin, FileText, Link2, Play, Sparkles, X, Copy, Check } from 'lucide-react'
 
-type EscopoResumo = 'geral' | 'ultimo' | 'mes'
-
 export default function Atendimentos() {
   const { perfil } = useAuth()
   const [dados, setDados] = useState<AtendimentoMentoria[]>([])
@@ -21,8 +19,9 @@ export default function Atendimentos() {
 
   // Resumo IA
   const [showResumo, setShowResumo] = useState(false)
-  const [escopoResumo, setEscopoResumo] = useState<EscopoResumo>('mes')
-  const [mentorResumo, setMentorResumo] = useState('todos')
+  const [alunos, setAlunos] = useState<{ id_aluno: string; nome: string; mentor: string }[]>([])
+  const [alunoSelecionado, setAlunoSelecionado] = useState<{ id_aluno: string; nome: string } | null>(null)
+  const [busca, setBusca] = useState('')
   const [resumoLoading, setResumoLoading] = useState(false)
   const [resumoTexto, setResumoTexto] = useState<string | null>(null)
   const [resumoErro, setResumoErro] = useState<string | null>(null)
@@ -84,7 +83,20 @@ export default function Atendimentos() {
     return h > 0 ? `${h}h${m > 0 ? ` ${m}min` : ''}` : `${m}min`
   }
 
+  async function abrirResumo() {
+    setShowResumo(true)
+    setResumoTexto(null)
+    setResumoErro(null)
+    setAlunoSelecionado(null)
+    setBusca('')
+    if (!alunos.length) {
+      const { data } = await dbQuery('alunos_dados', { order: 'nome' }, 'id_aluno,nome,mentor')
+      setAlunos(data || [])
+    }
+  }
+
   async function gerarResumo() {
+    if (!alunoSelecionado) return
     setResumoLoading(true)
     setResumoTexto(null)
     setResumoErro(null)
@@ -93,7 +105,7 @@ export default function Atendimentos() {
       const resp = await fetch('/api/resumo-atendimentos', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ escopo: escopoResumo, mentor: mentorResumo, token }),
+        body: JSON.stringify({ alunoId: alunoSelecionado.id_aluno, alunoNome: alunoSelecionado.nome, token }),
       })
       const json = await resp.json()
       if (!resp.ok) setResumoErro(json.error || 'Erro desconhecido')
@@ -120,7 +132,7 @@ export default function Atendimentos() {
           <div style={{ display: 'flex', gap: 6 }}>
             {perfil?.papel === 'coordenador' && (
               <>
-                <button onClick={() => { setShowResumo(true); setResumoTexto(null); setResumoErro(null) }}
+                <button onClick={abrirResumo}
                   style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#F3F0FF', color: '#7C3AED', border: 'none', borderRadius: 10, padding: '6px 12px', fontSize: 12, fontWeight: 500, cursor: 'pointer', fontFamily: 'DM Sans,sans-serif' }}>
                   <Sparkles size={13} strokeWidth={2} />Resumo IA
                 </button>
@@ -295,40 +307,40 @@ export default function Atendimentos() {
             <div style={{ padding: '16px 20px', overflowY: 'auto', flex: 1 }}>
               {!resumoTexto && !resumoErro && (
                 <>
-                  {/* Escopo */}
-                  <div style={{ marginBottom: 14 }}>
-                    <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, color: '#555' }}>Período</div>
-                    <div style={{ display: 'flex', gap: 8 }}>
-                      {([
-                        { id: 'mes',    label: 'Último mês' },
-                        { id: 'ultimo', label: 'Último atendimento' },
-                        { id: 'geral',  label: 'Todos' },
-                      ] as { id: EscopoResumo; label: string }[]).map(o => (
-                        <button key={o.id} onClick={() => setEscopoResumo(o.id)} style={{
-                          flex: 1, padding: '8px 4px', borderRadius: 10, fontSize: 12, fontWeight: 500,
-                          border: `1.5px solid ${escopoResumo === o.id ? '#7C3AED' : 'rgba(0,0,0,0.1)'}`,
-                          background: escopoResumo === o.id ? '#F3F0FF' : 'transparent',
-                          color: escopoResumo === o.id ? '#7C3AED' : '#666',
-                          cursor: 'pointer', fontFamily: 'DM Sans,sans-serif',
-                        }}>{o.label}</button>
-                      ))}
-                    </div>
+                  <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, color: '#555' }}>Selecione o aluno</div>
+
+                  {/* Busca */}
+                  <input
+                    value={busca}
+                    onChange={e => setBusca(e.target.value)}
+                    placeholder="Buscar aluno..."
+                    style={{ marginBottom: 10 }}
+                  />
+
+                  {/* Lista de alunos */}
+                  <div style={{ maxHeight: 260, overflowY: 'auto', borderRadius: 12, border: '0.5px solid rgba(0,0,0,0.1)', marginBottom: 16 }}>
+                    {alunos.length === 0 ? (
+                      <div style={{ padding: 20, textAlign: 'center', color: '#999', fontSize: 13 }}>Carregando...</div>
+                    ) : alunos
+                        .filter(a => a.nome.toLowerCase().includes(busca.toLowerCase()))
+                        .map((a, i, arr) => (
+                          <div key={a.id_aluno} onClick={() => setAlunoSelecionado(a)}
+                            style={{
+                              padding: '10px 14px', cursor: 'pointer',
+                              borderBottom: i < arr.length - 1 ? '0.5px solid rgba(0,0,0,0.06)' : 'none',
+                              background: alunoSelecionado?.id_aluno === a.id_aluno ? '#F3F0FF' : 'white',
+                            }}>
+                            <div style={{ fontSize: 13, fontWeight: alunoSelecionado?.id_aluno === a.id_aluno ? 600 : 400, color: alunoSelecionado?.id_aluno === a.id_aluno ? '#7C3AED' : '#1a1a1a' }}>{a.nome}</div>
+                            <div style={{ fontSize: 11, color: '#999', marginTop: 1 }}>{a.mentor}</div>
+                          </div>
+                        ))
+                    }
                   </div>
 
-                  {/* Mentor */}
-                  <div style={{ marginBottom: 20 }}>
-                    <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, color: '#555' }}>Mentor</div>
-                    <select value={mentorResumo} onChange={e => setMentorResumo(e.target.value)}
-                      style={{ width: '100%', fontSize: 13, padding: '9px 12px', borderRadius: 10, border: '0.5px solid rgba(0,0,0,0.15)', background: '#F7F6F3', fontFamily: 'DM Sans,sans-serif' }}>
-                      <option value="todos">Todos os mentores</option>
-                      {mentores.map(m => <option key={m} value={m}>{m}</option>)}
-                    </select>
-                  </div>
-
-                  <button onClick={gerarResumo} disabled={resumoLoading}
-                    style={{ width: '100%', padding: '12px', borderRadius: 12, border: 'none', background: '#7C3AED', color: 'white', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'DM Sans,sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                  <button onClick={gerarResumo} disabled={resumoLoading || !alunoSelecionado}
+                    style={{ width: '100%', padding: '12px', borderRadius: 12, border: 'none', background: alunoSelecionado ? '#7C3AED' : '#E2E8F0', color: alunoSelecionado ? 'white' : '#999', fontSize: 14, fontWeight: 600, cursor: alunoSelecionado ? 'pointer' : 'default', fontFamily: 'DM Sans,sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
                     <Sparkles size={16} strokeWidth={2} />
-                    {resumoLoading ? 'Gerando resumo...' : 'Gerar resumo com IA'}
+                    {resumoLoading ? 'Gerando resumo...' : alunoSelecionado ? `Analisar ${alunoSelecionado.nome.split(' ')[0]}` : 'Selecione um aluno'}
                   </button>
                   {resumoLoading && (
                     <div style={{ textAlign: 'center', fontSize: 12, color: '#999', marginTop: 10 }}>
@@ -362,7 +374,7 @@ export default function Atendimentos() {
                   <div style={{ fontSize: 13, lineHeight: 1.75, color: '#1a1a1a', whiteSpace: 'pre-wrap', background: '#F8FAFC', borderRadius: 12, padding: 16 }}>
                     {resumoTexto}
                   </div>
-                  <button onClick={() => { setResumoTexto(null); setResumoErro(null) }}
+                  <button onClick={() => { setResumoTexto(null); setResumoErro(null); setAlunoSelecionado(null); setBusca('') }}
                     style={{ width: '100%', marginTop: 14, padding: 10, borderRadius: 10, border: '0.5px solid rgba(0,0,0,0.12)', background: 'transparent', color: '#666', fontSize: 13, cursor: 'pointer', fontFamily: 'DM Sans,sans-serif' }}>
                     Gerar outro resumo
                   </button>
