@@ -126,6 +126,15 @@ export default function UploadSimulados() {
 
   // Calcula médias finais por ciclo/concurso para cada aluno
   function calcularRankings(todosDados: any[]): any[] {
+    // Detecta quais fases foram uploadadas por ciclo+concurso
+    // Se uma fase existe para qualquer aluno do ciclo, aluno sem nota = ausente = 0
+    const fasesExistentes: Record<string, Set<string>> = {}
+    todosDados.forEach(r => {
+      const key = `${r.ciclo_nome}__${r.concurso}`
+      if (!fasesExistentes[key]) fasesExistentes[key] = new Set()
+      fasesExistentes[key].add(r.fase)
+    })
+
     // Agrupa por aluno + ciclo
     const grupos: Record<string, any> = {}
     todosDados.forEach(r => {
@@ -136,6 +145,8 @@ export default function UploadSimulados() {
 
     const rankings: any[] = []
     Object.values(grupos).forEach((g: any) => {
+      const existentes = fasesExistentes[`${g.ciclo_nome}__${g.concurso}`] || new Set()
+
       const f1 = g.fases['1fase']
       const fmat = g.fases['2fase_mat']
       const ffis = g.fases['2fase_fis']
@@ -144,23 +155,23 @@ export default function UploadSimulados() {
       const fing = g.fases['2fase_ing']
 
       const nota1f = f1?.media_1fase ?? null
-      const notaMat = fmat?.nota_matematica ?? null
-      const notaFis = ffis?.nota_fisica ?? null
-      const notaQui = fqui?.nota_quimica ?? null
-      const notaPort = fport?.media_linguagens ?? null
-      const notaIng = fing?.nota_ingles ?? null
+      // Fase uploadada mas aluno sem nota = ausente = 0 (não exclui do denominador)
+      const notaMat = fmat?.nota_matematica ?? (existentes.has('2fase_mat') ? 0 : null)
+      const notaFis = ffis?.nota_fisica ?? (existentes.has('2fase_fis') ? 0 : null)
+      const notaQui = fqui?.nota_quimica ?? (existentes.has('2fase_qui') ? 0 : null)
+      const notaPort = fport?.media_linguagens ?? (existentes.has('2fase_port') ? 0 : null)
+      const notaIng = fing?.nota_ingles ?? null  // inglês não é obrigatório, ausência não vira 0
 
       let mediaFinal = null
       let resultado = null
 
       if (g.concurso === 'ITA') {
-        // Média ITA: 0.20 * cada uma das 5 componentes
+        // Média ITA: (1ªFase + Mat + Fis + Qui + Port) / 5
         const notas = [nota1f, notaMat, notaFis, notaQui, notaPort].filter(n => n !== null)
         if (notas.length > 0) {
           mediaFinal = notas.reduce((a, b) => a + b, 0) / notas.length
-          // Verifica reprovação
           if (notas.length === 5) {
-            const reprovado = [notaMat, notaFis, notaQui, notaPort].some(n => n < 4.0)
+            const reprovado = [notaMat, notaFis, notaQui, notaPort].some(n => (n as number) < 4.0)
             resultado = (mediaFinal >= 5.0 && !reprovado) ? 'Aprovado' : 'Reprovado'
           } else {
             resultado = 'Em andamento'
@@ -173,15 +184,13 @@ export default function UploadSimulados() {
           const pesos = [3, 2.5, 2.5, 1, 1]
           let soma = 0, pesoTotal = 0
           notas2f.forEach((n, i) => {
-            if (n !== null) { soma += n * pesos[i]; pesoTotal += pesos[i] }
+            if (n !== null) { soma += (n as number) * pesos[i]; pesoTotal += pesos[i] }
           })
-          const media2f = pesoTotal > 0 ? soma / pesoTotal : null
-          mediaFinal = media2f
+          mediaFinal = pesoTotal > 0 ? soma / pesoTotal : null
 
-          // Inglês é opcional — o resultado fecha com Mat+Fis+Qui+Port presentes
           const todasPresentes = [notaMat, notaFis, notaQui, notaPort].every(n => n !== null)
           if (todasPresentes) {
-            const reprovado = notas2f.some(n => n !== null && n < 4.0)
+            const reprovado = [notaMat, notaFis, notaQui, notaPort].some(n => (n as number) < 4.0)
             resultado = !reprovado ? 'Aprovado' : 'Reprovado'
           } else {
             resultado = 'Em andamento'
