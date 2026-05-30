@@ -4,18 +4,20 @@ import { dbQuery } from '@/lib/supabase'
 import Nav from '@/components/Nav'
 import { useParams, useRouter } from 'next/navigation'
 
+// Ritmo fica fora da média — é info complementar
 const CRITERIOS = [
-  { key: 'dominio_conteudo',         label: 'Domínio do conteúdo',       icon: '📚' },
-  { key: 'clareza_explicacao',       label: 'Clareza das explicações',    icon: '💡' },
-  { key: 'ritmo_aula',               label: 'Ritmo da aula',              icon: '⏱️' },
-  { key: 'teoria_exercicios',        label: 'Teoria e exercícios',        icon: '📝' },
-  { key: 'organizacao_quadro',       label: 'Organização do quadro',      icon: '🗂️' },
-  { key: 'respeito_alunos',          label: 'Respeito aos alunos',        icon: '🤝' },
-  { key: 'acessibilidade_duvidas',   label: 'Acessibilidade p/ dúvidas',  icon: '🙋' },
-  { key: 'cumprimento_horarios',     label: 'Cumprimento de horários',    icon: '🕐' },
-  { key: 'contribuicao_aprendizado', label: 'Contribuição ao aprendizado',icon: '🚀' },
-  { key: 'adequacao_listas',         label: 'Adequação das listas',       icon: '📋' },
+  { key: 'dominio_conteudo',         label: 'Domínio do conteúdo',        icon: '📚' },
+  { key: 'clareza_explicacao',       label: 'Clareza das explicações',     icon: '💡' },
+  { key: 'teoria_exercicios',        label: 'Teoria e exercícios',         icon: '📝' },
+  { key: 'organizacao_quadro',       label: 'Organização do quadro',       icon: '🗂️' },
+  { key: 'respeito_alunos',          label: 'Respeito aos alunos',         icon: '🤝' },
+  { key: 'acessibilidade_duvidas',   label: 'Acessibilidade p/ dúvidas',   icon: '🙋' },
+  { key: 'cumprimento_horarios',     label: 'Cumprimento de horários',     icon: '🕐' },
+  { key: 'contribuicao_aprendizado', label: 'Contribuição ao aprendizado', icon: '🚀' },
+  { key: 'adequacao_listas',         label: 'Adequação das listas',        icon: '📋' },
 ]
+
+const RITMO_LABELS: Record<number, string> = { 1: 'Muito lento', 2: 'Lento', 3: 'Normal', 4: 'Rápido', 5: 'Muito rápido' }
 
 function mediaNotas(respostas: any[], campo: string): number {
   const vals = respostas.map(r => Number(r[campo])).filter(v => v > 0)
@@ -285,6 +287,20 @@ export default function ProfessorCSAT() {
               </div>
             )
           })}
+
+          {/* Ritmo — info complementar, fora da média */}
+          {(() => {
+            const ritmoMedia = mediaNotas(respostasFiltradas, 'ritmo_aula')
+            const ritmoLabel = RITMO_LABELS[Math.round(ritmoMedia)] ?? '—'
+            return ritmoMedia > 0 ? (
+              <div style={{ marginTop: 6, paddingTop: 14, borderTop: '0.5px solid rgba(0,0,0,0.08)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12 }}>
+                  <span style={{ color: '#888' }}>⏱️ Ritmo da aula <span style={{ fontSize: 10, color: '#bbb' }}>(fora da média)</span></span>
+                  <span style={{ fontWeight: 600, color: '#555' }}>{ritmoLabel} ({ritmoMedia.toFixed(1)})</span>
+                </div>
+              </div>
+            ) : null
+          })()}
         </div>
 
         {/* Evolução */}

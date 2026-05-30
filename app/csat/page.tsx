@@ -20,10 +20,10 @@ const CRITERIOS_MENTORIA = [
 
 // ─── Professores ──────────────────────────────────────────────────────────────
 
+// Ritmo excluído da média — exibido apenas como info complementar no detalhe
 const CRITERIOS_PROF = [
   { key: 'dominio_conteudo',         label: 'Domínio do conteúdo' },
   { key: 'clareza_explicacao',       label: 'Clareza das explicações' },
-  { key: 'ritmo_aula',               label: 'Ritmo da aula' },
   { key: 'teoria_exercicios',        label: 'Teoria e exercícios' },
   { key: 'organizacao_quadro',       label: 'Organização do quadro' },
   { key: 'respeito_alunos',          label: 'Respeito aos alunos' },
