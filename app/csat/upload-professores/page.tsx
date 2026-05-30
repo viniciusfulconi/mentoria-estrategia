@@ -6,10 +6,8 @@ import Nav from '@/components/Nav'
 
 const MATERIAS = [
   'Matemática',
-  'Física ITA',
-  'Física IME',
-  'Química ITA',
-  'Química IME',
+  'Física',
+  'Química',
   'Português',
   'Redação',
 ]
