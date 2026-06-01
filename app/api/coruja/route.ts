@@ -7,21 +7,27 @@ const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY!
 const SCHEMA = `
 Tabelas disponíveis no banco de dados (PostgreSQL):
 
-1. resultados (notas dos simulados)
+1. resultados (notas dos simulados — cada linha é um aluno + ciclo + fase)
    - id_aluno text
    - nome_aluno text
    - mentor text
    - ciclo_nome text  (ex: 'Ciclo 1', 'Ciclo 4')
    - concurso text    ('ITA' ou 'IME')
-   - fase text        ('ranking', '1fase', '2fase_mat', '2fase_fis', '2fase_qui', '2fase_port')
-   - media_1fase numeric
-   - nota_matematica numeric
-   - nota_fisica numeric
-   - nota_quimica numeric
-   - media_linguagens numeric
-   - nota_ingles numeric
-   - media_2fase numeric
-   - resultado_ciclo text ('Aprovado', 'Reprovado', 'Em andamento')
+   - fase text        — valores possíveis e quais colunas são preenchidas por fase:
+       * '1fase'      → só media_1fase é preenchida (não há nota por disciplina na 1ª fase)
+       * '2fase_mat'  → só nota_matematica é preenchida
+       * '2fase_fis'  → só nota_fisica é preenchida
+       * '2fase_qui'  → só nota_quimica é preenchida
+       * '2fase_port' → só media_linguagens e nota_ingles são preenchidas
+       * 'ranking'    → linha consolidada do ciclo com media_1fase, media_2fase e resultado_ciclo
+   - media_1fase numeric       (preenchido em fase='1fase' e fase='ranking')
+   - nota_matematica numeric   (preenchido em fase='2fase_mat')
+   - nota_fisica numeric       (preenchido em fase='2fase_fis')
+   - nota_quimica numeric      (preenchido em fase='2fase_qui')
+   - media_linguagens numeric  (preenchido em fase='2fase_port')
+   - nota_ingles numeric       (preenchido em fase='2fase_port')
+   - media_2fase numeric       (preenchido em fase='ranking')
+   - resultado_ciclo text ('Aprovado', 'Reprovado', 'Em andamento') — só em fase='ranking'
 
 2. atendimentos_mentoria
    - id uuid
