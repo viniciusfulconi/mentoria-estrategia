@@ -127,7 +127,9 @@ Regras:
 - Para ranking geral use a tabela resultados WHERE fase = 'ranking'
 - Em perguntas de acompanhamento (ex: "sim", "pode mostrar", "quais são"), gere o SQL adequado com base no contexto anterior
 - Para perguntas analíticas, de estimativa ou opinativas (ex: "quem tem chance de passar?", "estime os aprovados"), gere SQL para buscar os dados relevantes — o outro sistema fará a análise com os dados retornados
-- Retorne NAO_SQL APENAS quando a pergunta não precisar de NENHUM dado do banco (ex: "o que é o ITA?", "quanto é 2+2")`
+- Retorne NAO_SQL APENAS quando a pergunta não precisar de NENHUM dado do banco (ex: "o que é o ITA?", "quanto é 2+2")
+- Para buscar dados completos de um aluno específico: use SEMPRE a tabela resultados com nome_aluno ILIKE '%nome%', sem JOINs — JOINs com atendimentos_mentoria podem retornar 0 linhas por diferença de grafia
+- Prefira queries simples e diretas; se precisar de dados de múltiplas tabelas, priorize a tabela resultados que tem todas as notas`
 
     const sqlResp = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
