@@ -8,7 +8,7 @@ import { dbQuery, dbUpdate } from '@/lib/supabase'
 import {
   LayoutDashboard, Users, Handshake, Calendar,
   GraduationCap, Star, ClipboardList, FileText, KeyRound,
-  PlayCircle, LogOut, MoreHorizontal, Menu, X, Bell, UserCircle,
+  PlayCircle, LogOut, MoreHorizontal, Menu, X, Bell, UserCircle, Bot,
 } from 'lucide-react'
 
 type LucideIcon = React.ComponentType<{ size?: number; strokeWidth?: number; color?: string }>
@@ -27,6 +27,7 @@ const tabsCoordenadorSecundario = [
   { href: '/provas-antigas', label: 'Provas',     icon: FileText },
   { href: '/aulas',          label: 'Aulas',      icon: PlayCircle },
   { href: '/admin',          label: 'Acessos',    icon: KeyRound },
+  { href: '/coruja',         label: 'Coruja',     icon: Bot },
 ]
 
 const tabsMentor = [
