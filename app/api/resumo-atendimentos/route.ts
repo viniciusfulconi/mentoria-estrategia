@@ -21,8 +21,9 @@ async function extrairTextoDocx(url: string): Promise<string> {
       console.error(`[docx] fetch falhou: ${resp.status} ${url}`)
       return ''
     }
-    const buffer = await resp.arrayBuffer()
-    const { value, messages } = await mammoth.extractRawText({ arrayBuffer: buffer })
+    const arrayBuffer = await resp.arrayBuffer()
+    const buffer = Buffer.from(arrayBuffer)
+    const { value, messages } = await mammoth.extractRawText({ buffer })
     if (messages?.length) console.warn(`[docx] mammoth warnings:`, messages)
     console.log(`[docx] extraído ${value.length} chars de ${url}`)
     return value.trim()
