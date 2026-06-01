@@ -26,6 +26,7 @@ export default function Atendimentos() {
   const [resumoTexto, setResumoTexto] = useState<string | null>(null)
   const [resumoErro, setResumoErro] = useState<string | null>(null)
   const [copiado, setCopiado] = useState(false)
+  const [tipoResumo, setTipoResumo] = useState<'geral' | 'ultimo' | 'ultimos_dois'>('geral')
 
   useEffect(() => { carregar() }, [perfil])
 
@@ -105,7 +106,7 @@ export default function Atendimentos() {
       const resp = await fetch('/api/resumo-atendimentos', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ alunoId: alunoSelecionado.id_aluno, alunoNome: alunoSelecionado.nome, token }),
+        body: JSON.stringify({ alunoId: alunoSelecionado.id_aluno, alunoNome: alunoSelecionado.nome, token, tipo: tipoResumo }),
       })
       const json = await resp.json()
       if (!resp.ok) setResumoErro(json.error || 'Erro desconhecido')
@@ -307,6 +308,24 @@ export default function Atendimentos() {
             <div style={{ padding: '16px 20px', overflowY: 'auto', flex: 1 }}>
               {!resumoTexto && !resumoErro && (
                 <>
+                  {/* Seletor de tipo */}
+                  <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, color: '#555' }}>Tipo de análise</div>
+                  <div style={{ display: 'flex', gap: 6, marginBottom: 16 }}>
+                    {([
+                      { id: 'geral', label: 'Geral' },
+                      { id: 'ultimo', label: 'Último atendimento' },
+                      { id: 'ultimos_dois', label: 'Últimos dois' },
+                    ] as const).map(t => (
+                      <button key={t.id} onClick={() => setTipoResumo(t.id)} style={{
+                        flex: 1, padding: '7px 4px', borderRadius: 10, fontSize: 11, fontWeight: tipoResumo === t.id ? 600 : 400,
+                        border: `1.5px solid ${tipoResumo === t.id ? '#7C3AED' : 'rgba(0,0,0,0.1)'}`,
+                        background: tipoResumo === t.id ? '#F3F0FF' : 'white',
+                        color: tipoResumo === t.id ? '#7C3AED' : '#666',
+                        cursor: 'pointer', fontFamily: 'DM Sans,sans-serif',
+                      }}>{t.label}</button>
+                    ))}
+                  </div>
+
                   <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, color: '#555' }}>Selecione o aluno</div>
 
                   {/* Busca */}

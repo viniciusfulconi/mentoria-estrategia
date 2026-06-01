@@ -5,6 +5,8 @@ const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY!
 
+type Tipo = 'geral' | 'ultimo' | 'ultimos_dois'
+
 async function querySupabase(table: string, select: string, params: Record<string, string>, token: string) {
   const qs = new URLSearchParams({ select, ...params }).toString()
   const resp = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${qs}`, {
@@ -33,58 +35,41 @@ async function extrairTextoDocx(url: string): Promise<string> {
   }
 }
 
-export async function POST(req: NextRequest) {
-  const { alunoId, alunoNome, token } = await req.json()
+function promptPara(tipo: Tipo, alunoNome: string, partes: string[]): string {
+  const contexto = partes.join('\n\n---\n\n')
 
-  if (!token) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
-  if (!alunoId || !alunoNome) return NextResponse.json({ error: 'Aluno não informado.' }, { status: 400 })
-  if (!ANTHROPIC_API_KEY) return NextResponse.json({ error: 'ANTHROPIC_API_KEY não configurada no servidor.' }, { status: 500 })
+  if (tipo === 'ultimo' || tipo === 'ultimos_dois') {
+    const label = tipo === 'ultimo' ? 'último atendimento' : 'últimos dois atendimentos'
+    return `Você é um assistente especializado em análise de sessões de mentoria para estudantes que se preparam para os vestibulares ITA e IME.
 
-  // ── 1. Histórico consolidado do aluno (bucket historico-alunos) ─────────────
-  const urlHistorico = `${SUPABASE_URL}/storage/v1/object/public/historico-alunos/${alunoId}.docx`
-  const textoHistorico = await extrairTextoDocx(urlHistorico)
+Abaixo está o relatório do ${label} do aluno ${alunoNome}. Faça uma análise objetiva e direta em markdown com os seguintes tópicos. Se algum item não estiver presente no relato, escreva "Não mencionado neste atendimento."
 
-  // ── 2. Sessões individuais recentes com .docx uploadado ────────────────────
-  let recentesTextos: string[] = []
-  try {
-    const atendimentos = await querySupabase(
-      'atendimentos_mentoria',
-      'aluno,mentor,data_atendimento,arquivo_gemini_url',
-      { aluno: `eq.${alunoNome}`, arquivo_gemini_url: 'not.is.null', order: 'data_atendimento.desc' },
-      token
-    )
-    const extraidos = await Promise.all(
-      atendimentos.slice(0, 20).map(async at => {
-        const texto = await extrairTextoDocx(at.arquivo_gemini_url)
-        if (!texto) return null
-        const data = at.data_atendimento
-          ? new Date(at.data_atendimento).toLocaleDateString('pt-BR')
-          : '?'
-        return `--- Sessão com ${at.mentor} em ${data} ---\n${texto}`
-      })
-    )
-    recentesTextos = extraidos.filter(Boolean) as string[]
-  } catch {
-    // Não bloqueia se falhar — histórico pode ser suficiente
+# Análise — ${alunoNome} (${label})
+
+## Temas trabalhados
+Assuntos, matérias ou questões discutidas na sessão.
+
+## Dúvidas e dificuldades
+Dúvidas conceituais, de método ou de conteúdo que o aluno trouxe.
+
+## Encaminhamentos e combinados
+O que foi acordado, recomendado ou ficou como tarefa para o aluno.
+
+## Observações do mentor
+Percepções sobre o estado emocional, motivação, foco ou evolução do aluno.
+
+## Pontos de atenção
+Qualquer sinal de alerta ou ponto que mereça acompanhamento próximo.
+
+---
+
+Use linguagem direta e profissional.
+
+${contexto}`
   }
 
-  // ── 3. Valida conteúdo disponível ───────────────────────────────────────────
-  if (!textoHistorico && !recentesTextos.length) {
-    return NextResponse.json({
-      error: `Nenhum relatório encontrado para ${alunoNome}. Verifique se o arquivo ${alunoId}.docx foi enviado para o bucket "historico-alunos" no Supabase.`,
-    }, { status: 404 })
-  }
-
-  // ── 4. Monta contexto para o Claude ────────────────────────────────────────
-  const partes: string[] = []
-  if (textoHistorico) {
-    partes.push(`## HISTÓRICO COMPLETO DE ATENDIMENTOS\n\n${textoHistorico}`)
-  }
-  if (recentesTextos.length) {
-    partes.push(`## SESSÕES RECENTES\n\n${recentesTextos.join('\n\n')}`)
-  }
-
-  const prompt = `Você é um assistente especializado em análise de sessões de mentoria para estudantes que se preparam para os vestibulares ITA e IME.
+  // tipo === 'geral'
+  return `Você é um assistente especializado em análise de sessões de mentoria para estudantes que se preparam para os vestibulares ITA e IME.
 
 Abaixo estão os relatórios de todos os atendimentos do aluno ${alunoNome}. Com base nesses relatórios, gere uma análise individual detalhada em markdown. Para cada seção, seja específico e cite exemplos concretos dos relatos quando possível. Se não houver informação suficiente para uma seção, escreva "Não identificado nos relatórios."
 
@@ -124,9 +109,76 @@ Qualquer outro aspecto significativo mencionado nos relatórios que mereça aten
 
 Use linguagem direta e profissional. Não repita informações entre seções.
 
-${partes.join('\n\n---\n\n')}`
+${contexto}`
+}
 
-  // ── 5. Chama Claude ─────────────────────────────────────────────────────────
+export async function POST(req: NextRequest) {
+  const { alunoId, alunoNome, token, tipo = 'geral' } = await req.json() as { alunoId: string; alunoNome: string; token: string; tipo: Tipo }
+
+  if (!token) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  if (!alunoId || !alunoNome) return NextResponse.json({ error: 'Aluno não informado.' }, { status: 400 })
+  if (!ANTHROPIC_API_KEY) return NextResponse.json({ error: 'ANTHROPIC_API_KEY não configurada no servidor.' }, { status: 500 })
+
+  const partes: string[] = []
+
+  if (tipo === 'geral') {
+    // ── Histórico consolidado ──────────────────────────────────────────────────
+    const urlHistorico = `${SUPABASE_URL}/storage/v1/object/public/historico-alunos/${alunoId}.docx`
+    const textoHistorico = await extrairTextoDocx(urlHistorico)
+    if (textoHistorico) partes.push(`## HISTÓRICO COMPLETO DE ATENDIMENTOS\n\n${textoHistorico}`)
+
+    // ── Sessões individuais ────────────────────────────────────────────────────
+    try {
+      const atendimentos = await querySupabase(
+        'atendimentos_mentoria',
+        'aluno,mentor,data_atendimento,arquivo_gemini_url',
+        { aluno: `eq.${alunoNome}`, arquivo_gemini_url: 'not.is.null', order: 'data_atendimento.desc' },
+        token
+      )
+      const extraidos = await Promise.all(
+        atendimentos.slice(0, 20).map(async at => {
+          const texto = await extrairTextoDocx(at.arquivo_gemini_url)
+          if (!texto) return null
+          const data = at.data_atendimento ? new Date(at.data_atendimento).toLocaleDateString('pt-BR') : '?'
+          return `--- Sessão com ${at.mentor} em ${data} ---\n${texto}`
+        })
+      )
+      const recentes = extraidos.filter(Boolean) as string[]
+      if (recentes.length) partes.push(`## SESSÕES RECENTES\n\n${recentes.join('\n\n')}`)
+    } catch { /* histórico pode ser suficiente */ }
+
+  } else {
+    // ── Último ou últimos dois atendimentos ────────────────────────────────────
+    const limite = tipo === 'ultimo' ? 1 : 2
+    try {
+      const atendimentos = await querySupabase(
+        'atendimentos_mentoria',
+        'aluno,mentor,data_atendimento,arquivo_gemini_url',
+        { aluno: `eq.${alunoNome}`, arquivo_gemini_url: 'not.is.null', order: 'data_atendimento.desc', limit: String(limite) },
+        token
+      )
+      const extraidos = await Promise.all(
+        atendimentos.map(async at => {
+          const texto = await extrairTextoDocx(at.arquivo_gemini_url)
+          if (!texto) return null
+          const data = at.data_atendimento ? new Date(at.data_atendimento).toLocaleDateString('pt-BR') : '?'
+          return `--- Sessão com ${at.mentor} em ${data} ---\n${texto}`
+        })
+      )
+      const textos = extraidos.filter(Boolean) as string[]
+      textos.forEach(t => partes.push(t))
+    } catch { /* silencioso */ }
+  }
+
+  if (!partes.length) {
+    const msg = tipo === 'geral'
+      ? `Nenhum relatório encontrado para ${alunoNome}. Verifique se o arquivo ${alunoId}.docx foi enviado para o bucket "historico-alunos" no Supabase.`
+      : `Nenhum atendimento com arquivo encontrado para ${alunoNome}. O mentor precisa fazer upload do .docx ao registrar o atendimento.`
+    return NextResponse.json({ error: msg }, { status: 404 })
+  }
+
+  const prompt = promptPara(tipo, alunoNome, partes)
+
   const claudeResp = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -150,8 +202,5 @@ ${partes.join('\n\n---\n\n')}`
   const claudeData = await claudeResp.json()
   const resumo = claudeData.content?.[0]?.text ?? 'Sem resposta da IA.'
 
-  return NextResponse.json({
-    resumo,
-    meta: { aluno: alunoNome, temHistorico: !!textoHistorico, sessõesRecentes: recentesTextos.length },
-  })
+  return NextResponse.json({ resumo, meta: { aluno: alunoNome, tipo } })
 }
