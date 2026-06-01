@@ -17,11 +17,17 @@ async function querySupabase(table: string, select: string, params: Record<strin
 async function extrairTextoDocx(url: string): Promise<string> {
   try {
     const resp = await fetch(url, { signal: AbortSignal.timeout(15000) })
-    if (!resp.ok) return ''
+    if (!resp.ok) {
+      console.error(`[docx] fetch falhou: ${resp.status} ${url}`)
+      return ''
+    }
     const buffer = await resp.arrayBuffer()
-    const { value } = await mammoth.extractRawText({ arrayBuffer: buffer })
+    const { value, messages } = await mammoth.extractRawText({ arrayBuffer: buffer })
+    if (messages?.length) console.warn(`[docx] mammoth warnings:`, messages)
+    console.log(`[docx] extraído ${value.length} chars de ${url}`)
     return value.trim()
-  } catch {
+  } catch (e) {
+    console.error(`[docx] erro ao extrair ${url}:`, e)
     return ''
   }
 }
