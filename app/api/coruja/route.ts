@@ -104,8 +104,8 @@ export async function POST(req: NextRequest) {
   if (!SERVICE_ROLE_KEY) return NextResponse.json({ error: 'SUPABASE_SERVICE_ROLE_KEY não configurada.' }, { status: 500 })
   if (!ANTHROPIC_API_KEY) return NextResponse.json({ error: 'ANTHROPIC_API_KEY não configurada.' }, { status: 500 })
 
-  // ── Passo 1: Claude gera o SQL ────────────────────────────────────────────
-  const promptSQL = `Você é um assistente que converte perguntas em SQL para um banco PostgreSQL de uma plataforma de mentoria para vestibulares ITA/IME.
+  // ── Passo 1: Claude gera o SQL (com histórico para entender perguntas de acompanhamento) ──
+  const systemSQL = `Você converte perguntas em SQL para um banco PostgreSQL de uma plataforma de mentoria para vestibulares ITA/IME.
 
 ${SCHEMA}
 
@@ -117,9 +117,8 @@ Regras:
 - Para nomes, use ilike para buscas case-insensitive
 - A fase 'ranking' em resultados contém a nota final consolidada de cada aluno por ciclo
 - Para ranking geral use a tabela resultados WHERE fase = 'ranking'
-- Se a pergunta não puder ser respondida com SQL, retorne exatamente: NAO_SQL
-
-Pergunta: ${pergunta}`
+- Em perguntas de acompanhamento (ex: "sim", "pode mostrar", "quais são"), gere o SQL adequado com base no contexto anterior
+- Se a pergunta não puder ser respondida com SQL, retorne exatamente: NAO_SQL`
 
   const sqlResp = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
@@ -131,7 +130,8 @@ Pergunta: ${pergunta}`
     body: JSON.stringify({
       model: 'claude-sonnet-4-6',
       max_tokens: 512,
-      messages: [{ role: 'user', content: promptSQL }],
+      system: systemSQL,
+      messages: [...historico, { role: 'user', content: pergunta }],
     }),
   })
 
