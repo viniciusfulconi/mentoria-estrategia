@@ -157,6 +157,7 @@ Regras:
 
     let dados: any[] = []
     let erroQuery: string | null = null
+    let fallbackUsado = false
 
     if (sql && sql !== 'NAO_SQL') {
       try {
@@ -164,6 +165,25 @@ Regras:
       } catch (e: any) {
         erroQuery = e.message
         console.error('[coruja] erro na query:', erroQuery)
+      }
+
+      // ── Fallback: se 0 resultados e havia ILIKE, tenta com o primeiro nome apenas ──
+      if (!erroQuery && dados.length === 0) {
+        const ilikeMatch = sql.match(/ilike\s+'%([^'%]+)%'/i)
+        if (ilikeMatch) {
+          const nomeOriginal = ilikeMatch[1].trim()
+          const primeiroNome = nomeOriginal.split(/\s+/)[0]
+          if (primeiroNome && primeiroNome.toLowerCase() !== nomeOriginal.toLowerCase()) {
+            const sqlFallback = sql.replace(
+              new RegExp(`ilike\\s+'%${nomeOriginal.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}%'`, 'i'),
+              `ILIKE '%${primeiroNome}%'`
+            )
+            try {
+              dados = await executarQuery(sqlFallback)
+              if (dados.length > 0) fallbackUsado = true
+            } catch { /* mantém dados vazio */ }
+          }
+        }
       }
     }
 
@@ -173,7 +193,9 @@ Regras:
       : sql === 'NAO_SQL'
       ? 'Esta pergunta não requer consulta ao banco de dados.'
       : dados.length === 0
-      ? 'A query retornou zero resultados.'
+      ? 'A query retornou zero resultados. O nome pode estar cadastrado de forma diferente no banco.'
+      : fallbackUsado
+      ? `Nome exato não encontrado. Busca ampliada pelo primeiro nome retornou ${dados.length} resultado(s) — pode haver mais de um aluno com esse nome ou a grafia está diferente:\n${JSON.stringify(dados, null, 2)}`
       : `Resultado da query (${dados.length} linhas):\n${JSON.stringify(dados, null, 2)}`
 
     const mensagens = [
