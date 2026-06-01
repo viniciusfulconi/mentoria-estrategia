@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { dbQuery, getToken } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import Nav from '@/components/Nav'
@@ -27,6 +27,7 @@ export default function Atendimentos() {
   const [resumoErro, setResumoErro] = useState<string | null>(null)
   const [copiado, setCopiado] = useState(false)
   const [tipoResumo, setTipoResumo] = useState<'geral' | 'ultimo' | 'ultimos_dois'>('geral')
+  const abortRef = useRef<AbortController | null>(null)
 
   useEffect(() => { carregar() }, [perfil])
 
@@ -98,6 +99,7 @@ export default function Atendimentos() {
 
   async function gerarResumo() {
     if (!alunoSelecionado) return
+    abortRef.current = new AbortController()
     setResumoLoading(true)
     setResumoTexto(null)
     setResumoErro(null)
@@ -107,15 +109,22 @@ export default function Atendimentos() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ alunoId: alunoSelecionado.id_aluno, alunoNome: alunoSelecionado.nome, token, tipo: tipoResumo }),
+        signal: abortRef.current.signal,
       })
       const json = await resp.json()
       if (!resp.ok) setResumoErro(json.error || 'Erro desconhecido')
       else setResumoTexto(json.resumo)
     } catch (e: any) {
-      setResumoErro(e.message)
+      if (e.name !== 'AbortError') setResumoErro(e.message)
     } finally {
       setResumoLoading(false)
+      abortRef.current = null
     }
+  }
+
+  function cancelarResumo() {
+    abortRef.current?.abort()
+    setResumoLoading(false)
   }
 
   function copiarResumo() {
@@ -362,8 +371,13 @@ export default function Atendimentos() {
                     {resumoLoading ? 'Gerando resumo...' : alunoSelecionado ? `Analisar ${alunoSelecionado.nome.split(' ')[0]}` : 'Selecione um aluno'}
                   </button>
                   {resumoLoading && (
-                    <div style={{ textAlign: 'center', fontSize: 12, color: '#999', marginTop: 10 }}>
-                      Extraindo relatórios e consultando IA. Pode levar até 30s.
+                    <div style={{ textAlign: 'center', marginTop: 10 }}>
+                      <div style={{ fontSize: 12, color: '#999', marginBottom: 8 }}>
+                        Extraindo relatórios e consultando IA. Pode levar até 60s.
+                      </div>
+                      <button onClick={cancelarResumo} style={{ fontSize: 12, color: '#DC2626', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'DM Sans,sans-serif', textDecoration: 'underline' }}>
+                        Cancelar
+                      </button>
                     </div>
                   )}
                 </>

@@ -37,8 +37,13 @@ const BLOCK_FIELDS: { field: string; ritmo: boolean; isText?: boolean }[] = [
 function converterNota(val: any, isRitmo: boolean): number | null {
   if (!val) return null
   const s = String(val).trim()
-  if (isRitmo) return ESCALA_RITMO[s] ?? ESCALA_QUALIDADE[s] ?? null
-  return ESCALA_QUALIDADE[s] ?? null
+  const n = isRitmo
+    ? (ESCALA_RITMO[s] ?? ESCALA_QUALIDADE[s] ?? null)
+    : (ESCALA_QUALIDADE[s] ?? null)
+  if (n !== null) return n >= 1 && n <= 5 ? n : null
+  const num = Number(s)
+  if (!isNaN(num) && num >= 1 && num <= 5) return Math.round(num)
+  return null
 }
 
 export default function UploadProfessores() {

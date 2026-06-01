@@ -95,7 +95,7 @@ export default function Nav() {
       const items = data || []
       setNotificacoes(items)
       setNaoLidas(items.filter((n: any) => !n.lida).length)
-    })
+    }).catch(() => { /* notificações indisponíveis — sem crash */ })
   }, [perfil])
 
   async function marcarTodasLidas() {

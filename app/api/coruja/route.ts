@@ -179,10 +179,12 @@ Regras:
         if (ilikeMatch) {
           const nomeOriginal = ilikeMatch[1].trim()
           const primeiroNome = nomeOriginal.split(/\s+/)[0]
-          if (primeiroNome && primeiroNome.toLowerCase() !== nomeOriginal.toLowerCase()) {
+          // sanitiza: só letras (incluindo acentuadas) e hífens — evita injeção via nome
+          const primeiroNomeSeguro = primeiroNome.replace(/[^a-zA-ZÀ-ÿ\-]/g, '').trim()
+          if (primeiroNomeSeguro && primeiroNomeSeguro.toLowerCase() !== nomeOriginal.toLowerCase()) {
             const sqlFallback = sql.replace(
               new RegExp(`ilike\\s+'%${nomeOriginal.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}%'`, 'i'),
-              `ILIKE '%${primeiroNome}%'`
+              `ILIKE '%${primeiroNomeSeguro}%'`
             )
             try {
               dados = await executarQuery(sqlFallback)
