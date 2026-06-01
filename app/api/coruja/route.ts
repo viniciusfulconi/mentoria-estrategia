@@ -151,15 +151,6 @@ Pergunta: ${pergunta}`
     }
   }
 
-  if (erroQuery) {
-    return NextResponse.json({
-      resposta: `Erro ao executar a consulta no banco de dados:\n\n\`\`\`\n${erroQuery}\n\`\`\``,
-      sql: sql !== 'NAO_SQL' ? sql : null,
-      linhas: 0,
-      erroQuery,
-    })
-  }
-
   // ── Passo 2: Claude interpreta e responde ─────────────────────────────────
   const contextoResultado = erroQuery
     ? `Tentei executar a query mas ocorreu um erro: ${erroQuery}`

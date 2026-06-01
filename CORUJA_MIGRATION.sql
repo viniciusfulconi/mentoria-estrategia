@@ -17,8 +17,8 @@ BEGIN
     RAISE EXCEPTION 'Apenas consultas SELECT são permitidas.';
   END IF;
 
-  -- Bloqueia palavras perigosas
-  IF sql_upper ~ '(DROP|DELETE|INSERT|UPDATE|TRUNCATE|ALTER|CREATE|GRANT|REVOKE|EXECUTE|COPY|DO)' THEN
+  -- Bloqueia palavras perigosas (word boundaries para não bloquear nomes de tabelas/colunas)
+  IF sql_upper ~ '\m(DROP|DELETE|INSERT|UPDATE|TRUNCATE|ALTER|CREATE|GRANT|REVOKE|EXECUTE|COPY|DO)\M' THEN
     RAISE EXCEPTION 'Operação não permitida.';
   END IF;
 
