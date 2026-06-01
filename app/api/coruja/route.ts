@@ -147,7 +147,17 @@ Pergunta: ${pergunta}`
       dados = await executarQuery(sql)
     } catch (e: any) {
       erroQuery = e.message
+      console.error('[coruja] erro na query:', erroQuery)
     }
+  }
+
+  if (erroQuery) {
+    return NextResponse.json({
+      resposta: `Erro ao executar a consulta no banco de dados:\n\n\`\`\`\n${erroQuery}\n\`\`\``,
+      sql: sql !== 'NAO_SQL' ? sql : null,
+      linhas: 0,
+      erroQuery,
+    })
   }
 
   // ── Passo 2: Claude interpreta e responde ─────────────────────────────────
