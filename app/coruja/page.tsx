@@ -150,7 +150,8 @@ export default function CorujaPage() {
       })
       const data = await resp.json()
       if (!resp.ok) {
-        setMensagens(prev => [...prev, { role: 'assistant', content: `Erro: ${data.error ?? 'Falha ao obter resposta.'}` }])
+        const errMsg = typeof data.error === 'string' ? data.error : JSON.stringify(data.error) ?? 'Falha ao obter resposta.'
+        setMensagens(prev => [...prev, { role: 'assistant', content: `Erro: ${errMsg}` }])
       } else {
         setMensagens(prev => [...prev, {
           role: 'assistant',

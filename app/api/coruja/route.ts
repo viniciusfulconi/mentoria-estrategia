@@ -97,15 +97,23 @@ async function executarQuery(sql: string): Promise<any[]> {
   return Array.isArray(data) ? data : []
 }
 
+// Mantém apenas as últimas N mensagens do histórico para não explodir o contexto
+function truncarHistorico(historico: any[], maxMensagens = 6) {
+  return historico.slice(-maxMensagens)
+}
+
 export async function POST(req: NextRequest) {
-  const { pergunta, historico = [], token } = await req.json()
+  try {
+    const { pergunta, historico = [], token } = await req.json()
 
-  if (!token) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
-  if (!SERVICE_ROLE_KEY) return NextResponse.json({ error: 'SUPABASE_SERVICE_ROLE_KEY não configurada.' }, { status: 500 })
-  if (!ANTHROPIC_API_KEY) return NextResponse.json({ error: 'ANTHROPIC_API_KEY não configurada.' }, { status: 500 })
+    if (!token) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+    if (!SERVICE_ROLE_KEY) return NextResponse.json({ error: 'SUPABASE_SERVICE_ROLE_KEY não configurada.' }, { status: 500 })
+    if (!ANTHROPIC_API_KEY) return NextResponse.json({ error: 'ANTHROPIC_API_KEY não configurada.' }, { status: 500 })
 
-  // ── Passo 1: Claude gera o SQL (com histórico para entender perguntas de acompanhamento) ──
-  const systemSQL = `Você converte perguntas em SQL para um banco PostgreSQL de uma plataforma de mentoria para vestibulares ITA/IME.
+    const historicoTruncado = truncarHistorico(historico)
+
+    // ── Passo 1: Claude gera o SQL (com histórico para entender perguntas de acompanhamento) ──
+    const systemSQL = `Você converte perguntas em SQL para um banco PostgreSQL de uma plataforma de mentoria para vestibulares ITA/IME.
 
 ${SCHEMA}
 
@@ -121,73 +129,87 @@ Regras:
 - Para perguntas analíticas, de estimativa ou opinativas (ex: "quem tem chance de passar?", "estime os aprovados"), gere SQL para buscar os dados relevantes — o outro sistema fará a análise com os dados retornados
 - Retorne NAO_SQL APENAS quando a pergunta não precisar de NENHUM dado do banco (ex: "o que é o ITA?", "quanto é 2+2")`
 
-  const sqlResp = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'x-api-key': ANTHROPIC_API_KEY,
-      'anthropic-version': '2023-06-01',
-      'content-type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 512,
-      system: systemSQL,
-      messages: [...historico, { role: 'user', content: pergunta }],
-    }),
-  })
+    const sqlResp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'x-api-key': ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01',
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 512,
+        system: systemSQL,
+        messages: [...historicoTruncado, { role: 'user', content: pergunta }],
+      }),
+      signal: AbortSignal.timeout(30000),
+    })
 
-  if (!sqlResp.ok) return NextResponse.json({ error: 'Erro ao gerar SQL.' }, { status: 500 })
-  const sqlData = await sqlResp.json()
-  const sql = sqlData.content?.[0]?.text?.trim() ?? ''
-
-  let dados: any[] = []
-  let erroQuery: string | null = null
-
-  if (sql && sql !== 'NAO_SQL') {
-    try {
-      dados = await executarQuery(sql)
-    } catch (e: any) {
-      erroQuery = e.message
-      console.error('[coruja] erro na query:', erroQuery)
+    if (!sqlResp.ok) {
+      const errText = await sqlResp.text()
+      console.error('[coruja] erro Anthropic SQL:', errText)
+      return NextResponse.json({ error: 'Erro ao gerar SQL.' }, { status: 500 })
     }
+    const sqlData = await sqlResp.json()
+    const sql = sqlData.content?.[0]?.text?.trim() ?? ''
+
+    let dados: any[] = []
+    let erroQuery: string | null = null
+
+    if (sql && sql !== 'NAO_SQL') {
+      try {
+        dados = await executarQuery(sql)
+      } catch (e: any) {
+        erroQuery = e.message
+        console.error('[coruja] erro na query:', erroQuery)
+      }
+    }
+
+    // ── Passo 2: Claude interpreta e responde ─────────────────────────────────
+    const contextoResultado = erroQuery
+      ? `Tentei executar a query mas ocorreu um erro: ${erroQuery}`
+      : sql === 'NAO_SQL'
+      ? 'Esta pergunta não requer consulta ao banco de dados.'
+      : dados.length === 0
+      ? 'A query retornou zero resultados.'
+      : `Resultado da query (${dados.length} linhas):\n${JSON.stringify(dados, null, 2)}`
+
+    const mensagens = [
+      ...historicoTruncado,
+      {
+        role: 'user',
+        content: `Pergunta: ${pergunta}\n\n${contextoResultado}\n\nResponda de forma direta e objetiva em português. Se houver dados, organize-os de forma clara. Se não houver dados suficientes, diga.`,
+      },
+    ]
+
+    const respostaResp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'x-api-key': ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01',
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 2048,
+        system: 'Você é a Coruja, assistente inteligente de uma plataforma de mentoria para vestibulares ITA/IME. Responda sempre em português, de forma direta e objetiva. Você tem acesso aos dados reais da plataforma.',
+        messages: mensagens,
+      }),
+      signal: AbortSignal.timeout(60000),
+    })
+
+    if (!respostaResp.ok) {
+      const errText = await respostaResp.text()
+      console.error('[coruja] erro Anthropic resposta:', errText)
+      return NextResponse.json({ error: 'Erro ao gerar resposta.' }, { status: 500 })
+    }
+    const respostaData = await respostaResp.json()
+    const resposta = respostaData.content?.[0]?.text ?? 'Sem resposta.'
+
+    return NextResponse.json({ resposta, sql: sql !== 'NAO_SQL' ? sql : null, linhas: dados.length })
+
+  } catch (e: any) {
+    console.error('[coruja] erro inesperado:', e)
+    return NextResponse.json({ error: `Erro interno: ${e?.message ?? 'desconhecido'}` }, { status: 500 })
   }
-
-  // ── Passo 2: Claude interpreta e responde ─────────────────────────────────
-  const contextoResultado = erroQuery
-    ? `Tentei executar a query mas ocorreu um erro: ${erroQuery}`
-    : sql === 'NAO_SQL'
-    ? 'Esta pergunta não requer consulta ao banco de dados.'
-    : dados.length === 0
-    ? 'A query retornou zero resultados.'
-    : `Resultado da query (${dados.length} linhas):\n${JSON.stringify(dados, null, 2)}`
-
-  const mensagens = [
-    ...historico,
-    {
-      role: 'user',
-      content: `Pergunta: ${pergunta}\n\n${contextoResultado}\n\nResponda de forma direta e objetiva em português. Se houver dados, organize-os de forma clara. Se não houver dados suficientes, diga.`,
-    },
-  ]
-
-  const respostaResp = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'x-api-key': ANTHROPIC_API_KEY,
-      'anthropic-version': '2023-06-01',
-      'content-type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 1024,
-      system: 'Você é a Coruja, assistente inteligente de uma plataforma de mentoria para vestibulares ITA/IME. Responda sempre em português, de forma direta e objetiva. Você tem acesso aos dados reais da plataforma.',
-      messages: mensagens,
-    }),
-    signal: AbortSignal.timeout(30000),
-  })
-
-  if (!respostaResp.ok) return NextResponse.json({ error: 'Erro ao gerar resposta.' }, { status: 500 })
-  const respostaData = await respostaResp.json()
-  const resposta = respostaData.content?.[0]?.text ?? 'Sem resposta.'
-
-  return NextResponse.json({ resposta, sql: sql !== 'NAO_SQL' ? sql : null, linhas: dados.length })
 }
