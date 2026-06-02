@@ -79,6 +79,7 @@ export default function Cadastro() {
             <select value={form.papel} onChange={e => setForm({ ...form, papel: e.target.value, mentor_nome: '', aluno_id: '' })}>
               <option value="aluno">Aluno</option>
               <option value="mentor">Mentor</option>
+              <option value="professor">Professor</option>
               <option value="direcao">Direção</option>
             </select>
           </div>
