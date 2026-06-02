@@ -132,6 +132,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (PUBLIC_ROUTES.includes(pathname) && !NO_REDIRECT_FROM.includes(pathname) && perfil.status !== 'pendente') {
       if (perfil.papel === 'coordenador' || perfil.papel === 'direcao') router.push('/')
       else if (perfil.papel === 'mentor') router.push('/mentor')
+      else if (perfil.papel === 'professor') router.push('/simulados')
       else if (perfil.papel === 'aluno') router.push('/meu-perfil')
     }
   }, [perfil, loading, pathname])

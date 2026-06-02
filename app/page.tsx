@@ -33,6 +33,7 @@ export default function Home() {
   useEffect(() => {
     if (authLoading) return
     if (perfil?.papel === 'mentor') { router.replace('/mentor'); return }
+    if (perfil?.papel === 'professor') { router.replace('/simulados'); return }
     if (perfil?.papel === 'aluno') {
       router.replace(perfil.aluno_id ? `/aluno/${perfil.aluno_id}` : '/meu-perfil')
       return
