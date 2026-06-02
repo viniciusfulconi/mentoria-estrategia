@@ -41,8 +41,8 @@ export default function Admin() {
     load()
   }
 
-  const papelLabel = (p: string) => p === 'mentor' ? '◉ Mentor' : p === 'aluno' ? '◎ Aluno' : p === 'direcao' ? '◈ Direção' : '⬡ Coord.'
-  const papelCor = (p: string) => p === 'mentor' ? '#2563EB' : p === 'aluno' ? '#16A34A' : p === 'direcao' ? '#0891B2' : '#D97706'
+  const papelLabel = (p: string) => p === 'mentor' ? '◉ Mentor' : p === 'aluno' ? '◎ Aluno' : p === 'direcao' ? '◈ Direção' : p === 'professor' ? '◆ Professor' : '⬡ Coord.'
+  const papelCor = (p: string) => p === 'mentor' ? '#2563EB' : p === 'aluno' ? '#16A34A' : p === 'direcao' ? '#0891B2' : p === 'professor' ? '#7C3AED' : '#D97706'
 
   return (
     <div style={{ paddingBottom: 80 }}>
@@ -102,6 +102,7 @@ export default function Admin() {
                     <option value="coordenador">⬡ Coord.</option>
                     <option value="direcao">◈ Direção</option>
                     <option value="mentor">◉ Mentor</option>
+                    <option value="professor">◆ Professor</option>
                     <option value="aluno">◎ Aluno</option>
                   </select>
                 )}

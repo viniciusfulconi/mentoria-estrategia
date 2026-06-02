@@ -7,7 +7,7 @@ type Perfil = {
   id: string
   email: string
   nome: string
-  papel: 'coordenador' | 'mentor' | 'aluno' | 'direcao'
+  papel: 'coordenador' | 'mentor' | 'aluno' | 'direcao' | 'professor'
   status: 'pendente' | 'aprovado' | 'bloqueado'
   mentor_nome?: string
   aluno_id?: string

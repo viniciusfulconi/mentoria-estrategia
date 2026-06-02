@@ -45,11 +45,18 @@ const tabsAluno = [
   { href: '/aulas',          label: 'Aulas',      icon: PlayCircle },
 ]
 
+const tabsProfessor = [
+  { href: '/simulados', label: 'Alunos',   icon: Users },
+  { href: '/turma',     label: 'Turma',    icon: GraduationCap },
+  { href: '/horario',   label: 'Horário',  icon: Calendar },
+]
+
 const PAPEL_LABEL: Record<string, string> = {
   coordenador: 'Coordenador',
   direcao: 'Direção',
   mentor: 'Mentor',
   aluno: 'Aluno',
+  professor: 'Professor',
 }
 
 function NavItem({ href, icon: Icon, label, active }: { href: string; icon: LucideIcon; label: string; active: boolean }) {
@@ -147,7 +154,10 @@ export default function Nav() {
   const isGestor = papel === 'coordenador' || papel === 'direcao'
   const alunoHome = perfil?.aluno_id ? `/aluno/${perfil.aluno_id}` : '/meu-perfil'
   const tabsAlunoFinal = tabsAluno.map(t => t.href === '/meu-perfil' ? { ...t, href: alunoHome } : t)
-  const tabs = isGestor ? tabsCoordenadorPrimario : papel === 'mentor' ? tabsMentor : tabsAlunoFinal
+  const tabs = isGestor ? tabsCoordenadorPrimario
+    : papel === 'mentor' ? tabsMentor
+    : papel === 'professor' ? tabsProfessor
+    : tabsAlunoFinal
   const iniciais = perfil?.nome?.split(' ').map(w => w[0]).slice(0, 2).join('') || '?'
   const secundarioAtivo = isGestor && tabsCoordenadorSecundario.some(t => path.startsWith(t.href))
 
