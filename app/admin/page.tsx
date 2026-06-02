@@ -61,9 +61,24 @@ export default function Admin() {
                   <div key={p.id} className="card" style={{ marginBottom: 10, borderLeft: '3px solid #D97706' }}>
                     <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 2 }}>{p.nome}</div>
                     <div style={{ fontSize: 12, color: '#999', marginBottom: 2 }}>{p.email}</div>
-                    <div style={{ fontSize: 11, marginBottom: 10 }}>
-                      <span style={{ color: papelCor(p.papel), fontWeight: 500 }}>{papelLabel(p.papel)}</span>
-                      {p.mentor_nome && <span style={{ color: '#999' }}> · {p.mentor_nome}</span>}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                      <select
+                        defaultValue={p.papel}
+                        onChange={e => alterarPapel(p.id, e.target.value)}
+                        style={{
+                          fontSize: 11, fontWeight: 500, color: papelCor(p.papel),
+                          border: '0.5px solid rgba(0,0,0,0.12)', borderRadius: 8,
+                          padding: '4px 6px', background: '#F7F6F3',
+                          fontFamily: 'DM Sans, sans-serif', cursor: 'pointer',
+                        }}
+                      >
+                        <option value="coordenador">⬡ Coord.</option>
+                        <option value="direcao">◈ Direção</option>
+                        <option value="mentor">◉ Mentor</option>
+                        <option value="professor">◆ Professor</option>
+                        <option value="aluno">◎ Aluno</option>
+                      </select>
+                      {p.mentor_nome && <span style={{ fontSize: 11, color: '#999' }}>{p.mentor_nome}</span>}
                     </div>
                     {!isDirecao && (
                       <div style={{ display: 'flex', gap: 8 }}>
