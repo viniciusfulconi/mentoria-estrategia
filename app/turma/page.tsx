@@ -1,15 +1,30 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { dbQuery } from '@/lib/supabase'
 import Nav from '@/components/Nav'
 import PageLoader from '@/components/PageLoader'
 import Link from 'next/link'
 
+const ITA_CORTE = { 2024: 7.1805, 2025: 7.2983 } as const
+const ITA_AVG = {
+  2024: { matematica: 7.90, fisica: 8.14, quimica: 7.29, portRed: 6.90, media2fase: 7.60 },
+  2025: { matematica: 8.26, fisica: 7.55, quimica: 7.60, portRed: 6.98, media2fase: 7.68 },
+} as const
+
+// Nota final ITA = (1ª fase + mat + fís + quím + port) / 5  (20% cada)
+function mediaFinalITA(r: any): number | null {
+  const vals = [r.media_1fase, r.nota_matematica, r.nota_fisica, r.nota_quimica, r.media_linguagens]
+    .map(v => (v !== null && v !== undefined && v !== '') ? Number(v) : null)
+  if (vals.some(v => v === null)) return null
+  return (vals as number[]).reduce((a, b) => a + b, 0) / 5
+}
+
 export default function Turma() {
   const [dados, setDados] = useState<any[]>([])
   const [cicloAtivo, setCicloAtivo] = useState<string>('')
   const [ciclos, setCiclos] = useState<string[]>([])
-  const [aba, setAba] = useState<'ranking' | 'atencao' | 'destaques' | 'mentor'>('ranking')
+  const [aba, setAba] = useState<'ranking' | 'atencao' | 'destaques' | 'mentor' | 'termometro'>('ranking')
+  const [anoITA, setAnoITA] = useState<2024 | 2025>(2025)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -114,6 +129,7 @@ export default function Turma() {
     { id: 'atencao', label: `⚠ Atenção (${atencao.length})` },
     { id: 'destaques', label: 'Destaques' },
     { id: 'mentor', label: 'Por mentor' },
+    { id: 'termometro', label: '🌡 Termômetro' },
   ]
 
   return (
@@ -238,6 +254,148 @@ export default function Turma() {
                     </div>
                   )
                 })}
+              </div>
+            )}
+
+            {/* TERMÔMETRO */}
+            {aba === 'termometro' && (
+              <div>
+                {/* Seletor de ano */}
+                <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+                  {([2024, 2025] as const).map(ano => (
+                    <button key={ano} onClick={() => setAnoITA(ano)} style={{
+                      padding: '6px 18px', borderRadius: 20, fontSize: 12, fontWeight: 600,
+                      border: 'none',
+                      background: anoITA === ano ? '#2563EB' : '#F1F5F9',
+                      color: anoITA === ano ? 'white' : '#666',
+                      cursor: 'pointer', fontFamily: 'DM Sans,sans-serif',
+                    }}>ITA {ano}</button>
+                  ))}
+                </div>
+
+                {cicloAtivo === 'geral' ? (
+                  <div className="card" style={{ textAlign: 'center', padding: 32, color: '#999' }}>
+                    <div style={{ fontSize: 28, marginBottom: 8 }}>🌡</div>
+                    <div>Selecione um ciclo específico para ver o Termômetro</div>
+                  </div>
+                ) : (String(cicloAtivo).toUpperCase().includes('IME') || cicloData.some((r: any) => String(r.concurso ?? '').toUpperCase() === 'IME')) ? (
+                  <div className="card" style={{ textAlign: 'center', padding: 32, color: '#999' }}>
+                    <div style={{ fontSize: 28, marginBottom: 8 }}>🏛</div>
+                    <div>Este é um ciclo do IME.</div>
+                    <div style={{ fontSize: 11, marginTop: 6 }}>Em breve: Termômetro IME com estatísticas próprias.</div>
+                  </div>
+                ) : (
+                  <>
+                    {/* Card resumo */}
+                    {(() => {
+                      const comNotaFinal = cicloData.map(r => ({ r, mf: mediaFinalITA(r) })).filter(x => x.mf !== null)
+                      const aprovados = comNotaFinal.filter(x => x.mf! >= ITA_CORTE[anoITA])
+                      return (
+                        <div className="card" style={{
+                          marginBottom: 14,
+                          background: aprovados.length > 0 ? '#F0FDF4' : '#FFF7ED',
+                          borderLeft: `4px solid ${aprovados.length > 0 ? '#16A34A' : '#D97706'}`,
+                        }}>
+                          <div style={{ fontSize: 28, fontWeight: 700, color: aprovados.length > 0 ? '#14532D' : '#92400E' }}>
+                            {aprovados.length}<span style={{ fontSize: 16, fontWeight: 400, color: '#666' }}>/{comNotaFinal.length}</span>
+                          </div>
+                          <div style={{ fontSize: 13, color: '#555', marginTop: 2 }}>
+                            alunos seriam aprovados no ITA {anoITA}
+                          </div>
+                          <div style={{ fontSize: 11, color: '#999', marginTop: 4 }}>
+                            Corte: {ITA_CORTE[anoITA].toFixed(4)} · Nota final = (1ª fase + mat + fís + quím + port) ÷ 5
+                          </div>
+                        </div>
+                      )
+                    })()}
+
+                    {/* Referência ITA */}
+                    <div style={{
+                      fontSize: 11, color: '#2563EB', fontWeight: 500,
+                      marginBottom: 10, padding: '6px 10px',
+                      background: '#EFF6FF', borderRadius: 8, lineHeight: 1.6,
+                    }}>
+                      <strong>ITA {anoITA}</strong> — Mat: {ITA_AVG[anoITA].matematica.toFixed(2)} · Fís: {ITA_AVG[anoITA].fisica.toFixed(2)} · Quím: {ITA_AVG[anoITA].quimica.toFixed(2)} · Port/Red: {ITA_AVG[anoITA].portRed.toFixed(2)} · Nota final média: {ITA_AVG[anoITA].media2fase.toFixed(2)} · Corte: {ITA_CORTE[anoITA].toFixed(4)}
+                    </div>
+
+                    {/* Lista de alunos com nota final calculável */}
+                    {[...cicloData]
+                      .map(r => ({ r, notaFinal: mediaFinalITA(r) }))
+                      .filter(x => x.notaFinal !== null)
+                      .sort((a, b) => b.notaFinal! - a.notaFinal!)
+                      .map(({ r, notaFinal }, i) => {
+                        const mf = notaFinal!
+                        const seriaAprovado = mf >= ITA_CORTE[anoITA]
+                        const d = mf - ITA_CORTE[anoITA]
+                        const subjects = [
+                          { label: 'Mat', campo: 'nota_matematica', ref: ITA_AVG[anoITA].matematica },
+                          { label: 'Fís', campo: 'nota_fisica',     ref: ITA_AVG[anoITA].fisica },
+                          { label: 'Quím', campo: 'nota_quimica',   ref: ITA_AVG[anoITA].quimica },
+                          { label: 'Port', campo: 'media_linguagens', ref: ITA_AVG[anoITA].portRed },
+                        ]
+                        return (
+                          <Link key={r.id} href={`/aluno/${r.id_aluno}`} style={{ textDecoration: 'none' }}>
+                            <div className="card" style={{
+                              marginBottom: 8,
+                              borderLeft: `3px solid ${seriaAprovado ? '#16A34A' : '#DC2626'}`,
+                            }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
+                                <div>
+                                  <div style={{ fontSize: 13, fontWeight: 500, color: '#1a1a1a' }}>{r.nome_aluno}</div>
+                                  <div style={{ fontSize: 10, color: '#999' }}>{r.mentor}</div>
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                  <div style={{ textAlign: 'right' }}>
+                                    <div style={{ fontSize: 17, fontWeight: 700, color: seriaAprovado ? '#16A34A' : '#DC2626' }}>
+                                      {mf.toFixed(4)}
+                                    </div>
+                                    <div style={{ fontSize: 10, color: d >= 0 ? '#16A34A' : '#DC2626' }}>
+                                      {d >= 0 ? '+' : ''}{d.toFixed(4)}
+                                    </div>
+                                  </div>
+                                  <div style={{
+                                    width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
+                                    background: seriaAprovado ? '#DCFCE7' : '#FEF2F2',
+                                    color: seriaAprovado ? '#14532D' : '#991B1B',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    fontSize: 14, fontWeight: 700,
+                                  }}>
+                                    {seriaAprovado ? '✓' : '✗'}
+                                  </div>
+                                </div>
+                              </div>
+                              <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+                                {subjects.map(({ label, campo, ref }) => {
+                                  const val = r[campo] !== null && r[campo] !== undefined ? Number(r[campo]) : null
+                                  if (val === null) return null
+                                  const dv = val - ref
+                                  return (
+                                    <div key={campo} style={{
+                                      background: dv >= 0 ? '#F0FDF4' : '#FEF2F2',
+                                      borderRadius: 6, padding: '3px 7px', fontSize: 10,
+                                    }}>
+                                      <span style={{ color: '#666' }}>{label} </span>
+                                      <span style={{ fontWeight: 600, color: dv >= 0 ? '#16A34A' : '#DC2626' }}>{val.toFixed(1)}</span>
+                                      <span style={{ color: dv >= 0 ? '#16A34A' : '#DC2626', fontSize: 9, marginLeft: 2 }}>
+                                        ({dv >= 0 ? '+' : ''}{dv.toFixed(1)})
+                                      </span>
+                                    </div>
+                                  )
+                                })}
+                              </div>
+                            </div>
+                          </Link>
+                        )
+                      })}
+
+                    {/* Alunos sem dados suficientes para calcular nota final */}
+                    {cicloData.filter(r => mediaFinalITA(r) === null).length > 0 && (
+                      <div style={{ fontSize: 11, color: '#aaa', textAlign: 'center', marginTop: 10 }}>
+                        {cicloData.filter(r => mediaFinalITA(r) === null).length} aluno(s) sem todos os campos para calcular a nota final ITA
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
             )}
 

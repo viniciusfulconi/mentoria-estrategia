@@ -8,7 +8,7 @@ import { dbQuery, dbUpdate } from '@/lib/supabase'
 import {
   LayoutDashboard, Users, Handshake, Calendar,
   GraduationCap, Star, ClipboardList, FileText, KeyRound,
-  PlayCircle, LogOut, MoreHorizontal, Menu, X, Bell, UserCircle, Bot,
+  PlayCircle, LogOut, MoreHorizontal, Menu, X, Bell, UserCircle, Bot, Trophy,
 } from 'lucide-react'
 
 type LucideIcon = React.ComponentType<{ size?: number; strokeWidth?: number; color?: string }>
@@ -21,13 +21,14 @@ const tabsCoordenadorPrimario = [
 ]
 
 const tabsCoordenadorSecundario = [
-  { href: '/turma',          label: 'Turma',      icon: GraduationCap },
-  { href: '/csat',           label: 'CSAT',       icon: Star },
-  { href: '/cronograma',     label: 'Cronograma', icon: ClipboardList },
-  { href: '/provas-antigas', label: 'Provas',     icon: FileText },
-  { href: '/aulas',          label: 'Aulas',      icon: PlayCircle },
-  { href: '/admin',          label: 'Acessos',    icon: KeyRound },
-  { href: '/coruja',         label: 'Coruja',     icon: Bot },
+  { href: '/turma',           label: 'Turma',      icon: GraduationCap },
+  { href: '/csat',            label: 'CSAT',       icon: Star },
+  { href: '/cronograma',      label: 'Cronograma', icon: ClipboardList },
+  { href: '/provas-antigas',  label: 'Provas',     icon: FileText },
+  { href: '/aulas',           label: 'Aulas',      icon: PlayCircle },
+  { href: '/aprovados-ita',   label: 'ITA',        icon: Trophy },
+  { href: '/admin',           label: 'Acessos',    icon: KeyRound },
+  { href: '/coruja',          label: 'Coruja',     icon: Bot },
 ]
 
 const tabsMentor = [

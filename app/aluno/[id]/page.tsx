@@ -10,6 +10,7 @@ import { CORES_MATERIA as CORES_MAT_IMPORT } from '@/lib/cores'
 import { BarChart, GraficoQuestoes, RadarQuestoesChart, GraficoEvolucaoLinhas, RadarSection } from '@/components/aluno/AlunoCharts'
 import { FileDown } from 'lucide-react'
 import { BannerRisco, DiagnosticoCorte } from '@/components/aluno/AlunoRisco'
+import Termometro from './Termometro'
 
 type AlunoCache = {
   dados: any[]; perfil: any; alunoInfo: any
@@ -38,7 +39,7 @@ export default function AlunoPage() {
   const [ciclosDoAluno, setCiclosDoAluno] = useState<string[]>([])
   const [turmaQuestoesLoaded, setTurmaQuestoesLoaded] = useState(false)
   const [cicloAtivo, setCicloAtivo] = useState<string | null>(null)
-  const [aba, setAba] = useState<'geral' | 'simulados' | 'listas' | 'provas'>('geral')
+  const [aba, setAba] = useState<'geral' | 'simulados' | 'listas' | 'provas' | 'termometro'>('geral')
   const [loading, setLoading] = useState(true)
   const [provasAluno, setProvasAluno] = useState<any[]>([])
   const [correcoesProva, setCorrecoesProva] = useState<any[]>([])
@@ -445,6 +446,7 @@ export default function AlunoPage() {
         {[
           { id: 'geral', label: 'Visão geral' },
           { id: 'simulados', label: 'Simulados' },
+          { id: 'termometro', label: '🌡 Termômetro' },
           { id: 'listas', label: 'Listas' },
           { id: 'provas', label: '📄 Provas' },
         ].map(a => (
@@ -632,6 +634,11 @@ export default function AlunoPage() {
               })}
             </div>
           </>
+        )}
+
+        {/* === ABA TERMÔMETRO === */}
+        {aba === 'termometro' && (
+          <Termometro rankings={rankings} />
         )}
 
         {/* === ABA LISTAS === */}
