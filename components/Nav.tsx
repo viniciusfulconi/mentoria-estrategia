@@ -27,6 +27,7 @@ const tabsCoordenadorSecundario = [
   { href: '/provas-antigas',  label: 'Provas',     icon: FileText },
   { href: '/aulas',           label: 'Aulas',      icon: PlayCircle },
   { href: '/aprovados-ita',   label: 'ITA',        icon: Trophy },
+  { href: '/aprovados-ime',   label: 'IME',        icon: Trophy },
   { href: '/admin',           label: 'Acessos',    icon: KeyRound },
   { href: '/coruja',          label: 'Coruja',     icon: Bot },
 ]

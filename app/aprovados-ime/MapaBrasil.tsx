@@ -2,18 +2,19 @@
 import { useState } from 'react'
 import { ComposableMap, Geographies, Geography } from 'react-simple-maps'
 
-export interface EstadoInfo {
+export interface EstadoInfoIME {
   total: number
-  media2fase: number
+  media: number
   matematica: number
   fisica: number
   quimica: number
-  portRed: number
-  bancas: { banca: string; total: number }[]
+  portugues: number
+  ingles: number
+  cidades: { cidade: string; total: number }[]
 }
 
 interface Props {
-  dados: Record<string, EstadoInfo>
+  dados: Record<string, EstadoInfoIME>
   estadoSelecionado: string | null
   onSelecionar: (uf: string | null) => void
 }
@@ -23,15 +24,15 @@ const GEO_URL = '/geo/brasil-estados.json'
 function corEstado(total: number, max: number): string {
   if (total === 0) return '#E8ECF0'
   const pct = total / max
-  if (pct >= 0.7) return '#14532d'
-  if (pct >= 0.35) return '#166534'
-  if (pct >= 0.15) return '#16a34a'
-  if (pct >= 0.06) return '#4ade80'
-  if (pct >= 0.02) return '#86efac'
-  return '#dcfce7'
+  if (pct >= 0.7) return '#1e3a5f'
+  if (pct >= 0.35) return '#1e40af'
+  if (pct >= 0.15) return '#2563eb'
+  if (pct >= 0.06) return '#60a5fa'
+  if (pct >= 0.02) return '#bfdbfe'
+  return '#dbeafe'
 }
 
-export default function MapaBrasil({ dados, estadoSelecionado, onSelecionar }: Props) {
+export default function MapaBrasilIME({ dados, estadoSelecionado, onSelecionar }: Props) {
   const [hovered, setHovered] = useState<string | null>(null)
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 })
 
@@ -57,7 +58,6 @@ export default function MapaBrasil({ dados, estadoSelecionado, onSelecionar }: P
               const info = dados[uf]
               const total = info?.total ?? 0
               const isSelected = estadoSelecionado === uf
-              const isHovered = hovered === uf
               const fill = corEstado(total, max)
               const hasData = total > 0
 
@@ -66,7 +66,7 @@ export default function MapaBrasil({ dados, estadoSelecionado, onSelecionar }: P
                   key={geo.rsmKey}
                   geography={geo}
                   fill={fill}
-                  stroke={isSelected ? '#2563EB' : '#fff'}
+                  stroke={isSelected ? '#f59e0b' : '#fff'}
                   strokeWidth={isSelected ? 1.5 : 0.5}
                   style={{
                     default: { outline: 'none', opacity: 1 },
@@ -99,11 +99,11 @@ export default function MapaBrasil({ dados, estadoSelecionado, onSelecionar }: P
           {dados[hovered]?.total
             ? (
               <>
-                <div style={{ color: '#4ade80', fontSize: 13, marginTop: 2 }}>
+                <div style={{ color: '#60a5fa', fontSize: 13, marginTop: 2 }}>
                   {dados[hovered].total} aprovado{dados[hovered].total > 1 ? 's' : ''}
                 </div>
                 <div style={{ color: '#aaa', fontSize: 11, marginTop: 1 }}>
-                  Média 2ª fase: <strong style={{ color: '#fff' }}>{dados[hovered].media2fase.toFixed(3)}</strong>
+                  Média: <strong style={{ color: '#fff' }}>{dados[hovered].media.toFixed(3)}</strong>
                 </div>
               </>
             )
@@ -116,10 +116,10 @@ export default function MapaBrasil({ dados, estadoSelecionado, onSelecionar }: P
       <div style={{ display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'center', marginTop: 10, flexWrap: 'wrap' }}>
         {[
           { cor: '#E8ECF0', label: '0' },
-          { cor: '#dcfce7', label: '1–5' },
-          { cor: '#86efac', label: '6–15' },
-          { cor: '#4ade80', label: '16–40' },
-          { cor: '#16a34a', label: '41+' },
+          { cor: '#dbeafe', label: '1–5' },
+          { cor: '#bfdbfe', label: '6–15' },
+          { cor: '#60a5fa', label: '16–40' },
+          { cor: '#1e40af', label: '41+' },
         ].map(({ cor, label }) => (
           <div key={cor} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
             <div style={{ width: 13, height: 13, borderRadius: 3, background: cor, border: '0.5px solid rgba(0,0,0,0.12)' }} />
