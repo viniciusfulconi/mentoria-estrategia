@@ -17,7 +17,7 @@ export default function Turmas() {
     <div style={{ paddingBottom: 80 }}>
       <div style={{ background:'white', borderBottom:'0.5px solid rgba(0,0,0,0.08)', padding:'16px', position:'sticky', top:0, zIndex:10, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
         <div style={{ fontSize:17, fontWeight:600 }}>Turmas</div>
-        <Link href="/turmas/nova" style={{ textDecoration:'none', background:'#2563EB', color:'white', borderRadius:10, padding:'7px 14px', fontSize:13, fontWeight:500 }}>+ Nova</Link>
+        <Link href="/turmas/nova" style={{ textDecoration:'none', background:'#f97316', color:'white', borderRadius:10, padding:'7px 14px', fontSize:13, fontWeight:500 }}>+ Nova</Link>
       </div>
       <div style={{ padding:16 }}>
         {loading ? <div style={{ textAlign:'center', color:'#999', padding:40 }}>Carregando...</div>
@@ -25,7 +25,7 @@ export default function Turmas() {
           <div className="card" style={{ textAlign:'center', color:'#999', padding:40 }}>
             <div style={{ fontSize:32, marginBottom:10 }}>◈</div>
             <div>Nenhuma turma ainda.</div>
-            <Link href="/turmas/nova" style={{ textDecoration:'none', display:'inline-block', marginTop:14, background:'#2563EB', color:'white', borderRadius:12, padding:'10px 20px', fontSize:14 }}>Criar turma</Link>
+            <Link href="/turmas/nova" style={{ textDecoration:'none', display:'inline-block', marginTop:14, background:'#f97316', color:'white', borderRadius:12, padding:'10px 20px', fontSize:14 }}>Criar turma</Link>
           </div>
         ) : turmas.map((t:any) => (
           <div key={t.id} className="card" style={{ marginBottom:10 }}>

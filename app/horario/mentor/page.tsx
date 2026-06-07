@@ -7,7 +7,7 @@ import Nav from '@/components/Nav'
 import { CORES_MATERIA } from '@/lib/agenda'
 
 export default function MentorEstudo() {
-  const { perfil } = useAuth()
+  const { perfil, verticalAtiva } = useAuth()
   const router = useRouter()
   const [alunos, setAlunos] = useState<any[]>([])
   const [materias, setMaterias] = useState<string[]>([])
@@ -32,7 +32,7 @@ export default function MentorEstudo() {
     if (repeticao !== 'nenhuma' && !dataFimRep) { setErro('Preencha a data final da repetição.'); return }
     setSaving(true)
 
-    const cor = CORES_MATERIA[form.materia] || '#2563EB'
+    const cor = CORES_MATERIA[form.materia] || '#f97316'
     const registros = []
     const dtBase = new Date(form.data)
     const dtFimRep = dataFimRep ? new Date(dataFimRep) : dtBase
@@ -48,6 +48,7 @@ export default function MentorEstudo() {
         data_inicio: dtInicio.toISOString(), data_fim: dtFim.toISOString(),
         aluno_id: form.aluno_id,
         criado_por: 'mentor', criado_por_id: perfil?.id,
+        vertical: verticalAtiva || 'ITA',
       })
       if (repeticao === 'nenhuma') break
       else if (repeticao === 'semanal') dtAtual.setDate(dtAtual.getDate() + 7)
@@ -83,7 +84,7 @@ export default function MentorEstudo() {
           <label>Matéria</label>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 6 }}>
             {materias.map(m => {
-              const cor = CORES_MATERIA[m] || '#2563EB'
+              const cor = CORES_MATERIA[m] || '#f97316'
               return (
                 <button key={m} onClick={() => setForm({ ...form, materia: m })} style={{
                   padding: '5px 12px', borderRadius: 20, fontSize: 11,
@@ -113,7 +114,7 @@ export default function MentorEstudo() {
               <button key={op.val} onClick={() => setRepeticao(op.val)} style={{
                 padding: '6px 14px', borderRadius: 20, fontSize: 12,
                 border: '0.5px solid rgba(0,0,0,0.12)',
-                background: repeticao === op.val ? '#2563EB' : 'transparent',
+                background: repeticao === op.val ? '#f97316' : 'transparent',
                 color: repeticao === op.val ? 'white' : '#666',
                 cursor: 'pointer', fontFamily: 'DM Sans,sans-serif'
               }}>{op.label}</button>

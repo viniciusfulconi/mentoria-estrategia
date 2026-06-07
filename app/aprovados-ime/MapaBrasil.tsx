@@ -26,7 +26,7 @@ function corEstado(total: number, max: number): string {
   const pct = total / max
   if (pct >= 0.7) return '#1e3a5f'
   if (pct >= 0.35) return '#1e40af'
-  if (pct >= 0.15) return '#2563eb'
+  if (pct >= 0.15) return '#f97316'
   if (pct >= 0.06) return '#60a5fa'
   if (pct >= 0.02) return '#bfdbfe'
   return '#dbeafe'

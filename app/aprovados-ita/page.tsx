@@ -162,8 +162,8 @@ export default function AprovadosITA() {
   function OrdIcon({ col }: { col: keyof AprovadoITA }) {
     if (ordenacao !== col) return <span style={{ color: '#ccc', fontSize: 10 }}>↕</span>
     return ordemDesc
-      ? <ChevronDown size={12} color="#2563EB" />
-      : <ChevronUp size={12} color="#2563EB" />
+      ? <ChevronDown size={12} color="#f97316" />
+      : <ChevronUp size={12} color="#f97316" />
   }
 
   if (authLoading) return null
@@ -200,8 +200,8 @@ export default function AprovadosITA() {
             <button key={m} onClick={() => setModalidadeFiltro(modalidadeFiltro === m ? null : m)} style={{
               fontSize: 12, fontWeight: 500, padding: '5px 12px', borderRadius: 20,
               border: '1px solid', cursor: 'pointer',
-              background: modalidadeFiltro === m ? '#7c3aed' : 'transparent',
-              borderColor: modalidadeFiltro === m ? '#7c3aed' : 'rgba(0,0,0,0.15)',
+              background: modalidadeFiltro === m ? '#f97316' : 'transparent',
+              borderColor: modalidadeFiltro === m ? '#f97316' : 'rgba(0,0,0,0.15)',
               color: modalidadeFiltro === m ? 'white' : '#444',
             }}>{m}</button>
           ))}
@@ -361,7 +361,7 @@ export default function AprovadosITA() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12 }}>
             {[
               { titulo: 'Ampla Concorrência', dados24: comp2024ac, dados25: comp2025ac, cor: '#1e40af' },
-              { titulo: 'Cota Racial', dados24: comp2024co, dados25: comp2025co, cor: '#7c3aed' },
+              { titulo: 'Cota Racial', dados24: comp2024co, dados25: comp2025co, cor: '#f97316' },
             ].map(({ titulo, dados24, dados25, cor }) => (
               <div key={titulo} style={{ background: '#F8FAFC', borderRadius: 12, padding: 16, border: '0.5px solid rgba(0,0,0,0.06)' }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: cor, marginBottom: 12 }}>{titulo}</div>
@@ -415,7 +415,7 @@ export default function AprovadosITA() {
               <div key={uf} style={{
                 display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px',
                 borderRadius: 10, background: '#F8FAFC',
-                border: `0.5px solid ${estadoSelecionado === uf ? '#2563EB' : 'rgba(0,0,0,0.06)'}`,
+                border: `0.5px solid ${estadoSelecionado === uf ? '#f97316' : 'rgba(0,0,0,0.06)'}`,
                 cursor: 'pointer',
               }}
                 onClick={() => setEstadoSelecionado(estadoSelecionado === uf ? null : uf)}
@@ -468,7 +468,7 @@ export default function AprovadosITA() {
             </div>
             <button
               onClick={() => setTabelaAberta(v => !v)}
-              style={{ fontSize: 12, color: '#2563EB', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
+              style={{ fontSize: 12, color: '#f97316', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
             >
               {tabelaAberta ? <><ChevronUp size={14} /> Recolher</> : <><ChevronDown size={14} /> Expandir</>}
             </button>
@@ -495,7 +495,7 @@ export default function AprovadosITA() {
                         onClick={() => toggleOrdem(col)}
                         style={{
                           padding: '10px 12px', textAlign: col === 'nome' || col === 'banca' ? 'left' : 'right',
-                          fontWeight: 600, color: ordenacao === col ? '#2563EB' : '#666',
+                          fontWeight: 600, color: ordenacao === col ? '#f97316' : '#666',
                           cursor: 'pointer', whiteSpace: 'nowrap',
                           borderBottom: '0.5px solid rgba(0,0,0,0.08)',
                           userSelect: 'none',
@@ -518,8 +518,8 @@ export default function AprovadosITA() {
                       <td style={{ padding: '8px 12px', textAlign: 'right', color: '#666' }}>
                         <span style={{
                           fontSize: 11, fontWeight: 600, padding: '2px 6px', borderRadius: 8,
-                          background: a.ano === 2025 ? '#EFF6FF' : '#F5F3FF',
-                          color: a.ano === 2025 ? '#1e40af' : '#7c3aed',
+                          background: a.ano === 2025 ? '#fff7ed' : '#F5F3FF',
+                          color: a.ano === 2025 ? '#1e40af' : '#f97316',
                         }}>{a.ano}</span>
                       </td>
                       <td style={{ padding: '8px 12px', color: '#555' }}>

@@ -1,33 +1,36 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { dbQuery, dbInsert } from '@/lib/supabase'
+import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
 import Nav from '@/components/Nav'
 
 export default function NovoMentor() {
   const router = useRouter()
+  const { verticalAtiva } = useAuth()
+  const vertical = verticalAtiva || 'ITA'
   const [turmas, setTurmas] = useState<any[]>([])
-  const [form, setForm] = useState({ nome:'', email:'', turma_id:'', materia:'Física', valor_por_atendimento:'', nota_media:'5' })
+  const [form, setForm] = useState({ nome:'', email:'', turma_id:'', valor_por_atendimento:'', nota_media:'5' })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
   useEffect(() => {
-    dbQuery('turmas').then(({ data }) => setTurmas(data || []))
-  }, [])
+    dbQuery('turmas', { tipo: `eq.${vertical}` }).then(({ data }) => setTurmas(data || []))
+  }, [vertical])
 
   async function salvar() {
-    if (!form.nome || !form.turma_id) { setError('Preencha nome e turma.'); return }
+    if (!form.nome) { setError('Preencha o nome.'); return }
     setSaving(true)
     const { error: err } = await dbInsert('mentores', [{
-      nome: form.nome, email: form.email, turma_id: form.turma_id,
-      materia: form.materia, valor_por_atendimento: Number(form.valor_por_atendimento)||0,
-      nota_media: Number(form.nota_media)||5, total_atendimentos: 0
+      nome: form.nome, email: form.email,
+      turma_id: form.turma_id || null,
+      valor_por_atendimento: Number(form.valor_por_atendimento)||0,
+      nota_media: Number(form.nota_media)||5, total_atendimentos: 0,
+      vertical, aceitando_alunos: true,
     }])
     if (err) { setError(err); setSaving(false) }
     else router.push('/mentores')
   }
-
-  const materias = ['Física','Matemática','Química','Biologia','Português','Redação','Inglês','Outra']
 
   return (
     <div style={{ paddingBottom:80 }}>
@@ -42,13 +45,7 @@ export default function NovoMentor() {
           <label>Turma</label>
           <select value={form.turma_id} onChange={e=>setForm({...form,turma_id:e.target.value})}>
             <option value="">Selecione a turma</option>
-            {turmas.map((t:any) => <option key={t.id} value={t.id}>{t.nome} ({t.tipo})</option>)}
-          </select>
-        </div>
-        <div>
-          <label>Matéria principal</label>
-          <select value={form.materia} onChange={e=>setForm({...form,materia:e.target.value})}>
-            {materias.map(m => <option key={m} value={m}>{m}</option>)}
+            {turmas.map((t:any) => <option key={t.id} value={t.id}>{t.nome}</option>)}
           </select>
         </div>
         <div><label>Valor por atendimento (R$)</label><input type="number" value={form.valor_por_atendimento} onChange={e=>setForm({...form,valor_por_atendimento:e.target.value})} placeholder="Ex: 40" /></div>

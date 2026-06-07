@@ -7,7 +7,8 @@ import Nav from '@/components/Nav'
 import { DIAS_SEMANA } from '@/lib/agenda'
 
 export default function NovaAula() {
-  const { perfil } = useAuth()
+  const { perfil, verticalAtiva } = useAuth()
+  const vertical = verticalAtiva || 'ITA'
   const router = useRouter()
   const [turmas, setTurmas] = useState<any[]>([])
   const [materias, setMaterias] = useState<string[]>([])
@@ -22,14 +23,14 @@ export default function NovaAula() {
 
   useEffect(() => {
     Promise.all([
-      dbQuery('turmas'),
-      dbQuery('topicos', {}, 'materia'),
+      dbQuery('turmas', { tipo: `eq.${vertical}` }),
+      dbQuery('topicos', { vertical: `eq.${vertical}` }, 'materia'),
     ]).then(([{ data: t }, { data: m }]) => {
       setTurmas(t || [])
       const ms = [...new Set((m || []).map((x: any) => x.materia))].sort() as string[]
       setMaterias(ms)
     })
-  }, [])
+  }, [vertical])
 
   async function salvar() {
     if (!form.turma_id || !form.materia || !form.hora_inicio || !form.hora_fim || !form.recorrencia_fim) {
@@ -55,6 +56,7 @@ export default function NovaAula() {
         recorrencia_inicio: form.recorrencia_inicio,
         recorrencia_fim: form.recorrencia_fim,
         turma_id: form.turma_id, criado_por: 'coordenador', criado_por_id: perfil?.id,
+        vertical,
       }])
       if (error) { setErro(error); setSaving(false); return }
     } else {
@@ -75,6 +77,7 @@ export default function NovaAula() {
           materia: form.materia, professor: form.professor,
           data_inicio: dtInicio.toISOString(), data_fim: dtFim.toISOString(),
           turma_id: form.turma_id, criado_por: 'coordenador', criado_por_id: perfil?.id,
+          vertical,
         })
         if (form.frequencia === 'quinzenal') dtAtual.setDate(dtAtual.getDate() + 14)
         else dtAtual.setMonth(dtAtual.getMonth() + 1)
@@ -125,9 +128,9 @@ export default function NovaAula() {
             ].map(op => (
               <button key={op.val} onClick={() => setForm({ ...form, frequencia: op.val })} style={{
                 flex: 1, padding: '8px', borderRadius: 10, fontSize: 12,
-                border: `1.5px solid ${form.frequencia === op.val ? '#2563EB' : 'rgba(0,0,0,0.1)'}`,
-                background: form.frequencia === op.val ? '#EFF6FF' : 'transparent',
-                color: form.frequencia === op.val ? '#2563EB' : '#666',
+                border: `1.5px solid ${form.frequencia === op.val ? '#f97316' : 'rgba(0,0,0,0.1)'}`,
+                background: form.frequencia === op.val ? '#fff7ed' : 'transparent',
+                color: form.frequencia === op.val ? '#f97316' : '#666',
                 cursor: 'pointer', fontFamily: 'DM Sans,sans-serif', fontWeight: 500
               }}>{op.label}</button>
             ))}

@@ -427,7 +427,7 @@ export default function UploadSimulados() {
             <input type="file" accept=".xlsx,.xls" onChange={handleFile} disabled={etapa === 'parsing'}
               style={{ width: '100%', padding: '10px', borderRadius: 10, border: '0.5px solid rgba(0,0,0,0.12)', background: '#F8FAFC', fontSize: 13 }} />
             {etapa === 'parsing' && (
-              <div style={{ textAlign: 'center', color: '#2563EB', padding: '16px 0 4px', fontSize: 13, fontWeight: 500 }}>
+              <div style={{ textAlign: 'center', color: '#f97316', padding: '16px 0 4px', fontSize: 13, fontWeight: 500 }}>
                 Lendo planilha...
               </div>
             )}
@@ -451,11 +451,11 @@ export default function UploadSimulados() {
               <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 12 }}>O que será importado</div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 14 }}>
                 <div style={{ background: '#F8FAFC', borderRadius: 10, padding: '10px 14px' }}>
-                  <div style={{ fontSize: 22, fontWeight: 700, color: '#2563EB' }}>{preview.alunosCount}</div>
+                  <div style={{ fontSize: 22, fontWeight: 700, color: '#f97316' }}>{preview.alunosCount}</div>
                   <div style={{ fontSize: 11, color: '#999' }}>alunos na planilha</div>
                 </div>
                 <div style={{ background: '#F8FAFC', borderRadius: 10, padding: '10px 14px' }}>
-                  <div style={{ fontSize: 22, fontWeight: 700, color: '#2563EB' }}>{preview.registros.length}</div>
+                  <div style={{ fontSize: 22, fontWeight: 700, color: '#f97316' }}>{preview.registros.length}</div>
                   <div style={{ fontSize: 11, color: '#999' }}>registros de notas</div>
                 </div>
               </div>
@@ -470,7 +470,7 @@ export default function UploadSimulados() {
                 }}>
                   <span style={{
                     fontSize: 10, fontWeight: 600, padding: '2px 7px', borderRadius: 8, flexShrink: 0,
-                    background: aba.concurso === 'ITA' ? '#EFF6FF' : '#DCFCE7',
+                    background: aba.concurso === 'ITA' ? '#fff7ed' : '#DCFCE7',
                     color: aba.concurso === 'ITA' ? '#1E40AF' : '#14532D',
                   }}>{aba.concurso}</span>
                   <div style={{ flex: 1, minWidth: 0 }}>
@@ -515,7 +515,7 @@ export default function UploadSimulados() {
                 <div key={i} style={{
                   color: l.startsWith('❌') ? '#DC2626'
                     : l.startsWith('✅') || l.startsWith('🎉') ? '#16A34A'
-                    : l.startsWith('🏆') || l.startsWith('📊') ? '#2563EB'
+                    : l.startsWith('🏆') || l.startsWith('📊') ? '#f97316'
                     : '#666'
                 }}>{l}</div>
               ))}
@@ -524,7 +524,7 @@ export default function UploadSimulados() {
         )}
 
         {etapa === 'saving' && (
-          <div style={{ textAlign: 'center', color: '#2563EB', padding: 20, fontWeight: 500 }}>Importando... aguarde</div>
+          <div style={{ textAlign: 'center', color: '#f97316', padding: 20, fontWeight: 500 }}>Importando... aguarde</div>
         )}
 
         {etapa === 'done' && (

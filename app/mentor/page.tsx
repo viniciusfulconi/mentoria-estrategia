@@ -88,9 +88,9 @@ export default function MentorDashboard() {
       {/* Métricas do mês */}
       {metricas !== null && (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, padding: '12px 16px', background: 'white', borderBottom: '0.5px solid rgba(0,0,0,0.06)' }}>
-          <div style={{ textAlign: 'center', padding: '10px 8px', borderRadius: 12, background: '#EFF6FF' }}>
-            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 4 }}><CalendarCheck size={16} color="#2563EB" strokeWidth={2} /></div>
-            <div style={{ fontSize: 18, fontWeight: 700, color: '#2563EB' }}>{metricas.sessoes}</div>
+          <div style={{ textAlign: 'center', padding: '10px 8px', borderRadius: 12, background: '#fff7ed' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 4 }}><CalendarCheck size={16} color="#f97316" strokeWidth={2} /></div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: '#f97316' }}>{metricas.sessoes}</div>
             <div style={{ fontSize: 10, color: '#64748B' }}>sessões/mês</div>
           </div>
           <div style={{ textAlign: 'center', padding: '10px 8px', borderRadius: 12, background: '#F0FDF4' }}>
@@ -111,7 +111,7 @@ export default function MentorDashboard() {
         {ciclos.map(c => (
           <button key={c} onClick={() => setCicloAtivo(c)} style={{
             padding: '5px 12px', borderRadius: 20, fontSize: 11, border: '0.5px solid rgba(0,0,0,0.12)',
-            background: cicloAtivo === c ? '#2563EB' : 'transparent', color: cicloAtivo === c ? 'white' : '#666',
+            background: cicloAtivo === c ? '#f97316' : 'transparent', color: cicloAtivo === c ? 'white' : '#666',
             cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'DM Sans,sans-serif'
           }}>{c.replace('Ciclo ', 'C').replace(' - ITA', '').replace(' - IME', '')}</button>
         ))}
@@ -122,14 +122,14 @@ export default function MentorDashboard() {
         : erro ? (
           <div className="card" style={{ textAlign: 'center', padding: 40 }}>
             <div style={{ fontSize: 13, color: '#DC2626', marginBottom: 12 }}>{erro}</div>
-            <button onClick={carregar} style={{ padding: '8px 20px', borderRadius: 10, background: '#2563EB', color: 'white', border: 'none', fontSize: 13, cursor: 'pointer', fontFamily: 'DM Sans, sans-serif' }}>Tentar novamente</button>
+            <button onClick={carregar} style={{ padding: '8px 20px', borderRadius: 10, background: '#f97316', color: 'white', border: 'none', fontSize: 13, cursor: 'pointer', fontFamily: 'DM Sans, sans-serif' }}>Tentar novamente</button>
           </div>
         ) : (
           <>
             {/* Stats do grupo */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 16 }}>
               <div className="card" style={{ textAlign: 'center', padding: 12 }}>
-                <div style={{ fontSize: 22, fontWeight: 600, color: '#2563EB' }}>{cicloData.length}</div>
+                <div style={{ fontSize: 22, fontWeight: 600, color: '#f97316' }}>{cicloData.length}</div>
                 <div style={{ fontSize: 10, color: '#999' }}>alunos</div>
               </div>
               <div className="card" style={{ textAlign: 'center', padding: 12 }}>
@@ -163,7 +163,7 @@ export default function MentorDashboard() {
               return (
                 <Link key={r.id} href={`/aluno/${r.id_aluno}`} style={{ textDecoration: 'none' }}>
                   <div className="card" style={{ marginBottom: 8, display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 600, color: '#2563EB', flexShrink: 0 }}>
+                    <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#fff7ed', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 600, color: '#f97316', flexShrink: 0 }}>
                       {r.classificacao || i + 1}
                     </div>
                     <div style={{ flex: 1 }}>

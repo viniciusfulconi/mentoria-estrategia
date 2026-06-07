@@ -152,7 +152,7 @@ export default function AprovadosIME() {
 
   function OrdIcon({ col }: { col: keyof AprovadoIME }) {
     if (ordenacao !== col) return <span style={{ color: '#ccc', fontSize: 10 }}>↕</span>
-    return ordemDesc ? <ChevronDown size={12} color="#2563EB" /> : <ChevronUp size={12} color="#2563EB" />
+    return ordemDesc ? <ChevronDown size={12} color="#f97316" /> : <ChevronUp size={12} color="#f97316" />
   }
 
   if (authLoading) return null
@@ -188,8 +188,8 @@ export default function AprovadosIME() {
             <button key={m} onClick={() => setModalidadeFiltro(modalidadeFiltro === m ? null : m)} style={{
               fontSize: 12, fontWeight: 500, padding: '5px 12px', borderRadius: 20,
               border: '1px solid', cursor: 'pointer',
-              background: modalidadeFiltro === m ? '#7c3aed' : 'transparent',
-              borderColor: modalidadeFiltro === m ? '#7c3aed' : 'rgba(0,0,0,0.15)',
+              background: modalidadeFiltro === m ? '#f97316' : 'transparent',
+              borderColor: modalidadeFiltro === m ? '#f97316' : 'rgba(0,0,0,0.15)',
               color: modalidadeFiltro === m ? 'white' : '#444',
             }}>{m}</button>
           ))}
@@ -277,7 +277,7 @@ export default function AprovadosIME() {
                   {infoEstado.cidades.map(c => (
                     <div key={c.cidade} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: '0.5px solid #F0F0F0' }}>
                       <span style={{ fontSize: 13, color: '#444', fontWeight: 500 }}>{c.cidade}</span>
-                      <span style={{ fontSize: 12, fontWeight: 700, color: '#1e40af', background: '#EFF6FF', borderRadius: 12, padding: '2px 8px' }}>{c.total}</span>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: '#1e40af', background: '#fff7ed', borderRadius: 12, padding: '2px 8px' }}>{c.total}</span>
                     </div>
                   ))}
                 </div>
@@ -345,7 +345,7 @@ export default function AprovadosIME() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12 }}>
             {[
               { titulo: 'Ativa — AC', dados25: comp25ac, dados26: comp26ac, cor: '#1e40af' },
-              { titulo: 'Ativa — Cotas', dados25: comp25co, dados26: comp26co, cor: '#7c3aed' },
+              { titulo: 'Ativa — Cotas', dados25: comp25co, dados26: comp26co, cor: '#f97316' },
             ].map(({ titulo, dados25, dados26, cor }) => (
               <div key={titulo} style={{ background: '#F8FAFC', borderRadius: 12, padding: 16, border: '0.5px solid rgba(0,0,0,0.06)' }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: cor, marginBottom: 12 }}>{titulo}</div>
@@ -396,11 +396,11 @@ export default function AprovadosIME() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 10 }}>
             {[
               { label: '2025 — Ativa AC',     corte: 7.615, cor: '#1e40af' },
-              { label: '2025 — Ativa Cotas',  corte: 6.660, cor: '#7c3aed' },
+              { label: '2025 — Ativa Cotas',  corte: 6.660, cor: '#f97316' },
               { label: '2025 — Reserva AC',   corte: 7.745, cor: '#0369a1' },
               { label: '2025 — Reserva Cotas', corte: 5.285, cor: '#9333ea' },
               { label: '2026 — Ativa AC',     corte: 8.225, cor: '#1e40af' },
-              { label: '2026 — Ativa Cotas',  corte: 7.690, cor: '#7c3aed' },
+              { label: '2026 — Ativa Cotas',  corte: 7.690, cor: '#f97316' },
               { label: '2026 — Reserva AC',   corte: 8.085, cor: '#0369a1' },
               { label: '2026 — Reserva Cotas', corte: 7.195, cor: '#9333ea' },
             ].map(({ label, corte, cor }) => (
@@ -421,13 +421,13 @@ export default function AprovadosIME() {
               <div key={uf} style={{
                 display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px',
                 borderRadius: 10, background: '#F8FAFC',
-                border: `0.5px solid ${estadoSelecionado === uf ? '#2563EB' : 'rgba(0,0,0,0.06)'}`,
+                border: `0.5px solid ${estadoSelecionado === uf ? '#f97316' : 'rgba(0,0,0,0.06)'}`,
                 cursor: 'pointer',
               }}
                 onClick={() => setEstadoSelecionado(estadoSelecionado === uf ? null : uf)}
               >
                 <div style={{
-                  width: 28, height: 28, borderRadius: '50%', background: i < 3 ? '#eff6ff' : '#F0F0F0',
+                  width: 28, height: 28, borderRadius: '50%', background: i < 3 ? '#fff7ed' : '#F0F0F0',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: 11, fontWeight: 700, color: i < 3 ? '#1e40af' : '#666', flexShrink: 0,
                 }}>
@@ -472,7 +472,7 @@ export default function AprovadosIME() {
             </div>
             <button
               onClick={() => setTabelaAberta(v => !v)}
-              style={{ fontSize: 12, color: '#2563EB', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
+              style={{ fontSize: 12, color: '#f97316', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
             >
               {tabelaAberta ? <><ChevronUp size={14} /> Recolher</> : <><ChevronDown size={14} /> Expandir</>}
             </button>
@@ -502,7 +502,7 @@ export default function AprovadosIME() {
                         style={{
                           padding: '10px 12px',
                           textAlign: !sortable ? 'left' : 'right',
-                          fontWeight: 600, color: ordenacao === col ? '#2563EB' : '#666',
+                          fontWeight: 600, color: ordenacao === col ? '#f97316' : '#666',
                           cursor: sortable ? 'pointer' : 'default',
                           whiteSpace: 'nowrap', borderBottom: '0.5px solid rgba(0,0,0,0.08)',
                           userSelect: 'none',
@@ -525,8 +525,8 @@ export default function AprovadosIME() {
                       <td style={{ padding: '8px 12px', textAlign: 'right' }}>
                         <span style={{
                           fontSize: 11, fontWeight: 600, padding: '2px 6px', borderRadius: 8,
-                          background: a.ano === 2026 ? '#EFF6FF' : '#F5F3FF',
-                          color: a.ano === 2026 ? '#1e40af' : '#7c3aed',
+                          background: a.ano === 2026 ? '#fff7ed' : '#F5F3FF',
+                          color: a.ano === 2026 ? '#1e40af' : '#f97316',
                         }}>{a.ano}</span>
                       </td>
                       <td style={{ padding: '8px 12px', color: '#555' }}>{a.modalidade}</td>

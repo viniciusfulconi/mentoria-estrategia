@@ -102,9 +102,9 @@ export default function NovoAtendimento() {
             </select>
           </div>
         ) : (
-          <div className="card" style={{ background: '#EFF6FF', padding: '10px 14px' }}>
+          <div className="card" style={{ background: '#fff7ed', padding: '10px 14px' }}>
             <div style={{ fontSize: 12, color: '#999' }}>Mentor</div>
-            <div style={{ fontSize: 14, fontWeight: 600, color: '#2563EB' }}>{form.mentor}</div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: '#f97316' }}>{form.mentor}</div>
           </div>
         )}
 
@@ -115,9 +115,9 @@ export default function NovoAtendimento() {
             {['Individual', 'Coletiva'].map(t => (
               <button key={t} onClick={() => setForm({ ...form, tipo: t })} style={{
                 flex: 1, padding: '9px', borderRadius: 10,
-                border: `1.5px solid ${form.tipo === t ? '#2563EB' : 'rgba(0,0,0,0.1)'}`,
-                background: form.tipo === t ? '#EFF6FF' : 'transparent',
-                color: form.tipo === t ? '#2563EB' : '#666',
+                border: `1.5px solid ${form.tipo === t ? '#f97316' : 'rgba(0,0,0,0.1)'}`,
+                background: form.tipo === t ? '#fff7ed' : 'transparent',
+                color: form.tipo === t ? '#f97316' : '#666',
                 cursor: 'pointer', fontFamily: 'DM Sans,sans-serif', fontSize: 13, fontWeight: 500
               }}>{t}</button>
             ))}
@@ -146,7 +146,7 @@ export default function NovoAtendimento() {
         {durMin > 0 && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             <div style={{ background: '#F7F6F3', borderRadius: 10, padding: '10px 14px', textAlign: 'center' }}>
-              <div style={{ fontSize: 18, fontWeight: 700, color: '#2563EB' }}>{durMin}min</div>
+              <div style={{ fontSize: 18, fontWeight: 700, color: '#f97316' }}>{durMin}min</div>
               <div style={{ fontSize: 10, color: '#999' }}>duração</div>
             </div>
             <div style={{ background: '#DCFCE7', borderRadius: 10, padding: '10px 14px', textAlign: 'center' }}>

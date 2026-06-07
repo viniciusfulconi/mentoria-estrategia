@@ -81,7 +81,7 @@ export default function NovaLista() {
             {materias.map(m => (
               <button key={m} onClick={() => selectMateria(m)} style={{
                 padding: '6px 14px', borderRadius: 20, fontSize: 12, border: '0.5px solid rgba(0,0,0,0.12)',
-                background: form.materia === m ? '#2563EB' : 'transparent',
+                background: form.materia === m ? '#f97316' : 'transparent',
                 color: form.materia === m ? 'white' : '#666',
                 cursor: 'pointer', fontFamily: 'DM Sans,sans-serif'
               }}>{m}</button>
@@ -120,11 +120,11 @@ export default function NovaLista() {
 
         {/* Preview da porcentagem */}
         {form.acertos && form.total && Number(form.total) > 0 && (
-          <div style={{ textAlign: 'center', padding: '12px', background: '#EFF6FF', borderRadius: 12 }}>
-            <div style={{ fontSize: 28, fontWeight: 700, color: '#2563EB' }}>
+          <div style={{ textAlign: 'center', padding: '12px', background: '#fff7ed', borderRadius: 12 }}>
+            <div style={{ fontSize: 28, fontWeight: 700, color: '#f97316' }}>
               {Math.round((Number(form.acertos) / Number(form.total)) * 100)}%
             </div>
-            <div style={{ fontSize: 12, color: '#2563EB' }}>{form.acertos} de {form.total} acertos</div>
+            <div style={{ fontSize: 12, color: '#f97316' }}>{form.acertos} de {form.total} acertos</div>
           </div>
         )}
 

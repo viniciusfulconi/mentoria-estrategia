@@ -139,7 +139,7 @@ export default function NovaProvaAntiga() {
         </div>
         {/* Progress bar */}
         <div style={{ width: 60, height: 4, background: '#F1F5F9', borderRadius: 4, overflow: 'hidden' }}>
-          <div style={{ width: step === 1 ? '50%' : '100%', height: '100%', background: '#7C3AED', borderRadius: 4, transition: 'width 0.3s' }} />
+          <div style={{ width: step === 1 ? '50%' : '100%', height: '100%', background: '#f97316', borderRadius: 4, transition: 'width 0.3s' }} />
         </div>
       </div>
 
@@ -245,7 +245,7 @@ export default function NovaProvaAntiga() {
                           style={{
                             padding: '3px 10px', borderRadius: 20, fontSize: 11,
                             border: '0.5px solid rgba(0,0,0,0.12)',
-                            background: selecionado ? '#7C3AED' : 'transparent',
+                            background: selecionado ? '#f97316' : 'transparent',
                             color: selecionado ? 'white' : '#666',
                             cursor: 'pointer', fontFamily: 'DM Sans, sans-serif',
                           }}
@@ -267,10 +267,10 @@ export default function NovaProvaAntiga() {
           })}
 
           {erro && <div style={{ color: '#DC2626', fontSize: 13, marginTop: 8 }}>{erro}</div>}
-          {uploadProgress && <div style={{ color: '#7C3AED', fontSize: 13, marginTop: 8 }}>{uploadProgress}</div>}
+          {uploadProgress && <div style={{ color: '#f97316', fontSize: 13, marginTop: 8 }}>{uploadProgress}</div>}
 
           <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <button className="btn-primary" onClick={salvar} disabled={saving} style={{ background: '#7C3AED' }}>
+            <button className="btn-primary" onClick={salvar} disabled={saving} style={{ background: '#f97316' }}>
               {saving ? uploadProgress || 'Salvando...' : 'Cadastrar prova'}
             </button>
             <button className="btn-secondary" onClick={() => setStep(1)}>← Voltar</button>

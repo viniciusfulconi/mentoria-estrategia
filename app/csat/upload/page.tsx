@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { dbInsert } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
+import { useAuth } from '@/contexts/AuthContext'
 import Nav from '@/components/Nav'
 
 const COL_MAP = {
@@ -20,6 +21,8 @@ const COL_MAP = {
 
 export default function UploadCSAT() {
   const router = useRouter()
+  const { verticalAtiva } = useAuth()
+  const vertical = verticalAtiva || 'ITA'
   const [nomePesquisa, setNomePesquisa] = useState('')
   const [dataPesquisa, setDataPesquisa] = useState(new Date().toISOString().split('T')[0])
   const [preview, setPreview] = useState<any[]>([])
@@ -75,7 +78,7 @@ export default function UploadCSAT() {
 
     // Cria pesquisa
     addLog('📋 Criando pesquisa...')
-    const { data: pesquisaArr, error: pErr } = await dbInsert<any>('pesquisas_csat', [{ nome: nomePesquisa, data: dataPesquisa }], true)
+    const { data: pesquisaArr, error: pErr } = await dbInsert<any>('pesquisas_csat', [{ nome: nomePesquisa, data: dataPesquisa, vertical }], true)
     if (pErr) { addLog(`❌ ${pErr}`); setSaving(false); return }
     const pesquisa = (pesquisaArr as any)?.[0]
 
@@ -96,6 +99,7 @@ export default function UploadCSAT() {
       o_que_ajuda: r.ajuda,
       o_que_melhorar: r.melhorar,
       o_que_mudaria: r.mudaria,
+      vertical,
     }))
 
     const { error: rErr } = await dbInsert('respostas_csat', records)
@@ -144,7 +148,7 @@ export default function UploadCSAT() {
               </div>
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                 {mentores.map(m => (
-                  <span key={m} style={{ fontSize: 10, padding: '3px 8px', borderRadius: 10, background: '#EFF6FF', color: '#1E40AF' }}>{m}</span>
+                  <span key={m} style={{ fontSize: 10, padding: '3px 8px', borderRadius: 10, background: '#fff7ed', color: '#1E40AF' }}>{m}</span>
                 ))}
               </div>
             </div>

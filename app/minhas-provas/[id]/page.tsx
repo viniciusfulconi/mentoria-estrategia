@@ -258,11 +258,11 @@ export default function MinhaProva() {
                     return (
                       <div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
-                          <div style={{ fontSize: 32, fontWeight: 700, color: '#2563EB' }}>{soma.toFixed(1)}</div>
+                          <div style={{ fontSize: 32, fontWeight: 700, color: '#f97316' }}>{soma.toFixed(1)}</div>
                           <div style={{ fontSize: 13, color: '#666' }}>de {total} pontos</div>
                         </div>
                         {correcao.pdf_correcao_url && (
-                          <a href={correcao.pdf_correcao_url} target="_blank" rel="noreferrer" style={{ fontSize: 12, color: '#2563EB' }}>
+                          <a href={correcao.pdf_correcao_url} target="_blank" rel="noreferrer" style={{ fontSize: 12, color: '#f97316' }}>
                             📎 Ver PDF enviado
                           </a>
                         )}
@@ -278,7 +278,7 @@ export default function MinhaProva() {
               <div className="card" style={{ background: '#F3F0FF' }}>
                 <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 4, color: '#5B21B6' }}>Ranking entre alunos</div>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
-                  <span style={{ fontSize: 28, fontWeight: 700, color: '#7C3AED' }}>{rankingInfo.pos}º</span>
+                  <span style={{ fontSize: 28, fontWeight: 700, color: '#f97316' }}>{rankingInfo.pos}º</span>
                   <span style={{ fontSize: 13, color: '#6B7280' }}>de {rankingInfo.total} alunos que fizeram esta prova</span>
                 </div>
               </div>
@@ -319,7 +319,7 @@ export default function MinhaProva() {
           <button
             className="btn-primary"
             onClick={() => setCorrigindo(true)}
-            style={{ background: '#7C3AED' }}
+            style={{ background: '#f97316' }}
           >
             ✏️ Corrigir prova
           </button>
@@ -369,7 +369,7 @@ export default function MinhaProva() {
 
             {erro && <div style={{ color: '#DC2626', fontSize: 13, marginTop: 8 }}>{erro}</div>}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
-              <button className="btn-primary" onClick={confirmarFase1} disabled={saving} style={{ background: '#7C3AED' }}>
+              <button className="btn-primary" onClick={confirmarFase1} disabled={saving} style={{ background: '#f97316' }}>
                 {saving ? 'Salvando...' : 'Confirmar correção'}
               </button>
               <button className="btn-secondary" onClick={() => setCorrigindo(false)}>Cancelar</button>
@@ -406,7 +406,7 @@ export default function MinhaProva() {
                     </div>
                     {questao?.materia && <span style={{ fontSize: 11, color: '#999' }}>{questao.materia}</span>}
                     <div style={{ flex: 1 }} />
-                    <span style={{ fontSize: 13, fontWeight: 700, color: nota !== undefined ? '#2563EB' : '#ccc' }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: nota !== undefined ? '#f97316' : '#ccc' }}>
                       {nota !== undefined ? nota.toFixed(1) : '—'}
                     </span>
                   </div>
@@ -417,7 +417,7 @@ export default function MinhaProva() {
                         onClick={() => setNotasFase2(prev => ({ ...prev, [String(num)]: v }))}
                         style={{
                           width: 38, height: 32, borderRadius: 8, border: '0.5px solid rgba(0,0,0,0.12)',
-                          background: nota === v ? '#2563EB' : 'white',
+                          background: nota === v ? '#f97316' : 'white',
                           color: nota === v ? 'white' : '#444',
                           fontSize: 11, fontWeight: nota === v ? 700 : 400,
                           cursor: 'pointer', fontFamily: 'DM Sans, sans-serif',
@@ -432,9 +432,9 @@ export default function MinhaProva() {
             })}
 
             {erro && <div style={{ color: '#DC2626', fontSize: 13, marginTop: 8 }}>{erro}</div>}
-            {uploadProgress && <div style={{ color: '#7C3AED', fontSize: 13 }}>{uploadProgress}</div>}
+            {uploadProgress && <div style={{ color: '#f97316', fontSize: 13 }}>{uploadProgress}</div>}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
-              <button className="btn-primary" onClick={confirmarFase2} disabled={saving} style={{ background: '#7C3AED' }}>
+              <button className="btn-primary" onClick={confirmarFase2} disabled={saving} style={{ background: '#f97316' }}>
                 {saving ? uploadProgress || 'Salvando...' : 'Confirmar correção'}
               </button>
               <button className="btn-secondary" onClick={() => setCorrigindo(false)}>Cancelar</button>

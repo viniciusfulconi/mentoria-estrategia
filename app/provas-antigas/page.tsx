@@ -33,7 +33,7 @@ export default function ProvasAntigas() {
       <div style={{ background: 'white', borderBottom: '0.5px solid rgba(0,0,0,0.08)', padding: '16px', position: 'sticky', top: 0, zIndex: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ fontSize: 17, fontWeight: 600 }}>Provas Antigas</div>
         {isCoordenador && (
-          <Link href="/provas-antigas/nova" style={{ textDecoration: 'none', background: '#7C3AED', color: 'white', borderRadius: 10, padding: '7px 14px', fontSize: 13, fontWeight: 500 }}>
+          <Link href="/provas-antigas/nova" style={{ textDecoration: 'none', background: '#f97316', color: 'white', borderRadius: 10, padding: '7px 14px', fontSize: 13, fontWeight: 500 }}>
             + Nova prova
           </Link>
         )}
@@ -45,14 +45,14 @@ export default function ProvasAntigas() {
         ) : erro ? (
           <div className="card" style={{ textAlign: 'center', padding: 40 }}>
             <div style={{ fontSize: 13, color: '#DC2626', marginBottom: 12 }}>{erro}</div>
-            <button onClick={load} style={{ padding: '8px 20px', borderRadius: 10, background: '#2563EB', color: 'white', border: 'none', fontSize: 13, cursor: 'pointer', fontFamily: 'DM Sans, sans-serif' }}>Tentar novamente</button>
+            <button onClick={load} style={{ padding: '8px 20px', borderRadius: 10, background: '#f97316', color: 'white', border: 'none', fontSize: 13, cursor: 'pointer', fontFamily: 'DM Sans, sans-serif' }}>Tentar novamente</button>
           </div>
         ) : provas.length === 0 ? (
           <div className="card" style={{ textAlign: 'center', color: '#999', padding: 40 }}>
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}><FileText size={36} strokeWidth={1.5} color="#CBD5E1" /></div>
             <div style={{ marginBottom: 12 }}>Nenhuma prova cadastrada ainda.</div>
             {isCoordenador && (
-              <Link href="/provas-antigas/nova" style={{ textDecoration: 'none', display: 'inline-block', background: '#7C3AED', color: 'white', borderRadius: 12, padding: '10px 20px', fontSize: 14 }}>
+              <Link href="/provas-antigas/nova" style={{ textDecoration: 'none', display: 'inline-block', background: '#f97316', color: 'white', borderRadius: 12, padding: '10px 20px', fontSize: 14 }}>
                 Cadastrar primeira prova
               </Link>
             )}
@@ -61,7 +61,7 @@ export default function ProvasAntigas() {
           <div key={p.id} className="card" style={{ marginBottom: 10 }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
               <div style={{ width: 40, height: 40, borderRadius: 10, background: '#F3F0FF', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <FileText size={18} strokeWidth={2} color="#7C3AED" />
+                <FileText size={18} strokeWidth={2} color="#f97316" />
               </div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontWeight: 600, fontSize: 14, color: '#1a1a1a', marginBottom: 4 }}>{p.nome}</div>
@@ -81,7 +81,7 @@ export default function ProvasAntigas() {
                 </div>
               </div>
               {p.pdf_url && (
-                <a href={p.pdf_url} target="_blank" rel="noreferrer" style={{ flexShrink: 0, fontSize: 11, color: '#7C3AED', textDecoration: 'none', padding: '4px 8px', border: '0.5px solid #7C3AED', borderRadius: 8 }}>
+                <a href={p.pdf_url} target="_blank" rel="noreferrer" style={{ flexShrink: 0, fontSize: 11, color: '#f97316', textDecoration: 'none', padding: '4px 8px', border: '0.5px solid #f97316', borderRadius: 8 }}>
                   PDF
                 </a>
               )}

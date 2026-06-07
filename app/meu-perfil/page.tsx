@@ -9,8 +9,10 @@ export default function MeuPerfil() {
   const router = useRouter()
 
   useEffect(() => {
-    // Redireciona aluno para sua própria página de resultados
-    if (perfil?.aluno_id) {
+    if (!perfil) return
+    if (perfil.vertical === 'Medicina') {
+      router.replace('/med/aluno')
+    } else if (perfil.aluno_id) {
       router.replace(`/aluno/${perfil.aluno_id}`)
     }
   }, [perfil])

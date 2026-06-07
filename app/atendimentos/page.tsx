@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import { dbQuery, getToken } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import Nav from '@/components/Nav'
@@ -8,7 +9,8 @@ import type { AtendimentoMentoria } from '@/lib/supabase'
 import { List, DollarSign, Brain, CheckCircle2, Pin, FileText, Link2, Play, Sparkles, X, Copy, Check } from 'lucide-react'
 
 export default function Atendimentos() {
-  const { perfil } = useAuth()
+  const { perfil, verticalAtiva } = useAuth()
+  const router = useRouter()
   const [dados, setDados] = useState<AtendimentoMentoria[]>([])
   const [loading, setLoading] = useState(true)
   const [erro, setErro] = useState<string | null>(null)
@@ -29,7 +31,10 @@ export default function Atendimentos() {
   const [tipoResumo, setTipoResumo] = useState<'geral' | 'ultimo' | 'ultimos_dois'>('geral')
   const abortRef = useRef<AbortController | null>(null)
 
-  useEffect(() => { carregar() }, [perfil])
+  useEffect(() => {
+    if (verticalAtiva === 'Medicina') { router.replace('/med/alunos'); return }
+    carregar()
+  }, [perfil, verticalAtiva])
 
   async function carregar() {
     setErro(null)
@@ -143,14 +148,14 @@ export default function Atendimentos() {
             {perfil?.papel === 'coordenador' && (
               <>
                 <button onClick={abrirResumo}
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#F3F0FF', color: '#7C3AED', border: 'none', borderRadius: 10, padding: '6px 12px', fontSize: 12, fontWeight: 500, cursor: 'pointer', fontFamily: 'DM Sans,sans-serif' }}>
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#F3F0FF', color: '#f97316', border: 'none', borderRadius: 10, padding: '6px 12px', fontSize: 12, fontWeight: 500, cursor: 'pointer', fontFamily: 'DM Sans,sans-serif' }}>
                   <Sparkles size={13} strokeWidth={2} />Resumo IA
                 </button>
                 <Link href="/atendimentos/upload" style={{ textDecoration: 'none', background: '#F1F5F9', color: '#666', borderRadius: 10, padding: '6px 12px', fontSize: 12 }}>↑ Import</Link>
               </>
             )}
             {perfil?.papel !== 'direcao' && (
-              <Link href="/atendimentos/novo" style={{ textDecoration: 'none', background: '#2563EB', color: 'white', borderRadius: 10, padding: '6px 12px', fontSize: 12, fontWeight: 500 }}>+ Novo</Link>
+              <Link href="/atendimentos/novo" style={{ textDecoration: 'none', background: '#f97316', color: 'white', borderRadius: 10, padding: '6px 12px', fontSize: 12, fontWeight: 500 }}>+ Novo</Link>
             )}
           </div>
         </div>
@@ -216,7 +221,7 @@ export default function Atendimentos() {
         ) : erro ? (
           <div className="card" style={{ textAlign: 'center', padding: 40 }}>
             <div style={{ fontSize: 13, color: '#DC2626', marginBottom: 12 }}>{erro}</div>
-            <button onClick={carregar} style={{ padding: '8px 20px', borderRadius: 10, background: '#2563EB', color: 'white', border: 'none', fontSize: 13, cursor: 'pointer', fontFamily: 'DM Sans, sans-serif' }}>Tentar novamente</button>
+            <button onClick={carregar} style={{ padding: '8px 20px', borderRadius: 10, background: '#f97316', color: 'white', border: 'none', fontSize: 13, cursor: 'pointer', fontFamily: 'DM Sans, sans-serif' }}>Tentar novamente</button>
           </div>
         ) : (
           <>
@@ -234,11 +239,11 @@ export default function Atendimentos() {
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 8, background: d.tipo === 'Individual' ? '#EFF6FF' : '#DCFCE7', color: d.tipo === 'Individual' ? '#1E40AF' : '#14532D' }}>{d.tipo}</span>
+                  <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 8, background: d.tipo === 'Individual' ? '#fff7ed' : '#DCFCE7', color: d.tipo === 'Individual' ? '#1E40AF' : '#14532D' }}>{d.tipo}</span>
                   {d.encaminhamento_psico && <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 8, background: '#FEF2F2', color: '#991B1B', display: 'inline-flex', alignItems: 'center', gap: 4 }}><Brain size={10} strokeWidth={2} />Psico</span>}
                   {d.arquivo_gemini_url && <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 8, background: '#DCFCE7', color: '#14532D', display: 'inline-flex', alignItems: 'center', gap: 4 }}><FileText size={10} strokeWidth={2} />Docx</span>}
-                  {d.link_gemini && !d.arquivo_gemini_url && <a href={d.link_gemini} target="_blank" rel="noopener noreferrer" style={{ fontSize: 10, padding: '2px 8px', borderRadius: 8, background: '#F1F5F9', color: '#2563EB', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}><Link2 size={10} strokeWidth={2} />Gemini</a>}
-                  {d.link_gravacao && <a href={d.link_gravacao} target="_blank" rel="noopener noreferrer" style={{ fontSize: 10, padding: '2px 8px', borderRadius: 8, background: '#F1F5F9', color: '#2563EB', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}><Play size={10} strokeWidth={2} />Gravação</a>}
+                  {d.link_gemini && !d.arquivo_gemini_url && <a href={d.link_gemini} target="_blank" rel="noopener noreferrer" style={{ fontSize: 10, padding: '2px 8px', borderRadius: 8, background: '#F1F5F9', color: '#f97316', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}><Link2 size={10} strokeWidth={2} />Gemini</a>}
+                  {d.link_gravacao && <a href={d.link_gravacao} target="_blank" rel="noopener noreferrer" style={{ fontSize: 10, padding: '2px 8px', borderRadius: 8, background: '#F1F5F9', color: '#f97316', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}><Play size={10} strokeWidth={2} />Gravação</a>}
                 </div>
                 {d.descricao && <div style={{ fontSize: 12, color: '#666', marginTop: 8, lineHeight: 1.5, borderTop: '0.5px solid rgba(0,0,0,0.06)', paddingTop: 8 }}>{d.descricao}</div>}
               </div>
@@ -247,7 +252,7 @@ export default function Atendimentos() {
             {aba === 'lista' && filtrados.length > limite && (
               <button
                 onClick={() => setLimite(l => l + 50)}
-                style={{ width: '100%', padding: '12px', borderRadius: 12, border: '0.5px solid rgba(0,0,0,0.12)', background: 'white', color: '#2563EB', fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', marginBottom: 10 }}
+                style={{ width: '100%', padding: '12px', borderRadius: 12, border: '0.5px solid rgba(0,0,0,0.12)', background: 'white', color: '#f97316', fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', marginBottom: 10 }}
               >
                 Carregar mais ({filtrados.length - limite} restantes)
               </button>
@@ -256,7 +261,7 @@ export default function Atendimentos() {
             {/* FINANCEIRO */}
             {aba === 'financeiro' && (
               <>
-                <div style={{ background: '#2563EB', borderRadius: 14, padding: '16px 20px', marginBottom: 16, textAlign: 'center' }}>
+                <div style={{ background: '#f97316', borderRadius: 14, padding: '16px 20px', marginBottom: 16, textAlign: 'center' }}>
                   <div style={{ fontSize: 32, fontWeight: 800, color: 'white' }}>R$ {totalGeral.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
                   <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', marginTop: 4 }}>Total gasto · {filtrados.length} atendimentos</div>
                 </div>
@@ -270,7 +275,7 @@ export default function Atendimentos() {
                       <div style={{ fontSize: 20, fontWeight: 700, color: '#16A34A' }}>R$ {f.totalValor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
                     </div>
                     <div style={{ height: 6, background: '#F1F5F9', borderRadius: 3, overflow: 'hidden' }}>
-                      <div style={{ height: '100%', width: `${totalGeral > 0 ? (f.totalValor/totalGeral)*100 : 0}%`, background: '#2563EB', borderRadius: 3 }} />
+                      <div style={{ height: '100%', width: `${totalGeral > 0 ? (f.totalValor/totalGeral)*100 : 0}%`, background: '#f97316', borderRadius: 3 }} />
                     </div>
                     <div style={{ fontSize: 10, color: '#999', marginTop: 4 }}>{totalGeral > 0 ? ((f.totalValor/totalGeral)*100).toFixed(1) : 0}% do total</div>
                   </div>
@@ -307,7 +312,7 @@ export default function Atendimentos() {
           <div onClick={e => e.stopPropagation()} style={{ background: 'white', borderRadius: '20px 20px 0 0', width: '100%', maxWidth: 560, maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
             {/* Header do modal */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '18px 20px 14px', borderBottom: '0.5px solid rgba(0,0,0,0.08)' }}>
-              <Sparkles size={18} strokeWidth={2} color="#7C3AED" />
+              <Sparkles size={18} strokeWidth={2} color="#f97316" />
               <div style={{ flex: 1, fontSize: 16, fontWeight: 600 }}>Resumo dos atendimentos</div>
               <button onClick={() => setShowResumo(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#999', display: 'flex', alignItems: 'center' }}>
                 <X size={20} strokeWidth={2} />
@@ -327,9 +332,9 @@ export default function Atendimentos() {
                     ] as const).map(t => (
                       <button key={t.id} onClick={() => setTipoResumo(t.id)} style={{
                         flex: 1, padding: '7px 4px', borderRadius: 10, fontSize: 11, fontWeight: tipoResumo === t.id ? 600 : 400,
-                        border: `1.5px solid ${tipoResumo === t.id ? '#7C3AED' : 'rgba(0,0,0,0.1)'}`,
+                        border: `1.5px solid ${tipoResumo === t.id ? '#f97316' : 'rgba(0,0,0,0.1)'}`,
                         background: tipoResumo === t.id ? '#F3F0FF' : 'white',
-                        color: tipoResumo === t.id ? '#7C3AED' : '#666',
+                        color: tipoResumo === t.id ? '#f97316' : '#666',
                         cursor: 'pointer', fontFamily: 'DM Sans,sans-serif',
                       }}>{t.label}</button>
                     ))}
@@ -358,7 +363,7 @@ export default function Atendimentos() {
                               borderBottom: i < arr.length - 1 ? '0.5px solid rgba(0,0,0,0.06)' : 'none',
                               background: alunoSelecionado?.id_aluno === a.id_aluno ? '#F3F0FF' : 'white',
                             }}>
-                            <div style={{ fontSize: 13, fontWeight: alunoSelecionado?.id_aluno === a.id_aluno ? 600 : 400, color: alunoSelecionado?.id_aluno === a.id_aluno ? '#7C3AED' : '#1a1a1a' }}>{a.nome}</div>
+                            <div style={{ fontSize: 13, fontWeight: alunoSelecionado?.id_aluno === a.id_aluno ? 600 : 400, color: alunoSelecionado?.id_aluno === a.id_aluno ? '#f97316' : '#1a1a1a' }}>{a.nome}</div>
                             <div style={{ fontSize: 11, color: '#999', marginTop: 1 }}>{a.mentor}</div>
                           </div>
                         ))
@@ -366,7 +371,7 @@ export default function Atendimentos() {
                   </div>
 
                   <button onClick={gerarResumo} disabled={resumoLoading || !alunoSelecionado}
-                    style={{ width: '100%', padding: '12px', borderRadius: 12, border: 'none', background: alunoSelecionado ? '#7C3AED' : '#E2E8F0', color: alunoSelecionado ? 'white' : '#999', fontSize: 14, fontWeight: 600, cursor: alunoSelecionado ? 'pointer' : 'default', fontFamily: 'DM Sans,sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                    style={{ width: '100%', padding: '12px', borderRadius: 12, border: 'none', background: alunoSelecionado ? '#f97316' : '#E2E8F0', color: alunoSelecionado ? 'white' : '#999', fontSize: 14, fontWeight: 600, cursor: alunoSelecionado ? 'pointer' : 'default', fontFamily: 'DM Sans,sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
                     <Sparkles size={16} strokeWidth={2} />
                     {resumoLoading ? 'Gerando resumo...' : alunoSelecionado ? `Analisar ${alunoSelecionado.nome.split(' ')[0]}` : 'Selecione um aluno'}
                   </button>

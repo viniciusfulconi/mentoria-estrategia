@@ -13,7 +13,7 @@ export function BarChart({ dados }: { dados: { materia: string, pct: number }[] 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       {dados.map(({ materia, pct }) => {
-        const cor = CORES_MAT[materia] || '#2563EB'
+        const cor = CORES_MAT[materia] || '#f97316'
         return (
           <div key={materia}>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, marginBottom: 3 }}>
@@ -93,7 +93,7 @@ export function GraficoQuestoes({ dados, turmaQuestoes, cicloAtivo, fase, titulo
             const x = i * (barW * 2 + gap + 4) + 2
             const hAluno = vAluno * h
             const hTurma = vTurma * h
-            const corBarra = corAluno || '#2563EB'
+            const corBarra = corAluno || '#f97316'
             const pctTurma = Math.round(vTurma * 100)
 
             return (
@@ -301,7 +301,7 @@ export function GraficoEvolucaoLinhas({ rankings }: { rankings: any[] }) {
 
   const series = [
     { label: '1ª Fase',    campo: 'media_1fase',      cor: '#64748B' },
-    { label: 'Matemática', campo: 'nota_matematica',   cor: '#2563EB' },
+    { label: 'Matemática', campo: 'nota_matematica',   cor: '#f97316' },
     { label: 'Física',     campo: 'nota_fisica',       cor: '#1E88E5' },
     { label: 'Química',    campo: 'nota_quimica',      cor: '#E53935' },
     { label: 'Port./Red.', campo: 'media_linguagens',  cor: '#FB8C00' },
@@ -479,7 +479,7 @@ export function RadarSection({ rankings }: { rankings: any[] }) {
           {(['media', 'recente'] as const).map(m => (
             <button key={m} onClick={() => setModo(m)} style={{
               padding: '3px 10px', borderRadius: 12, fontSize: 10, border: 'none',
-              background: modo === m ? '#2563EB' : '#F1F5F9',
+              background: modo === m ? '#f97316' : '#F1F5F9',
               color: modo === m ? 'white' : '#666',
               cursor: 'pointer', fontFamily: 'DM Sans,sans-serif'
             }}>{m === 'media' ? 'Média geral' : 'Último ciclo'}</button>
@@ -496,9 +496,9 @@ export function RadarSection({ rankings }: { rankings: any[] }) {
           const [x, y] = pontoEixo(i, raio)
           return <line key={i} x1={cx} y1={cy} x2={x} y2={y} stroke="rgba(0,0,0,0.07)" strokeWidth="1" />
         })}
-        <polygon points={polyPath} fill="#2563EB" fillOpacity="0.15" stroke="#2563EB" strokeWidth="2" />
+        <polygon points={polyPath} fill="#f97316" fillOpacity="0.15" stroke="#f97316" strokeWidth="2" />
         {pontos.map(([x, y], i) => {
-          const cor = CORES_MAT[dadosRadar[i].materia] || '#2563EB'
+          const cor = CORES_MAT[dadosRadar[i].materia] || '#f97316'
           return (
             <g key={i}>
               <circle cx={x} cy={y} r="5" fill={cor} stroke="white" strokeWidth="1.5" />
@@ -510,7 +510,7 @@ export function RadarSection({ rankings }: { rankings: any[] }) {
         })}
         {dadosRadar.map((d, i) => {
           const [x, y] = pontoEixo(i, raio + 20)
-          const cor = CORES_MAT[d.materia] || '#2563EB'
+          const cor = CORES_MAT[d.materia] || '#f97316'
           return (
             <text key={i} x={x} y={y} textAnchor="middle" fontSize="10" fontWeight="600" fill={cor} dominantBaseline="middle">
               {d.materia}

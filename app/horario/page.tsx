@@ -10,7 +10,7 @@ import { Clock, BookOpen, User, ExternalLink, Trash2, CalendarX } from 'lucide-r
 type Visualizacao = 'dia' | 'semana' | 'mes' | 'ano'
 
 export default function Horario() {
-  const { perfil } = useAuth()
+  const { perfil, verticalAtiva } = useAuth()
   const [atividades, setAtividades] = useState<any[]>([])
   const [vis, setVis] = useState<Visualizacao>('mes')
   const [dataAtual, setDataAtual] = useState(new Date())
@@ -18,15 +18,16 @@ export default function Horario() {
   const [loading, setLoading] = useState(true)
   const [turmaId, setTurmaId] = useState<string | null>(null)
 
-  useEffect(() => { carregarDados() }, [perfil])
+  useEffect(() => { carregarDados() }, [perfil, verticalAtiva])
 
   async function carregarDados() {
     if (!perfil) return
+    const vertical = verticalAtiva || 'ITA'
 
-    const { data: turmas } = await dbQuery('turmas', { limit: '1' }, 'id')
+    const { data: turmas } = await dbQuery('turmas', { tipo: `eq.${vertical}`, limit: '1' }, 'id')
     setTurmaId(turmas?.[0]?.id || null)
 
-    const params: Record<string, string> = { order: 'data_inicio' }
+    const params: Record<string, string> = { vertical: `eq.${vertical}`, order: 'data_inicio' }
     if (perfil.papel === 'aluno' && perfil.aluno_id) {
       params['or'] = `(aluno_id.eq.${perfil.aluno_id},aluno_id.is.null)`
     }
@@ -130,12 +131,12 @@ export default function Horario() {
             )}
             {isMentor && (
               <div style={{ display: 'flex', gap: 4 }}>
-                <Link href="/horario/mentor" style={{ textDecoration: 'none', background: '#2563EB', color: 'white', borderRadius: 8, padding: '5px 10px', fontSize: 11 }}>+ Estudo</Link>
-                <Link href="/horario/nova-prova-antiga" style={{ textDecoration: 'none', background: '#7C3AED', color: 'white', borderRadius: 8, padding: '5px 10px', fontSize: 11 }}>+ Prova</Link>
+                <Link href="/horario/mentor" style={{ textDecoration: 'none', background: '#f97316', color: 'white', borderRadius: 8, padding: '5px 10px', fontSize: 11 }}>+ Estudo</Link>
+                <Link href="/horario/nova-prova-antiga" style={{ textDecoration: 'none', background: '#f97316', color: 'white', borderRadius: 8, padding: '5px 10px', fontSize: 11 }}>+ Prova</Link>
               </div>
             )}
             {isAluno && (
-              <Link href="/horario/nova-atividade" style={{ textDecoration: 'none', background: '#2563EB', color: 'white', borderRadius: 8, padding: '5px 12px', fontSize: 11 }}>+ Pessoal</Link>
+              <Link href="/horario/nova-atividade" style={{ textDecoration: 'none', background: '#f97316', color: 'white', borderRadius: 8, padding: '5px 12px', fontSize: 11 }}>+ Pessoal</Link>
             )}
           </div>
         </div>
@@ -145,7 +146,7 @@ export default function Horario() {
           {(['dia', 'semana', 'mes', 'ano'] as Visualizacao[]).map(v => (
             <button key={v} onClick={() => setVis(v)} style={{
               padding: '4px 12px', borderRadius: 16, fontSize: 11, border: 'none',
-              background: vis === v ? '#2563EB' : '#F1F5F9', color: vis === v ? 'white' : '#666',
+              background: vis === v ? '#f97316' : '#F1F5F9', color: vis === v ? 'white' : '#666',
               cursor: 'pointer', fontFamily: 'DM Sans,sans-serif',
             }}>{v === 'dia' ? 'Dia' : v === 'semana' ? 'Semana' : v === 'mes' ? 'Mês' : 'Ano'}</button>
           ))}
@@ -153,9 +154,9 @@ export default function Horario() {
 
         {/* Navegação */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <button onClick={navAnterior} style={{ background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', color: '#2563EB' }}>‹</button>
+          <button onClick={navAnterior} style={{ background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', color: '#f97316' }}>‹</button>
           <div style={{ fontSize: 14, fontWeight: 600, textAlign: 'center', textTransform: 'capitalize' }}>{tituloNav()}</div>
-          <button onClick={navProximo} style={{ background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', color: '#2563EB' }}>›</button>
+          <button onClick={navProximo} style={{ background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', color: '#f97316' }}>›</button>
         </div>
       </div>
 
@@ -222,11 +223,11 @@ export default function Horario() {
             {/* Resumo horas de estudo */}
             {isAluno && Object.keys(horasEstudo).length > 0 && (
               <div className="card" style={{ marginTop: 16 }}>
-                <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}><Clock size={13} strokeWidth={2} color="#2563EB" />Horas de estudo esta semana</div>
+                <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}><Clock size={13} strokeWidth={2} color="#f97316" />Horas de estudo esta semana</div>
                 {Object.entries(horasEstudo).sort((a, b) => b[1] - a[1]).map(([mat, h]) => (
                   <div key={mat} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 4 }}>
                     <span style={{ color: '#666' }}>{mat}</span>
-                    <span style={{ fontWeight: 600, color: '#2563EB' }}>{h.toFixed(1)}h</span>
+                    <span style={{ fontWeight: 600, color: '#f97316' }}>{h.toFixed(1)}h</span>
                   </div>
                 ))}
               </div>
@@ -257,7 +258,7 @@ export default function Horario() {
               </div>
             )}
             {atividadeSelecionada.link && (
-              <a href={atividadeSelecionada.link} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 10, color: '#2563EB', fontSize: 13, textDecoration: 'none' }}>
+              <a href={atividadeSelecionada.link} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 10, color: '#f97316', fontSize: 13, textDecoration: 'none' }}>
                 <ExternalLink size={13} strokeWidth={2} />Abrir link
               </a>
             )}
@@ -371,9 +372,9 @@ function ViewSemana({ dataAtual, atividadesExpandidas, onSelect, onSelectDia }: 
         {dias.map((d, i) => {
           const isHoje = d.getDate() === hoje.getDate() && d.getMonth() === hoje.getMonth() && d.getFullYear() === hoje.getFullYear()
           return (
-            <div key={i} onClick={() => onSelectDia(d)} style={{ textAlign: 'center', cursor: 'pointer', padding: '6px 2px', borderRadius: 8, background: isHoje ? '#EFF6FF' : 'transparent' }}>
-              <div style={{ fontSize: 10, color: isHoje ? '#2563EB' : '#999' }}>{DIAS_CURTO[i]}</div>
-              <div style={{ fontSize: 16, fontWeight: isHoje ? 700 : 400, color: isHoje ? '#2563EB' : '#1a1a1a' }}>{d.getDate()}</div>
+            <div key={i} onClick={() => onSelectDia(d)} style={{ textAlign: 'center', cursor: 'pointer', padding: '6px 2px', borderRadius: 8, background: isHoje ? '#fff7ed' : 'transparent' }}>
+              <div style={{ fontSize: 10, color: isHoje ? '#f97316' : '#999' }}>{DIAS_CURTO[i]}</div>
+              <div style={{ fontSize: 16, fontWeight: isHoje ? 700 : 400, color: isHoje ? '#f97316' : '#1a1a1a' }}>{d.getDate()}</div>
             </div>
           )
         })}
@@ -383,7 +384,7 @@ function ViewSemana({ dataAtual, atividadesExpandidas, onSelect, onSelectDia }: 
           const ativs = atividadesDoDia(d)
           const isHoje = d.getDate() === hoje.getDate() && d.getMonth() === hoje.getMonth() && d.getFullYear() === hoje.getFullYear()
           return (
-            <div key={i} style={{ minHeight: 120, borderRadius: 8, border: '1px solid ' + (isHoje ? '#2563EB' : 'rgba(0,0,0,0.06)'), padding: 4, background: isHoje ? '#FAFAFE' : 'white' }}>
+            <div key={i} style={{ minHeight: 120, borderRadius: 8, border: '1px solid ' + (isHoje ? '#f97316' : 'rgba(0,0,0,0.06)'), padding: 4, background: isHoje ? '#FAFAFE' : 'white' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                 {ativs.map((a: any) => {
                   const cores = corAtividade(a)
@@ -442,11 +443,11 @@ function ViewMes({ dataAtual, atividadesExpandidas, onSelectDia }: any) {
           return (
             <div key={i} onClick={() => onSelectDia(new Date(ano, mes, dia))} style={{
               minHeight: 52, borderRadius: 8, padding: '4px 3px',
-              background: isHoje ? '#EFF6FF' : 'white',
-              border: `0.5px solid ${isHoje ? '#2563EB' : 'rgba(0,0,0,0.06)'}`,
+              background: isHoje ? '#fff7ed' : 'white',
+              border: `0.5px solid ${isHoje ? '#f97316' : 'rgba(0,0,0,0.06)'}`,
               cursor: 'pointer'
             }}>
-              <div style={{ fontSize: 11, fontWeight: isHoje ? 700 : 400, color: isHoje ? '#2563EB' : '#333', textAlign: 'center', marginBottom: 2 }}>{dia}</div>
+              <div style={{ fontSize: 11, fontWeight: isHoje ? 700 : 400, color: isHoje ? '#f97316' : '#333', textAlign: 'center', marginBottom: 2 }}>{dia}</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                 {ativs.slice(0, 2).map((a: any) => {
                   const { bg, text } = corAtividade(a)
@@ -484,10 +485,10 @@ function ViewAno({ ano, atividadesExpandidas, onSelectMes }: any) {
         return (
           <div key={mi} onClick={() => onSelectMes(mi)} className="card" style={{
             cursor: 'pointer', textAlign: 'center', padding: '12px 8px',
-            border: isMesAtual ? '1.5px solid #2563EB' : '0.5px solid rgba(0,0,0,0.08)',
-            background: isMesAtual ? '#EFF6FF' : 'white'
+            border: isMesAtual ? '1.5px solid #f97316' : '0.5px solid rgba(0,0,0,0.08)',
+            background: isMesAtual ? '#fff7ed' : 'white'
           }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: isMesAtual ? '#2563EB' : '#1a1a1a', marginBottom: 6 }}>{m}</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: isMesAtual ? '#f97316' : '#1a1a1a', marginBottom: 6 }}>{m}</div>
             <div style={{ fontSize: 11, color: '#999', marginBottom: 6 }}>{atividsMes.length} ativ.</div>
             <div style={{ display: 'flex', gap: 3, justifyContent: 'center', flexWrap: 'wrap' }}>
               {tipos.slice(0, 4).map((t: any) => {

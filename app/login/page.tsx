@@ -153,7 +153,7 @@ export default function Login() {
 
             <button onClick={entrar} disabled={loading} style={{
               width: '100%', padding: '13px', borderRadius: 12,
-              background: loading ? '#aaa' : '#2563EB', color: 'white',
+              background: loading ? '#aaa' : '#f97316', color: 'white',
               border: 'none', fontSize: 15, fontWeight: 600,
               cursor: loading ? 'not-allowed' : 'pointer',
               fontFamily: 'DM Sans, sans-serif', marginTop: 4,
@@ -165,7 +165,7 @@ export default function Login() {
           <div style={{ textAlign: 'center', marginTop: 16 }}>
             <button
               onClick={() => { setRecuperando(v => !v); setRecuperacaoEnviada(false) }}
-              style={{ background: 'none', border: 'none', fontSize: 13, color: '#2563EB', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif' }}
+              style={{ background: 'none', border: 'none', fontSize: 13, color: '#f97316', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif' }}
             >
               Esqueci minha senha
             </button>
@@ -194,7 +194,7 @@ export default function Login() {
                   <button
                     onClick={enviarRecuperacao}
                     disabled={loadingRecuperacao || !emailRecuperacao}
-                    style={{ width: '100%', padding: '10px', borderRadius: 10, background: loadingRecuperacao || !emailRecuperacao ? '#aaa' : '#2563EB', color: 'white', border: 'none', fontSize: 14, fontWeight: 500, cursor: loadingRecuperacao || !emailRecuperacao ? 'not-allowed' : 'pointer', fontFamily: 'DM Sans, sans-serif' }}
+                    style={{ width: '100%', padding: '10px', borderRadius: 10, background: loadingRecuperacao || !emailRecuperacao ? '#aaa' : '#f97316', color: 'white', border: 'none', fontSize: 14, fontWeight: 500, cursor: loadingRecuperacao || !emailRecuperacao ? 'not-allowed' : 'pointer', fontFamily: 'DM Sans, sans-serif' }}
                   >
                     {loadingRecuperacao ? 'Enviando...' : 'Enviar link'}
                   </button>
@@ -205,7 +205,7 @@ export default function Login() {
 
           <div style={{ textAlign: 'center', marginTop: 16, fontSize: 13, color: '#999' }}>
             Não tem conta?{' '}
-            <Link href="/cadastro" style={{ color: '#2563EB', fontWeight: 600, textDecoration: 'none' }}>Cadastre-se</Link>
+            <Link href="/cadastro" style={{ color: '#f97316', fontWeight: 600, textDecoration: 'none' }}>Cadastre-se</Link>
           </div>
         </div>
       </div>

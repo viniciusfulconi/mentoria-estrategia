@@ -54,7 +54,7 @@ function LineChart({ pesquisas, dados, label }: { pesquisas: string[], dados: nu
   const yScale = (v: number) => h - pad - ((v - min) / (max - min)) * (h - pad * 2)
   const points = dados.map((v, i) => [pad + i * xStep, yScale(v)])
   const path = points.map(([x, y], i) => `${i === 0 ? 'M' : 'L'}${x},${y}`).join(' ')
-  const cor = dados.length ? corMedia(dados[dados.length - 1]) : '#2563EB'
+  const cor = dados.length ? corMedia(dados[dados.length - 1]) : '#f97316'
   return (
     <svg viewBox={`0 0 ${w} ${h}`} width="100%">
       {[2,3,4,5].map(v => (
@@ -184,9 +184,9 @@ export default function MentorCSAT() {
 
       {/* Seletor pesquisa */}
       <div style={{ display: 'flex', gap: 6, overflowX: 'auto', padding: '8px 16px', background: 'white', borderBottom: '0.5px solid rgba(0,0,0,0.06)' }}>
-        <button onClick={() => setPesquisaAtiva('todas')} style={{ padding: '4px 12px', borderRadius: 16, fontSize: 11, border: 'none', background: pesquisaAtiva === 'todas' ? '#2563EB' : '#F1F5F9', color: pesquisaAtiva === 'todas' ? 'white' : '#666', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'DM Sans,sans-serif' }}>Geral</button>
+        <button onClick={() => setPesquisaAtiva('todas')} style={{ padding: '4px 12px', borderRadius: 16, fontSize: 11, border: 'none', background: pesquisaAtiva === 'todas' ? '#f97316' : '#F1F5F9', color: pesquisaAtiva === 'todas' ? 'white' : '#666', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'DM Sans,sans-serif' }}>Geral</button>
         {pesquisas.filter(p => respostas.some(r => r.pesquisa_id === p.id)).map(p => (
-          <button key={p.id} onClick={() => setPesquisaAtiva(p.id)} style={{ padding: '4px 12px', borderRadius: 16, fontSize: 11, border: 'none', background: pesquisaAtiva === p.id ? '#2563EB' : '#F1F5F9', color: pesquisaAtiva === p.id ? 'white' : '#666', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'DM Sans,sans-serif' }}>{p.nome}</button>
+          <button key={p.id} onClick={() => setPesquisaAtiva(p.id)} style={{ padding: '4px 12px', borderRadius: 16, fontSize: 11, border: 'none', background: pesquisaAtiva === p.id ? '#f97316' : '#F1F5F9', color: pesquisaAtiva === p.id ? 'white' : '#666', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'DM Sans,sans-serif' }}>{p.nome}</button>
         ))}
       </div>
 
@@ -197,7 +197,7 @@ export default function MentorCSAT() {
             {perfil?.foto_url ? (
               <img src={perfil.foto_url} alt={nome} style={{ width: 72, height: 72, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
             ) : (
-              <div style={{ width: 72, height: 72, borderRadius: '50%', background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, fontWeight: 700, color: '#1E40AF', flexShrink: 0 }}>
+              <div style={{ width: 72, height: 72, borderRadius: '50%', background: '#fff7ed', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, fontWeight: 700, color: '#1E40AF', flexShrink: 0 }}>
                 {nome.split(' ').map(w => w[0]).slice(0, 2).join('')}
               </div>
             )}
@@ -286,7 +286,7 @@ export default function MentorCSAT() {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {(abaFeedback === 'ajuda' ? feedbacksAjuda : feedbacksMelhorar).map((f, i) => (
-              <div key={i} style={{ background: '#F7F6F3', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: '#444', lineHeight: 1.5, borderLeft: `3px solid ${abaFeedback === 'ajuda' ? '#16A34A' : '#2563EB'}` }}>
+              <div key={i} style={{ background: '#F7F6F3', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: '#444', lineHeight: 1.5, borderLeft: `3px solid ${abaFeedback === 'ajuda' ? '#16A34A' : '#f97316'}` }}>
                 "{f}"
               </div>
             ))}

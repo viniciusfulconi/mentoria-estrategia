@@ -120,7 +120,7 @@ export default function NovaProvaAntigaHorario() {
         )}
 
         {erro && <div style={{ color: '#DC2626', fontSize: 13 }}>{erro}</div>}
-        <button className="btn-primary" onClick={salvar} disabled={saving} style={{ background: '#7C3AED' }}>
+        <button className="btn-primary" onClick={salvar} disabled={saving} style={{ background: '#f97316' }}>
           {saving ? 'Salvando...' : 'Adicionar ao calendário'}
         </button>
         <button className="btn-secondary" onClick={() => router.back()}>Cancelar</button>

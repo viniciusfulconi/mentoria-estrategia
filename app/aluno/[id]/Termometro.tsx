@@ -197,7 +197,7 @@ export default function Termometro({ rankings }: Props) {
           <button key={ano} onClick={() => setAnoITA(ano)} style={{
             padding: '6px 20px', borderRadius: 20, fontSize: 12, fontWeight: 600,
             border: 'none', cursor: 'pointer', fontFamily: 'DM Sans,sans-serif',
-            background: anoITA === ano ? '#2563EB' : '#F1F5F9',
+            background: anoITA === ano ? '#f97316' : '#F1F5F9',
             color: anoITA === ano ? 'white' : '#666',
           }}>
             ITA {ano}
@@ -306,7 +306,7 @@ export default function Termometro({ rankings }: Props) {
                 ? 'linear-gradient(135deg, #F0FDF4, #DCFCE7)'
                 : insights.criticas.length > 0
                   ? '#FEF2F2'
-                  : 'linear-gradient(135deg, #EFF6FF, #F5F3FF)',
+                  : 'linear-gradient(135deg, #fff7ed, #F5F3FF)',
               border: `1px solid ${insights.aprovado ? '#86EFAC' : insights.criticas.length > 0 ? '#FCA5A5' : '#C4B5FD'}`,
             }}>
               <div style={{ fontSize: 18, flexShrink: 0 }}>
@@ -348,14 +348,14 @@ export default function Termometro({ rankings }: Props) {
                 ))}
                 <th style={{ padding: '8px 10px', textAlign: 'center', fontWeight: 600,
                   color: anoITA === 2024 ? '#1e40af' : '#166534',
-                  background: anoITA === 2024 ? '#EFF6FF' : '#F0FDF4',
+                  background: anoITA === 2024 ? '#fff7ed' : '#F0FDF4',
                   borderBottom: '0.5px solid rgba(0,0,0,0.08)', whiteSpace: 'nowrap', minWidth: 96 }}>
                   ITA {anoITA}?
                 </th>
               </tr>
 
               {/* Linha de referência ITA do ano selecionado */}
-              <tr style={{ background: anoITA === 2024 ? '#EFF6FF' : '#F0FDF4' }}>
+              <tr style={{ background: anoITA === 2024 ? '#fff7ed' : '#F0FDF4' }}>
                 <td style={{ padding: '5px 12px', fontSize: 10, fontWeight: 600,
                   color: anoITA === 2024 ? '#1e40af' : '#166534',
                   borderBottom: '0.5px solid rgba(0,0,0,0.06)' }}>

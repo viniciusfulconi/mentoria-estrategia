@@ -80,12 +80,12 @@ export default function DadosPessoais() {
             {fotoPreview ? (
               <img src={fotoPreview} alt="foto" style={{ width: 80, height: 80, borderRadius: '50%', objectFit: 'cover', margin: '0 auto' }} />
             ) : (
-              <div style={{ width: 80, height: 80, borderRadius: '50%', background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, fontWeight: 600, color: '#1E40AF', margin: '0 auto' }}>
+              <div style={{ width: 80, height: 80, borderRadius: '50%', background: '#fff7ed', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, fontWeight: 600, color: '#1E40AF', margin: '0 auto' }}>
                 {meuPerfil?.nome?.split(' ').map((w: string) => w[0]).slice(0, 2).join('') || '?'}
               </div>
             )}
           </div>
-          <label style={{ display: 'inline-block', background: '#EFF6FF', color: '#2563EB', padding: '8px 16px', borderRadius: 10, fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
+          <label style={{ display: 'inline-block', background: '#fff7ed', color: '#f97316', padding: '8px 16px', borderRadius: 10, fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
             📷 Alterar foto
             <input type="file" accept="image/*" onChange={handleFoto} style={{ display: 'none' }} />
           </label>

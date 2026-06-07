@@ -17,7 +17,7 @@ type AtendSemana = { sessoes: number; horas: number; sessoesAnterior: number }
 type Financeiro = { gasto: number; orcamento: number }
 
 export default function Home() {
-  const { perfil, loading: authLoading } = useAuth()
+  const { perfil, loading: authLoading, verticalAtiva } = useAuth()
   const router = useRouter()
   const [stats, setStats] = useState({ alunos: 0, mentores: 0, sessoesMes: 0, aulas: 0 })
   const [turmas, setTurmas] = useState<any[]>([])
@@ -29,10 +29,13 @@ export default function Home() {
   const [financeiro, setFinanceiro] = useState<Financeiro | null>(null)
   const [provasSemana, setProvasSemana] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [medStats, setMedStats] = useState<{ total: number; semMentor: number; pendentes: number; comMentor: number; simulados: number } | null>(null)
 
   useEffect(() => {
     if (authLoading) return
-    if (perfil?.papel === 'mentor') { router.replace('/mentor'); return }
+    if (perfil?.papel === 'mentor') {
+      router.replace(perfil.vertical === 'Medicina' ? '/med/mentor' : '/mentor'); return
+    }
     if (perfil?.papel === 'professor') { router.replace('/simulados'); return }
     if (perfil?.papel === 'aluno') {
       router.replace(perfil.aluno_id ? `/aluno/${perfil.aluno_id}` : '/meu-perfil')
@@ -43,8 +46,26 @@ export default function Home() {
   useEffect(() => {
     if (authLoading) return
     if (perfil?.papel !== 'coordenador' && perfil?.papel !== 'direcao') return
-    load()
-  }, [authLoading, perfil])
+    if (verticalAtiva === 'Medicina') loadMed()
+    else load()
+  }, [authLoading, perfil, verticalAtiva])
+
+  async function loadMed() {
+    setLoading(true)
+    const [{ data: alunos }, { data: sims }] = await Promise.all([
+      dbQuery('alunos', { vertical: 'eq.Medicina' }, 'id,mentor_id,mentor_aceite'),
+      dbQuery('simulados_med', { vertical: 'eq.Medicina' }, 'id'),
+    ])
+    const lista = alunos || []
+    setMedStats({
+      total: lista.length,
+      semMentor: lista.filter((a: any) => !a.mentor_id).length,
+      pendentes: lista.filter((a: any) => a.mentor_id && a.mentor_aceite === null).length,
+      comMentor: lista.filter((a: any) => a.mentor_aceite === true).length,
+      simulados: (sims || []).length,
+    })
+    setLoading(false)
+  }
 
   async function load() {
     const hoje = new Date()
@@ -165,7 +186,7 @@ export default function Home() {
   }
 
   function corMedia(m: number) {
-    return m >= 7 ? '#16A34A' : m >= 5.5 ? '#2563EB' : m >= 4.5 ? '#D97706' : '#DC2626'
+    return m >= 7 ? '#16A34A' : m >= 5.5 ? '#f97316' : m >= 4.5 ? '#D97706' : '#DC2626'
   }
 
   function formatMoeda(v: number) {
@@ -175,9 +196,87 @@ export default function Home() {
   const isDirecao = perfil?.papel === 'direcao'
   if (authLoading || (perfil?.papel !== 'coordenador' && perfil?.papel !== 'direcao')) return null
 
+  // ── Dashboard de Medicina ────────────────────────────────────────────────
+  if (verticalAtiva === 'Medicina') {
+    const STATUS_CORES: Record<string, { label: string; bg: string; color: string }> = {
+      semMentor:  { label: 'Sem mentor',          bg: '#F1F5F9', color: '#475569' },
+      pendentes:  { label: 'Aguardando mentor',    bg: '#FEF9C3', color: '#854d0e' },
+      comMentor:  { label: 'Com mentor',           bg: '#DCFCE7', color: '#166534' },
+    }
+    return (
+      <div style={{ paddingBottom: 80 }}>
+        <Nav />
+        <div style={{ padding: '20px 16px', maxWidth: 600, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div>
+            <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 2 }}>Medicina</div>
+            <div style={{ fontSize: 12, color: '#999' }}>Visão geral do programa</div>
+          </div>
+
+          {loading ? (
+            <div style={{ textAlign: 'center', padding: 40, color: '#aaa', fontSize: 13 }}>Carregando...</div>
+          ) : medStats ? (
+            <>
+              {/* Cards */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                <div style={{ background: 'white', borderRadius: 14, padding: '14px 16px', border: '0.5px solid rgba(0,0,0,0.08)', gridColumn: '1 / -1' }}>
+                  <div style={{ fontSize: 11, color: '#999' }}>Total de alunos</div>
+                  <div style={{ fontSize: 32, fontWeight: 700, color: 'var(--purple)', marginTop: 2 }}>{medStats.total}</div>
+                </div>
+                {(['semMentor', 'pendentes', 'comMentor'] as const).map(k => {
+                  const cfg = STATUS_CORES[k]
+                  const val = medStats[k]
+                  return (
+                    <div key={k} style={{ background: 'white', borderRadius: 14, padding: '12px 14px', border: '0.5px solid rgba(0,0,0,0.08)' }}>
+                      <div style={{ fontSize: 10, color: '#999', marginBottom: 4 }}>{cfg.label}</div>
+                      <div style={{ fontSize: 24, fontWeight: 700 }}>{val}</div>
+                      {val > 0 && (
+                        <div style={{ marginTop: 4 }}>
+                          <span style={{ background: cfg.bg, color: cfg.color, fontSize: 10, fontWeight: 600, padding: '2px 7px', borderRadius: 10 }}>
+                            {Math.round(val / medStats.total * 100)}%
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+                <div style={{ background: 'white', borderRadius: 14, padding: '12px 14px', border: '0.5px solid rgba(0,0,0,0.08)' }}>
+                  <div style={{ fontSize: 10, color: '#999', marginBottom: 4 }}>Simulados</div>
+                  <div style={{ fontSize: 24, fontWeight: 700 }}>{medStats.simulados}</div>
+                </div>
+              </div>
+
+              {/* Ações rápidas */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#aaa', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Ações rápidas</div>
+                {[
+                  { href: '/med/alunos', label: 'Gerenciar alunos', sub: `${medStats.semMentor} sem mentor · ${medStats.pendentes} pendentes` },
+                  { href: '/med/simulados', label: 'Simulados', sub: `${medStats.simulados} simulado${medStats.simulados !== 1 ? 's' : ''} criado${medStats.simulados !== 1 ? 's' : ''}` },
+                  { href: '/med/simulados/templates', label: 'Modelos de prova', sub: 'Criar e gerenciar templates' },
+                ].map(item => (
+                  <a key={item.href} href={item.href} style={{
+                    textDecoration: 'none', background: 'white', borderRadius: 14,
+                    padding: '14px 16px', border: '0.5px solid rgba(0,0,0,0.08)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  }}>
+                    <div>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: '#1a1a1a' }}>{item.label}</div>
+                      <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>{item.sub}</div>
+                    </div>
+                    <span style={{ color: '#ccc', fontSize: 18 }}>›</span>
+                  </a>
+                ))}
+              </div>
+            </>
+          ) : null}
+        </div>
+      </div>
+    )
+  }
+  // ────────────────────────────────────────────────────────────────────────
+
   const statCards = [
-    { label: 'Alunos ativos', value: stats.alunos, sub: 'ITA + Medicina', icon: Users, color: '#2563EB', bg: '#EFF6FF' },
-    { label: 'Mentores', value: stats.mentores, sub: 'no programa', icon: Handshake, color: '#7C3AED', bg: '#F3F0FF' },
+    { label: 'Alunos ativos', value: stats.alunos, sub: 'ITA + Medicina', icon: Users, color: '#f97316', bg: '#fff7ed' },
+    { label: 'Mentores', value: stats.mentores, sub: 'no programa', icon: Handshake, color: '#f97316', bg: '#F3F0FF' },
     { label: 'Sessões este mês', value: stats.sessoesMes, sub: 'atendimentos', icon: CalendarCheck, color: '#16A34A', bg: '#F0FDF4' },
     { label: 'Videoaulas', value: stats.aulas, sub: 'cadastradas', icon: PlayCircle, color: '#EA580C', bg: '#FFF7ED' },
   ]
@@ -187,9 +286,9 @@ export default function Home() {
       <div style={{ background: 'white', borderBottom: '0.5px solid rgba(0,0,0,0.08)', padding: '16px', position: 'sticky', top: 0, zIndex: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
           <div style={{ fontSize: 11, color: '#999', marginBottom: 2 }}>Estratégia Concursos</div>
-          <div style={{ fontSize: 17, fontWeight: 600, color: '#2563EB' }}>Mentoria</div>
+          <div style={{ fontSize: 17, fontWeight: 600, color: '#f97316' }}>Mentoria</div>
         </div>
-        <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 600, color: '#1E40AF' }}>CO</div>
+        <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#fff7ed', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 600, color: '#1E40AF' }}>CO</div>
       </div>
 
       <div style={{ padding: 16 }}>
@@ -251,7 +350,7 @@ export default function Home() {
             {atendSemana && (
               <div style={{ background: 'white', border: '0.5px solid rgba(0,0,0,0.08)', borderRadius: 16, padding: 14 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-                  <Clock size={13} color="#2563EB" strokeWidth={2} />
+                  <Clock size={13} color="#f97316" strokeWidth={2} />
                   <div style={{ fontSize: 11, color: '#999' }}>Esta semana</div>
                 </div>
                 <div style={{ fontSize: 24, fontWeight: 700, color: '#1a1a1a', lineHeight: 1 }}>{atendSemana.sessoes}</div>
@@ -269,7 +368,7 @@ export default function Home() {
             {financeiro && (
               <div style={{ background: 'white', border: '0.5px solid rgba(0,0,0,0.08)', borderRadius: 16, padding: 14 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-                  <DollarSign size={13} color="#7C3AED" strokeWidth={2} />
+                  <DollarSign size={13} color="#f97316" strokeWidth={2} />
                   <div style={{ fontSize: 11, color: '#999' }}>Gasto do mês</div>
                 </div>
                 <div style={{ fontSize: 18, fontWeight: 700, color: '#1a1a1a', lineHeight: 1 }}>{formatMoeda(financeiro.gasto)}</div>
@@ -279,7 +378,7 @@ export default function Home() {
                     <div style={{ marginTop: 8, background: '#F1F5F9', borderRadius: 4, height: 4, overflow: 'hidden' }}>
                       <div style={{
                         height: '100%', borderRadius: 4,
-                        background: financeiro.gasto / financeiro.orcamento > 0.9 ? '#DC2626' : '#7C3AED',
+                        background: financeiro.gasto / financeiro.orcamento > 0.9 ? '#DC2626' : '#f97316',
                         width: `${Math.min(100, financeiro.gasto / financeiro.orcamento * 100)}%`,
                         transition: 'width 0.6s ease',
                       }} />
@@ -312,7 +411,7 @@ export default function Home() {
                     borderBottom: i < provasSemana.length - 1 ? '0.5px solid rgba(0,0,0,0.06)' : 'none',
                   }}>
                     <div style={{ width: 32, height: 32, borderRadius: 10, background: '#F3F0FF', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <BookOpen size={15} color="#7C3AED" strokeWidth={2} />
+                      <BookOpen size={15} color="#f97316" strokeWidth={2} />
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 12, fontWeight: 500, color: '#1a1a1a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -486,7 +585,7 @@ export default function Home() {
             return (
               <Link key={l.href} href={l.href} style={{ textDecoration: 'none' }}>
                 <div className="card" style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
-                  <Icon size={16} color="#2563EB" strokeWidth={2} />
+                  <Icon size={16} color="#f97316" strokeWidth={2} />
                   <span style={{ fontSize: 13, fontWeight: 500 }}>{l.label}</span>
                 </div>
               </Link>

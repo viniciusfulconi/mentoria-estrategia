@@ -272,7 +272,7 @@ export default function AlunoPage() {
   function PizzaChart({ gabarito, parcial, zero, materia }: { gabarito: number, parcial: number, zero: number, materia: string }) {
     const total = gabarito + parcial + zero
     if (!total) return null
-    const cor = CORES_MAT[materia] || '#2563EB'
+    const cor = CORES_MAT[materia] || '#f97316'
     const r = 48, cx = 60, cy = 60, stroke = 20
     const circ = 2 * Math.PI * r
     const gab = (gabarito / total) * circ
@@ -382,10 +382,10 @@ export default function AlunoPage() {
             return <line key={i} x1={cx} y1={cy} x2={x} y2={y} stroke="rgba(0,0,0,0.08)" strokeWidth="1" />
           })}
           {/* Área preenchida */}
-          <polygon points={polyPath} fill="#2563EB" fillOpacity="0.15" stroke="#2563EB" strokeWidth="2" />
+          <polygon points={polyPath} fill="#f97316" fillOpacity="0.15" stroke="#f97316" strokeWidth="2" />
           {/* Pontos */}
           {pontos.map(([x, y], i) => {
-            const cor = (CORES_MAT as any)[dados[i].materia] || '#2563EB'
+            const cor = (CORES_MAT as any)[dados[i].materia] || '#f97316'
             return (
               <g key={i}>
                 <circle cx={x} cy={y} r="5" fill={cor} stroke="white" strokeWidth="1.5" />
@@ -398,7 +398,7 @@ export default function AlunoPage() {
           {/* Labels das matérias */}
           {dados.map((d, i) => {
             const [x, y] = pontoEixo(i, raio + 18)
-            const cor = (CORES_MAT as any)[d.materia] || '#2563EB'
+            const cor = (CORES_MAT as any)[d.materia] || '#f97316'
             // Quebra nome longo
             const nome = d.materia.length > 10 ? d.materia.replace('/', '/\n') : d.materia
             return (
@@ -426,7 +426,7 @@ export default function AlunoPage() {
           <div style={{ fontSize: 11, color: '#999' }}>{alunoInfo?.mentor}</div>
         </div>
         {isOwn && (
-          <Link href="/dados-pessoais" style={{ textDecoration: 'none', fontSize: 11, color: '#2563EB', border: '0.5px solid #2563EB', borderRadius: 8, padding: '5px 10px' }}>
+          <Link href="/dados-pessoais" style={{ textDecoration: 'none', fontSize: 11, color: '#f97316', border: '0.5px solid #f97316', borderRadius: 8, padding: '5px 10px' }}>
             ✎ Meus dados
           </Link>
         )}
@@ -434,7 +434,7 @@ export default function AlunoPage() {
           <Link
             href={`/aluno/${targetId}/relatorio`}
             target="_blank"
-            style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#7C3AED', border: '0.5px solid rgba(124,58,237,0.4)', borderRadius: 8, padding: '5px 10px' }}
+            style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#f97316', border: '0.5px solid rgba(124,58,237,0.4)', borderRadius: 8, padding: '5px 10px' }}
           >
             <FileDown size={13} strokeWidth={2} /> PDF
           </Link>
@@ -452,7 +452,7 @@ export default function AlunoPage() {
         ].map(a => (
           <button key={a.id} onClick={() => setAba(a.id as any)} style={{
             padding: '5px 14px', borderRadius: 16, fontSize: 11, border: 'none',
-            background: aba === a.id ? '#2563EB' : '#F1F5F9',
+            background: aba === a.id ? '#f97316' : '#F1F5F9',
             color: aba === a.id ? 'white' : '#666',
             cursor: 'pointer', fontFamily: 'DM Sans,sans-serif'
           }}>{a.label}</button>
@@ -476,7 +476,7 @@ export default function AlunoPage() {
                   {perfil?.foto_url ? (
                     <img src={perfil.foto_url} alt={nomeAluno} style={{ width: 64, height: 64, borderRadius: '50%', objectFit: 'cover' }} />
                   ) : (
-                    <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 600, color: '#1E40AF' }}>
+                    <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#fff7ed', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 600, color: '#1E40AF' }}>
                       {nomeAluno.split(' ').map((w: string) => w[0]).slice(0, 2).join('')}
                     </div>
                   )}
@@ -485,7 +485,7 @@ export default function AlunoPage() {
                   <div style={{ fontWeight: 600, fontSize: 15 }}>{nomeAluno}</div>
                   <div style={{ fontSize: 11, color: '#999', marginTop: 2 }}>ID: {targetId?.slice(0, 8)}</div>
                   {perfil?.modalidade && (
-                    <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 10, background: '#EFF6FF', color: '#1E40AF', marginTop: 4, display: 'inline-block' }}>
+                    <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 10, background: '#fff7ed', color: '#1E40AF', marginTop: 4, display: 'inline-block' }}>
                       {perfil.modalidade === 'presencial' ? '🏫 Presencial' : '💻 Online'}
                     </span>
                   )}
@@ -503,7 +503,7 @@ export default function AlunoPage() {
             {/* Ranking */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 14 }}>
               <div className="card" style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: 28, fontWeight: 700, color: '#2563EB' }}>#{posicaoGeral}</div>
+                <div style={{ fontSize: 28, fontWeight: 700, color: '#f97316' }}>#{posicaoGeral}</div>
                 <div style={{ fontSize: 11, color: '#999' }}>Ranking geral</div>
                 <div style={{ fontSize: 10, color: '#bbb' }}>média {mediaGeralAluno.toFixed(1)}</div>
               </div>
@@ -515,7 +515,7 @@ export default function AlunoPage() {
                   return (
                     <div key={campo} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, marginBottom: 4 }}>
                       <span style={{ color: '#666' }}>{label}</span>
-                      <span style={{ fontWeight: 600, color: '#2563EB' }}>#{pos}</span>
+                      <span style={{ fontWeight: 600, color: '#f97316' }}>#{pos}</span>
                     </div>
                   )
                 })}
@@ -545,7 +545,7 @@ export default function AlunoPage() {
               {ciclos.map(c => (
                 <button key={c} onClick={() => setCicloAtivo(c)} style={{
                   padding: '5px 12px', borderRadius: 20, fontSize: 11, border: '0.5px solid rgba(0,0,0,0.12)',
-                  background: cicloAtivo === c ? '#2563EB' : 'transparent', color: cicloAtivo === c ? 'white' : '#666',
+                  background: cicloAtivo === c ? '#f97316' : 'transparent', color: cicloAtivo === c ? 'white' : '#666',
                   cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'DM Sans,sans-serif'
                 }}>{c.replace('Ciclo ', 'C').replace(' - ITA', '').replace(' - IME', '')}</button>
               ))}
@@ -582,14 +582,14 @@ export default function AlunoPage() {
                 {/* Gráficos de acertos por questão */}
                 <div className="card" style={{ marginBottom: 14 }}>
                   <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 14 }}>Acertos por questão — 1ª Fase</div>
-                  <GraficoQuestoes dados={dados} turmaQuestoes={turmaQuestoes} cicloAtivo={cicloAtivo} fase="1fase" titulo="1ª Fase" corAluno="#2563EB" />
+                  <GraficoQuestoes dados={dados} turmaQuestoes={turmaQuestoes} cicloAtivo={cicloAtivo} fase="1fase" titulo="1ª Fase" corAluno="#f97316" />
                 </div>
 
                 {/* Radar comparativo por questão — dissertativas */}
                 <div className="card" style={{ marginBottom: 14 }}>
                   <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 4 }}>Análise comparada — dissertativas</div>
                   <div style={{ fontSize: 11, color: '#999', marginBottom: 14 }}>Desempenho por questão: aluno, média e top 25% da turma</div>
-                  <RadarQuestoesChart dados={dados} turmaQuestoes={turmaQuestoes} cicloAtivo={cicloAtivo} fase="2fase_mat" titulo="Matemática" corAluno="#2563EB" />
+                  <RadarQuestoesChart dados={dados} turmaQuestoes={turmaQuestoes} cicloAtivo={cicloAtivo} fase="2fase_mat" titulo="Matemática" corAluno="#f97316" />
                   <RadarQuestoesChart dados={dados} turmaQuestoes={turmaQuestoes} cicloAtivo={cicloAtivo} fase="2fase_fis" titulo="Física" corAluno="#1E88E5" />
                   <RadarQuestoesChart dados={dados} turmaQuestoes={turmaQuestoes} cicloAtivo={cicloAtivo} fase="2fase_qui" titulo="Química" corAluno="#E53935" />
                 </div>
@@ -707,7 +707,7 @@ export default function AlunoPage() {
                     const corrigida = !!correcao?.confirmed_at
                     return (
                       <Link key={pa.id} href={`/minhas-provas/${pa.id}`} style={{ textDecoration: 'none' }}>
-                        <div className="card" style={{ marginBottom: 10, borderLeft: `3px solid ${corrigida ? '#16A34A' : '#7C3AED'}` }}>
+                        <div className="card" style={{ marginBottom: 10, borderLeft: `3px solid ${corrigida ? '#16A34A' : '#f97316'}` }}>
                           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
                             <div style={{ fontSize: 24, flexShrink: 0 }}>📄</div>
                             <div style={{ flex: 1 }}>

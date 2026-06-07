@@ -85,12 +85,12 @@ export default function NovaAula() {
                 key={o.value}
                 onClick={() => setTipo(o.value)}
                 style={{
-                  flex: 1, padding: '10px 8px', borderRadius: 12, border: `1.5px solid ${tipo === o.value ? '#2563EB' : 'rgba(0,0,0,0.1)'}`,
-                  background: tipo === o.value ? '#EFF6FF' : 'white', cursor: 'pointer',
+                  flex: 1, padding: '10px 8px', borderRadius: 12, border: `1.5px solid ${tipo === o.value ? '#f97316' : 'rgba(0,0,0,0.1)'}`,
+                  background: tipo === o.value ? '#fff7ed' : 'white', cursor: 'pointer',
                   fontFamily: 'DM Sans, sans-serif', textAlign: 'center',
                 }}
               >
-                <div style={{ fontSize: 12, fontWeight: 600, color: tipo === o.value ? '#2563EB' : '#1a1a1a' }}>{o.label}</div>
+                <div style={{ fontSize: 12, fontWeight: 600, color: tipo === o.value ? '#f97316' : '#1a1a1a' }}>{o.label}</div>
                 <div style={{ fontSize: 10, color: '#999', marginTop: 2 }}>{o.desc}</div>
               </button>
             ))}

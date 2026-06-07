@@ -16,7 +16,7 @@ function mediaArr(lista: any[], campo: string) {
 }
 
 function corNota(n: number) {
-  return n >= 7 ? '#16A34A' : n >= 4 ? '#2563EB' : '#DC2626'
+  return n >= 7 ? '#16A34A' : n >= 4 ? '#f97316' : '#DC2626'
 }
 
 export default function RelatorioAluno() {
@@ -111,9 +111,9 @@ export default function RelatorioAluno() {
         tbody tr:last-child td { border-bottom: none; }
         tbody tr:hover td { background: #F8FAFC; }
         .media-row td {
-          background: #EFF6FF !important;
+          background: #fff7ed !important;
           font-weight: 700; color: #1E3A5F;
-          border-top: 1.5px solid #2563EB;
+          border-top: 1.5px solid #f97316;
           border-bottom: none;
         }
       `}</style>
@@ -133,7 +133,7 @@ export default function RelatorioAluno() {
           onClick={() => window.print()}
           style={{
             display: 'flex', alignItems: 'center', gap: 8,
-            background: '#2563EB', color: 'white', border: 'none',
+            background: '#f97316', color: 'white', border: 'none',
             borderRadius: 10, padding: '9px 20px', fontSize: 13,
             fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
             boxShadow: '0 2px 10px rgba(37,99,235,0.35)',
@@ -166,7 +166,7 @@ export default function RelatorioAluno() {
 
           {/* Student + mentor info */}
           <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr 1fr', gap: 24, alignItems: 'center', marginBottom: 28 }}>
-            <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 800, color: '#1E40AF', flexShrink: 0 }}>
+            <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#fff7ed', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 800, color: '#1E40AF', flexShrink: 0 }}>
               {iniciais}
             </div>
             <div>
@@ -189,7 +189,7 @@ export default function RelatorioAluno() {
           {/* Summary cards */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 32 }}>
             {[
-              { label: 'Ciclos avaliados', value: totalCiclos, color: '#2563EB', bg: '#EFF6FF' },
+              { label: 'Ciclos avaliados', value: totalCiclos, color: '#f97316', bg: '#fff7ed' },
               { label: 'Aprovações',        value: aprovados,   color: '#16A34A', bg: '#F0FDF4' },
               { label: 'Reprovações',       value: reprovados,  color: reprovados > 0 ? '#DC2626' : '#94A3B8', bg: reprovados > 0 ? '#FEF2F2' : '#F8FAFC' },
               { label: 'Taxa de aprovação', value: `${txAprov}%`, color: txAprov >= 70 ? '#16A34A' : txAprov >= 50 ? '#D97706' : '#DC2626', bg: '#F8FAFC' },

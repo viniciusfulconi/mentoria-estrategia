@@ -12,7 +12,7 @@ const STATUS_OPTS = [
 ]
 
 export default function CronogramaAluno() {
-  const { perfil } = useAuth()
+  const { perfil, verticalAtiva } = useAuth()
   const params = useParams()
   const router = useRouter()
   const alunoId = params?.id as string
@@ -25,24 +25,33 @@ export default function CronogramaAluno() {
   const [nomeAluno, setNomeAluno] = useState('')
   const [concurso, setConcurso] = useState<any>(null)
 
-  // Para aluno, usa o próprio id
-  const targetId = perfil?.papel === 'aluno' ? perfil.aluno_id! : alunoId
+  // Para aluno, usa o aluno_id do perfil; cai no param da URL se não estiver preenchido (Medicina sem aluno_id)
+  const targetId = perfil?.papel === 'aluno' ? (perfil.aluno_id || alunoId) : alunoId
 
   useEffect(() => {
     load()
-  }, [targetId])
+  }, [targetId, verticalAtiva])
 
   async function load() {
-    const [{ data: ts }, { data: ps }, { data: cs }, { data: aluno }] = await Promise.all([
-      dbQuery('topicos', { order: 'materia,incidencia.desc' }),
+    const vertical = verticalAtiva || 'ITA'
+
+    const [{ data: ts }, { data: ps }, { data: cs }] = await Promise.all([
+      dbQuery('topicos', { vertical: `eq.${vertical}`, order: 'materia,incidencia.desc' }),
       dbQuery('progresso_topicos', { aluno_id: `eq.${targetId}` }),
-      dbQuery('concursos', { limit: '1' }),
-      dbQuery('alunos_dados', { id_aluno: `eq.${targetId}` }, 'nome'),
+      dbQuery('concursos', { vertical: `eq.${vertical}`, order: 'created_at.desc', limit: '1' }),
     ])
 
     setTopicos(ts || [])
     setConcurso(cs?.[0] ?? null)
-    setNomeAluno(aluno?.[0]?.nome || '')
+
+    // Nome do aluno: tabela diferente por vertical
+    if (vertical === 'Medicina') {
+      const { data: aluno } = await dbQuery('alunos', { id: `eq.${targetId}` }, 'nome')
+      setNomeAluno(aluno?.[0]?.nome || '')
+    } else {
+      const { data: aluno } = await dbQuery('alunos_dados', { id_aluno: `eq.${targetId}` }, 'nome')
+      setNomeAluno(aluno?.[0]?.nome || '')
+    }
 
     const pMap: Record<string, string> = {}
     ;(ps || []).forEach((p: any) => { pMap[p.topico_id] = p.status })
@@ -115,7 +124,7 @@ export default function CronogramaAluno() {
           return (
             <button key={m} onClick={() => setMateriaAtiva(m)} style={{
               padding: '5px 12px', borderRadius: 20, fontSize: 11, border: '0.5px solid rgba(0,0,0,0.12)',
-              background: active ? '#2563EB' : 'transparent', color: active ? 'white' : '#666',
+              background: active ? '#f97316' : 'transparent', color: active ? 'white' : '#666',
               cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'DM Sans,sans-serif',
               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1, minWidth: 70
             }}>
@@ -127,7 +136,17 @@ export default function CronogramaAluno() {
       </div>
 
       <div style={{ padding: 16 }}>
-        {loading ? <div style={{ textAlign: 'center', color: '#999', padding: 40 }}>Carregando...</div> : (
+        {loading ? <div style={{ textAlign: 'center', color: '#999', padding: 40 }}>Carregando...</div>
+        : topicos.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '60px 24px' }}>
+            <div style={{ fontSize: 36, marginBottom: 12 }}>📋</div>
+            <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 8 }}>Cronograma ainda não disponível</div>
+            <div style={{ fontSize: 13, color: '#aaa', lineHeight: 1.6 }}>
+              O coordenador ainda não importou os tópicos do edital.<br />
+              Assim que o cronograma for cadastrado, ele aparecerá aqui.
+            </div>
+          </div>
+        ) : (
           <>
             {/* Stats da matéria */}
             {materiaAtiva && (

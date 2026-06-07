@@ -200,7 +200,7 @@ export default function UploadAtendimentos() {
           <div className="card">
             <div style={{ fontFamily: 'monospace', fontSize: 11, lineHeight: 1.9, maxHeight: 300, overflowY: 'auto' }}>
               {log.map((l, i) => (
-                <div key={i} style={{ color: l.startsWith('❌') ? '#DC2626' : l.startsWith('✅') || l.startsWith('🎉') ? '#16A34A' : l.startsWith('💰') ? '#2563EB' : '#666' }}>{l}</div>
+                <div key={i} style={{ color: l.startsWith('❌') ? '#DC2626' : l.startsWith('✅') || l.startsWith('🎉') ? '#16A34A' : l.startsWith('💰') ? '#f97316' : '#666' }}>{l}</div>
               ))}
             </div>
           </div>

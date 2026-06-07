@@ -2,10 +2,13 @@
 import { useState, useEffect } from 'react'
 import { supabase, dbQuery, dbInsert, dbUpdate, dbDelete } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
+import { useAuth } from '@/contexts/AuthContext'
 import Nav from '@/components/Nav'
 
 export default function NovoCronograma() {
   const router = useRouter()
+  const { verticalAtiva } = useAuth()
+  const vertical = verticalAtiva || 'ITA'
   const [concursos, setConcursos] = useState<any[]>([])
   const [nome, setNome] = useState('')
   const [logo, setLogo] = useState<File | null>(null)
@@ -18,7 +21,7 @@ export default function NovoCronograma() {
   const [concursoAtual, setConcursoAtual] = useState<any>(null)
 
   useEffect(() => {
-    dbQuery('concursos', { order: 'created_at.desc' }).then(({ data }) => {
+    dbQuery('concursos', { vertical: `eq.${vertical}`, order: 'created_at.desc' }).then(({ data }) => {
       setConcursos(data || [])
       if (data && data.length > 0) {
         setModo('editar')
@@ -27,7 +30,7 @@ export default function NovoCronograma() {
         setLogoPreview(data[0].logo_url || '')
       }
     })
-  }, [])
+  }, [vertical])
 
   function handleLogo(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0]
@@ -85,7 +88,7 @@ export default function NovoCronograma() {
     let concursoId = concursoAtual?.id
     if (!concursoId) {
       addLog('📋 Criando concurso...')
-      const { data, error } = await dbInsert<any>('concursos', [{ nome, logo_url: logoUrl }], true)
+      const { data, error } = await dbInsert<any>('concursos', [{ nome, logo_url: logoUrl, vertical }], true)
       if (error) { addLog(`❌ ${error}`); setSaving(false); return }
       concursoId = (data as any)?.[0]?.id
     } else {
@@ -105,6 +108,7 @@ export default function NovoCronograma() {
         materia: t.materia,
         topico: t.topico,
         incidencia: t.incidencia,
+        vertical,
       }))
 
       const { error: topErr } = await dbInsert('topicos', records)
@@ -157,13 +161,13 @@ export default function NovoCronograma() {
               <div style={{ fontSize: 12, color: '#16A34A', marginBottom: 8 }}>✅ {topicosPreview.length} tópicos · {materias.length} matérias detectadas</div>
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                 {materias.map(m => (
-                  <span key={m} style={{ fontSize: 10, padding: '3px 8px', borderRadius: 10, background: '#EFF6FF', color: '#1E40AF' }}>{m}</span>
+                  <span key={m} style={{ fontSize: 10, padding: '3px 8px', borderRadius: 10, background: '#fff7ed', color: '#1E40AF' }}>{m}</span>
                 ))}
               </div>
               <div style={{ marginTop: 10, maxHeight: 200, overflowY: 'auto', fontSize: 11, color: '#666' }}>
                 {topicosPreview.slice(0, 5).map((t, i) => (
                   <div key={i} style={{ padding: '3px 0', borderBottom: '0.5px solid rgba(0,0,0,0.06)' }}>
-                    <span style={{ color: '#2563EB', fontWeight: 500 }}>{t.materia}</span> · {t.topico} · <span style={{ color: '#D97706' }}>{(t.incidencia * 100).toFixed(0)}%</span>
+                    <span style={{ color: '#f97316', fontWeight: 500 }}>{t.materia}</span> · {t.topico} · <span style={{ color: '#D97706' }}>{(t.incidencia * 100).toFixed(0)}%</span>
                   </div>
                 ))}
                 {topicosPreview.length > 5 && <div style={{ color: '#999', marginTop: 4 }}>... e mais {topicosPreview.length - 5} tópicos</div>}

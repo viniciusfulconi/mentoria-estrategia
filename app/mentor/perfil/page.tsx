@@ -34,7 +34,7 @@ function corCSAT(m: number) {
 }
 
 function corNota(m: number) {
-  return m >= 7 ? '#16A34A' : m >= 4 ? '#2563EB' : '#DC2626'
+  return m >= 7 ? '#16A34A' : m >= 4 ? '#f97316' : '#DC2626'
 }
 
 function calcMedia(r: any) {
@@ -127,7 +127,7 @@ export default function MentorPerfil() {
         {/* Profile card */}
         <div className="card" style={{ marginBottom: 16 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}>
-            <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 700, color: '#1E40AF', flexShrink: 0 }}>
+            <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#fff7ed', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 700, color: '#1E40AF', flexShrink: 0 }}>
               {iniciais}
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
@@ -138,9 +138,9 @@ export default function MentorPerfil() {
                     onChange={e => setNomeEdit(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && salvarNome()}
                     autoFocus
-                    style={{ flex: 1, fontSize: 14, fontWeight: 600, padding: '6px 10px', borderRadius: 8, border: '1.5px solid #2563EB', fontFamily: 'DM Sans, sans-serif', outline: 'none', minWidth: 0 }}
+                    style={{ flex: 1, fontSize: 14, fontWeight: 600, padding: '6px 10px', borderRadius: 8, border: '1.5px solid #f97316', fontFamily: 'DM Sans, sans-serif', outline: 'none', minWidth: 0 }}
                   />
-                  <button onClick={salvarNome} disabled={savingNome} style={{ background: '#2563EB', border: 'none', borderRadius: 8, padding: 8, cursor: 'pointer', display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+                  <button onClick={salvarNome} disabled={savingNome} style={{ background: '#f97316', border: 'none', borderRadius: 8, padding: 8, cursor: 'pointer', display: 'flex', alignItems: 'center', flexShrink: 0 }}>
                     <Check size={14} color="white" strokeWidth={2.5} />
                   </button>
                   <button onClick={() => setEditando(false)} style={{ background: '#F1F5F9', border: 'none', borderRadius: 8, padding: 8, cursor: 'pointer', display: 'flex', alignItems: 'center', flexShrink: 0 }}>
@@ -161,18 +161,18 @@ export default function MentorPerfil() {
 
           {/* Estatísticas de carreira */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
-            <div style={{ textAlign: 'center', background: '#EFF6FF', borderRadius: 12, padding: '10px 8px' }}>
+            <div style={{ textAlign: 'center', background: '#fff7ed', borderRadius: 12, padding: '10px 8px' }}>
               <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 3 }}>
-                <BarChart2 size={15} color="#2563EB" strokeWidth={2} />
+                <BarChart2 size={15} color="#f97316" strokeWidth={2} />
               </div>
-              <div style={{ fontSize: 20, fontWeight: 700, color: '#2563EB' }}>{atendStats.sessoes}</div>
+              <div style={{ fontSize: 20, fontWeight: 700, color: '#f97316' }}>{atendStats.sessoes}</div>
               <div style={{ fontSize: 10, color: '#64748B' }}>sessões</div>
             </div>
             <div style={{ textAlign: 'center', background: '#F3F0FF', borderRadius: 12, padding: '10px 8px' }}>
               <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 3 }}>
-                <Clock size={15} color="#7C3AED" strokeWidth={2} />
+                <Clock size={15} color="#f97316" strokeWidth={2} />
               </div>
-              <div style={{ fontSize: 20, fontWeight: 700, color: '#7C3AED' }}>{atendStats.horas}h</div>
+              <div style={{ fontSize: 20, fontWeight: 700, color: '#f97316' }}>{atendStats.horas}h</div>
               <div style={{ fontSize: 10, color: '#64748B' }}>de mentoria</div>
             </div>
             <div style={{ textAlign: 'center', background: '#F0FDF4', borderRadius: 12, padding: '10px 8px' }}>
@@ -192,7 +192,7 @@ export default function MentorPerfil() {
               <div style={{ fontSize: 14, fontWeight: 600 }}>Satisfação dos alunos</div>
               <Link
                 href={`/csat/mentor/${encodeURIComponent(meuPerfil!.mentor_nome!)}`}
-                style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#2563EB', textDecoration: 'none' }}
+                style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#f97316', textDecoration: 'none' }}
               >
                 Ver completo <ExternalLink size={11} strokeWidth={2} />
               </Link>
@@ -226,7 +226,7 @@ export default function MentorPerfil() {
               href={`/csat/mentor/${encodeURIComponent(meuPerfil!.mentor_nome!)}`}
               style={{ textDecoration: 'none' }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '10px', borderRadius: 10, background: '#F8FAFC', border: '0.5px solid rgba(0,0,0,0.08)', fontSize: 13, color: '#2563EB', fontWeight: 500 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '10px', borderRadius: 10, background: '#F8FAFC', border: '0.5px solid rgba(0,0,0,0.08)', fontSize: 13, color: '#f97316', fontWeight: 500 }}>
                 Radar, evolução e feedbacks <ChevronRight size={14} strokeWidth={2} />
               </div>
             </Link>
@@ -252,7 +252,7 @@ export default function MentorPerfil() {
                   borderBottom: i < alunos.length - 1 ? '0.5px solid rgba(0,0,0,0.06)' : 'none',
                   background: reprovado ? '#FFF8F8' : 'transparent',
                 }}>
-                  <div style={{ width: 34, height: 34, borderRadius: '50%', background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 600, color: '#1E40AF', flexShrink: 0 }}>
+                  <div style={{ width: 34, height: 34, borderRadius: '50%', background: '#fff7ed', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 600, color: '#1E40AF', flexShrink: 0 }}>
                     {a.nome.split(' ').map((w: string) => w[0]).slice(0, 2).join('')}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>

@@ -66,7 +66,7 @@ export default function MapaBrasil({ dados, estadoSelecionado, onSelecionar }: P
                   key={geo.rsmKey}
                   geography={geo}
                   fill={fill}
-                  stroke={isSelected ? '#2563EB' : '#fff'}
+                  stroke={isSelected ? '#f97316' : '#fff'}
                   strokeWidth={isSelected ? 1.5 : 0.5}
                   style={{
                     default: { outline: 'none', opacity: 1 },

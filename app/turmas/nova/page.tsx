@@ -1,12 +1,14 @@
 'use client'
 import { useState } from 'react'
 import { dbInsert } from '@/lib/supabase'
+import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
 import Nav from '@/components/Nav'
 
 export default function NovaTurma() {
+  const { verticalAtiva } = useAuth()
   const router = useRouter()
-  const [form, setForm] = useState({ nome:'', tipo:'ITA', ano: new Date().getFullYear(), orcamento_total:'' })
+  const [form, setForm] = useState({ nome:'', tipo: (verticalAtiva || 'ITA') as 'ITA' | 'Medicina', ano: new Date().getFullYear(), orcamento_total:'' })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
@@ -34,7 +36,7 @@ export default function NovaTurma() {
         </div>
         <div>
           <label>Tipo</label>
-          <select value={form.tipo} onChange={e => setForm({...form, tipo:e.target.value})}>
+          <select value={form.tipo} onChange={e => setForm({...form, tipo:e.target.value as 'ITA' | 'Medicina'})}>
             <option value="ITA">ITA</option>
             <option value="Medicina">Medicina</option>
           </select>

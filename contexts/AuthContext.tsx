@@ -11,15 +11,23 @@ type Perfil = {
   status: 'pendente' | 'aprovado' | 'bloqueado'
   mentor_nome?: string
   aluno_id?: string
+  vertical?: 'ITA' | 'Medicina'
 }
+
+export type Vertical = 'ITA' | 'Medicina'
 
 type AuthCtx = {
   perfil: Perfil | null
   loading: boolean
   signOut: () => void
+  verticalAtiva: Vertical
+  setVerticalAtiva: (v: Vertical) => void
 }
 
-const AuthContext = createContext<AuthCtx>({ perfil: null, loading: true, signOut: () => {} })
+const AuthContext = createContext<AuthCtx>({
+  perfil: null, loading: true, signOut: () => {},
+  verticalAtiva: 'ITA', setVerticalAtiva: () => {},
+})
 
 const PUBLIC_ROUTES = ['/login', '/cadastro', '/aguardando', '/reset-password']
 // Rotas onde usuários autenticados NÃO devem ser redirecionados para o dashboard
@@ -43,13 +51,38 @@ function getSessionFromStorage(): { access_token: string; user: { id: string } }
   }
 }
 
+function loadVerticalFromStorage(): Vertical {
+  if (typeof window === 'undefined') return 'ITA'
+  return (localStorage.getItem('verticalAtiva') as Vertical) || 'ITA'
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [perfil, setPerfil] = useState<Perfil | null>(null)
   const [loading, setLoading] = useState(true)
   const [timeoutError, setTimeoutError] = useState(false)
+  const [verticalAtiva, setVerticalAtivaState] = useState<Vertical>('ITA')
   const router = useRouter()
   const pathname = usePathname()
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Inicializa vertical do localStorage (coordenador/direção) ou do perfil (outros)
+  useEffect(() => {
+    setVerticalAtivaState(loadVerticalFromStorage())
+  }, [])
+
+  useEffect(() => {
+    if (!perfil) return
+    const isGestor = perfil.papel === 'coordenador' || perfil.papel === 'direcao'
+    if (!isGestor) {
+      // Para não-gestores, vertical é fixa pelo perfil
+      setVerticalAtivaState((perfil.vertical as Vertical) || 'ITA')
+    }
+  }, [perfil])
+
+  function setVerticalAtiva(v: Vertical) {
+    setVerticalAtivaState(v)
+    if (typeof window !== 'undefined') localStorage.setItem('verticalAtiva', v)
+  }
 
   // Inicialização da sessão — roda uma única vez
   useEffect(() => {
@@ -131,9 +164,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     if (PUBLIC_ROUTES.includes(pathname) && !NO_REDIRECT_FROM.includes(pathname) && perfil.status !== 'pendente') {
       if (perfil.papel === 'coordenador' || perfil.papel === 'direcao') router.push('/')
-      else if (perfil.papel === 'mentor') router.push('/mentor')
+      else if (perfil.papel === 'mentor') router.push(perfil.vertical === 'Medicina' ? '/med/mentor' : '/mentor')
       else if (perfil.papel === 'professor') router.push('/simulados')
-      else if (perfil.papel === 'aluno') router.push('/meu-perfil')
+      else if (perfil.papel === 'aluno') {
+        router.push(perfil.vertical === 'Medicina' ? '/med/aluno' : '/meu-perfil')
+      }
     }
   }, [perfil, loading, pathname])
 
@@ -160,7 +195,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           onClick={() => window.location.reload()}
           style={{
             marginTop: 8, padding: '12px 32px', borderRadius: 12,
-            background: '#534AB7', color: 'white', border: 'none',
+            background: '#f97316', color: 'white', border: 'none',
             fontSize: 14, fontWeight: 600, cursor: 'pointer',
             fontFamily: 'DM Sans, sans-serif'
           }}
@@ -172,7 +207,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ perfil, loading, signOut }}>
+    <AuthContext.Provider value={{ perfil, loading, signOut, verticalAtiva, setVerticalAtiva }}>
       {children}
     </AuthContext.Provider>
   )

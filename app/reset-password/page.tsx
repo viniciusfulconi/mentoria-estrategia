@@ -124,7 +124,7 @@ export default function ResetPassword() {
                 disabled={loading}
                 style={{
                   width: '100%', padding: '13px', borderRadius: 12,
-                  background: loading ? '#aaa' : '#2563EB',
+                  background: loading ? '#aaa' : '#f97316',
                   color: 'white', border: 'none', fontSize: 15, fontWeight: 600,
                   cursor: loading ? 'not-allowed' : 'pointer',
                   fontFamily: 'DM Sans, sans-serif', marginTop: 4,

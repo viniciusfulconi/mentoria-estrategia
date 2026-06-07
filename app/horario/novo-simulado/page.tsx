@@ -6,7 +6,8 @@ import { useRouter } from 'next/navigation'
 import Nav from '@/components/Nav'
 
 export default function NovoSimulado() {
-  const { perfil } = useAuth()
+  const { perfil, verticalAtiva } = useAuth()
+  const vertical = verticalAtiva || 'ITA'
   const router = useRouter()
   const [turmas, setTurmas] = useState<any[]>([])
   const [materias, setMaterias] = useState<string[]>([])
@@ -16,12 +17,12 @@ export default function NovoSimulado() {
   const [erro, setErro] = useState('')
 
   useEffect(() => {
-    Promise.all([dbQuery('turmas'), dbQuery('topicos', {}, 'materia')])
+    Promise.all([dbQuery('turmas', { tipo: `eq.${vertical}` }), dbQuery('topicos', { vertical: `eq.${vertical}` }, 'materia')])
       .then(([{ data: t }, { data: m }]) => {
         setTurmas(t || [])
         setMaterias([...new Set((m || []).map((x: any) => x.materia))].sort() as string[])
       })
-  }, [])
+  }, [vertical])
 
   function toggleMateria(m: string) {
     setMateriasSel(prev => prev.includes(m) ? prev.filter(x => x !== m) : [...prev, m])
@@ -37,7 +38,7 @@ export default function NovoSimulado() {
       tipo_simulado: form.tipo, ciclo_simulado: form.ciclo,
       materias_simulado: materiasSel,
       data_inicio: dtInicio.toISOString(), data_fim: dtFim.toISOString(),
-      criado_por: 'coordenador', criado_por_id: perfil?.id,
+      criado_por: 'coordenador', criado_por_id: perfil?.id, vertical,
     }])
     if (error) { setErro(error); setSaving(false) }
     else router.push('/horario')
@@ -58,7 +59,7 @@ export default function NovoSimulado() {
           <label>Matérias envolvidas</label>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 6 }}>
             {materias.map(m => (
-              <button key={m} onClick={() => toggleMateria(m)} style={{ padding: '5px 12px', borderRadius: 20, fontSize: 11, border: '0.5px solid rgba(0,0,0,0.12)', background: materiasSel.includes(m) ? '#2563EB' : 'transparent', color: materiasSel.includes(m) ? 'white' : '#666', cursor: 'pointer', fontFamily: 'DM Sans,sans-serif' }}>{m}</button>
+              <button key={m} onClick={() => toggleMateria(m)} style={{ padding: '5px 12px', borderRadius: 20, fontSize: 11, border: '0.5px solid rgba(0,0,0,0.12)', background: materiasSel.includes(m) ? '#f97316' : 'transparent', color: materiasSel.includes(m) ? 'white' : '#666', cursor: 'pointer', fontFamily: 'DM Sans,sans-serif' }}>{m}</button>
             ))}
           </div>
         </div>

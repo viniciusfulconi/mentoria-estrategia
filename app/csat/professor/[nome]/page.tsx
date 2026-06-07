@@ -62,7 +62,7 @@ function LineChart({ labels, dados }: { labels: string[]; dados: number[] }) {
   const yScale = (v: number) => h - pad - ((v - min) / (max - min)) * (h - pad * 2)
   const points = dados.map((v, i) => [pad + i * xStep, yScale(v)])
   const path = points.map(([x, y], i) => `${i === 0 ? 'M' : 'L'}${x},${y}`).join(' ')
-  const cor = dados.length ? corMedia(dados[dados.length - 1]) : '#2563EB'
+  const cor = dados.length ? corMedia(dados[dados.length - 1]) : '#f97316'
   return (
     <svg viewBox={`0 0 ${w} ${h}`} width="100%">
       {[2, 3, 4, 5].map(v => (
@@ -221,7 +221,7 @@ export default function ProfessorCSAT() {
       <div style={{ display: 'flex', gap: 6, overflowX: 'auto', padding: '8px 16px', background: 'white', borderBottom: '0.5px solid rgba(0,0,0,0.06)' }}>
         <button
           onClick={() => setAvaliacaoAtiva('todas')}
-          style={{ padding: '4px 12px', borderRadius: 16, fontSize: 11, border: 'none', background: avaliacaoAtiva === 'todas' ? '#2563EB' : '#F1F5F9', color: avaliacaoAtiva === 'todas' ? 'white' : '#666', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'DM Sans,sans-serif' }}
+          style={{ padding: '4px 12px', borderRadius: 16, fontSize: 11, border: 'none', background: avaliacaoAtiva === 'todas' ? '#f97316' : '#F1F5F9', color: avaliacaoAtiva === 'todas' ? 'white' : '#666', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'DM Sans,sans-serif' }}
         >
           Geral
         </button>
@@ -229,7 +229,7 @@ export default function ProfessorCSAT() {
           <button
             key={a.id}
             onClick={() => setAvaliacaoAtiva(a.id)}
-            style={{ padding: '4px 12px', borderRadius: 16, fontSize: 11, border: 'none', background: avaliacaoAtiva === a.id ? '#2563EB' : '#F1F5F9', color: avaliacaoAtiva === a.id ? 'white' : '#666', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'DM Sans,sans-serif' }}
+            style={{ padding: '4px 12px', borderRadius: 16, fontSize: 11, border: 'none', background: avaliacaoAtiva === a.id ? '#f97316' : '#F1F5F9', color: avaliacaoAtiva === a.id ? 'white' : '#666', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'DM Sans,sans-serif' }}
           >
             {a.nome}
           </button>
@@ -344,7 +344,7 @@ export default function ProfessorCSAT() {
               {comentarios.map((c, i) => (
                 <div
                   key={i}
-                  style={{ background: '#F7F6F3', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: '#444', lineHeight: 1.5, borderLeft: '3px solid #2563EB' }}
+                  style={{ background: '#F7F6F3', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: '#444', lineHeight: 1.5, borderLeft: '3px solid #f97316' }}
                 >
                   "{c}"
                 </div>

@@ -6,7 +6,7 @@ import Nav from '@/components/Nav'
 import { useRouter } from 'next/navigation'
 
 export default function Admin() {
-  const { perfil } = useAuth()
+  const { perfil, verticalAtiva } = useAuth()
   const router = useRouter()
   const [pendentes, setPendentes] = useState<any[]>([])
   const [aprovados, setAprovados] = useState<any[]>([])
@@ -15,12 +15,19 @@ export default function Admin() {
   useEffect(() => {
     if (perfil && perfil.papel !== 'coordenador' && perfil.papel !== 'direcao') router.push('/')
     load()
-  }, [perfil])
+  }, [perfil, verticalAtiva])
 
   const isDirecao = perfil?.papel === 'direcao'
 
   async function load() {
-    const { data } = await dbQuery('perfis', { order: 'created_at.desc' })
+    const vertical = verticalAtiva || 'ITA'
+    const filtro: Record<string, string> = { order: 'created_at.desc' }
+    if (vertical === 'Medicina') {
+      filtro['vertical'] = 'eq.Medicina'
+    } else {
+      filtro['or'] = '(vertical.eq.ITA,vertical.is.null)'
+    }
+    const { data } = await dbQuery('perfis', filtro)
     setPendentes((data || []).filter((p: any) => p.status === 'pendente'))
     setAprovados((data || []).filter((p: any) => p.status === 'aprovado'))
     setLoading(false)
@@ -42,7 +49,7 @@ export default function Admin() {
   }
 
   const papelLabel = (p: string) => p === 'mentor' ? '◉ Mentor' : p === 'aluno' ? '◎ Aluno' : p === 'direcao' ? '◈ Direção' : p === 'professor' ? '◆ Professor' : '⬡ Coord.'
-  const papelCor = (p: string) => p === 'mentor' ? '#2563EB' : p === 'aluno' ? '#16A34A' : p === 'direcao' ? '#0891B2' : p === 'professor' ? '#7C3AED' : '#D97706'
+  const papelCor = (p: string) => p === 'mentor' ? '#f97316' : p === 'aluno' ? '#16A34A' : p === 'direcao' ? '#0891B2' : p === 'professor' ? '#f97316' : '#D97706'
 
   return (
     <div style={{ paddingBottom: 80 }}>
@@ -94,7 +101,7 @@ export default function Admin() {
             <div style={{ fontSize: 11, fontWeight: 600, color: '#999', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10, marginTop: pendentes.length ? 20 : 0 }}>Usuários aprovados ({aprovados.length})</div>
             {aprovados.map(p => (
               <div key={p.id} className="card" style={{ marginBottom: 8, display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 600, color: '#1E40AF', flexShrink: 0 }}>
+                <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#fff7ed', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 600, color: '#1E40AF', flexShrink: 0 }}>
                   {p.nome.split(' ').map((w: string) => w[0]).slice(0, 2).join('')}
                 </div>
                 <div style={{ flex: 1 }}>

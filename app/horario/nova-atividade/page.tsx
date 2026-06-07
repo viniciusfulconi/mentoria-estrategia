@@ -8,7 +8,7 @@ import Nav from '@/components/Nav'
 const CORES_PESSOAL = ['#26A69A', '#AB47BC', '#EC407A', '#FF7043', '#8D6E63', '#78909C']
 
 export default function NovaAtividade() {
-  const { perfil } = useAuth()
+  const { perfil, verticalAtiva } = useAuth()
   const router = useRouter()
   const [form, setForm] = useState({ titulo: '', descricao: '', data: new Date().toISOString().split('T')[0], hora_inicio: '08:00', hora_fim: '09:00', cor: CORES_PESSOAL[0] })
   const [repeticao, setRepeticao] = useState('nenhuma')
@@ -34,6 +34,7 @@ export default function NovaAtividade() {
         data_inicio: dtInicio.toISOString(), data_fim: dtFim.toISOString(),
         cor: form.cor, aluno_id: perfil?.aluno_id,
         criado_por: 'aluno', criado_por_id: perfil?.id,
+        vertical: verticalAtiva || 'ITA',
       })
       if (repeticao === 'nenhuma') break
       else if (repeticao === 'semanal') dtAtual.setDate(dtAtual.getDate() + 7)

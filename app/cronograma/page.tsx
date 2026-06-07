@@ -6,7 +6,7 @@ import Nav from '@/components/Nav'
 import Link from 'next/link'
 
 export default function Cronograma() {
-  const { perfil } = useAuth()
+  const { perfil, verticalAtiva } = useAuth()
   const [concursos, setConcursos] = useState<any[]>([])
   const [alunos, setAlunos] = useState<any[]>([])
   const [topicos, setTopicos] = useState<any[]>([])
@@ -16,47 +16,59 @@ export default function Cronograma() {
 
   useEffect(() => {
     load()
-  }, [perfil])
+  }, [perfil, verticalAtiva])
 
   async function load() {
-    const [{ data: cs }, { data: ts }, { data: ps }, { data: als }] = await Promise.all([
-      dbQuery('concursos', { order: 'created_at.desc' }),
-      dbQuery('topicos'),
+    setLoading(true)
+    const vertical = verticalAtiva || 'ITA'
+
+    const [{ data: cs }, { data: ts }, { data: ps }] = await Promise.all([
+      dbQuery('concursos', { vertical: `eq.${vertical}`, order: 'created_at.desc' }),
+      dbQuery('topicos', { vertical: `eq.${vertical}` }),
       dbQuery('progresso_topicos'),
-      dbQuery('alunos_dados', { order: 'nome' }),
     ])
     setConcursos(cs || [])
     setTopicos(ts || [])
     setProgressos(ps || [])
 
-    // Filtra alunos por mentor se for mentor
-    if (perfil?.papel === 'mentor' && perfil.mentor_nome) {
-      setAlunos((als || []).filter((a: any) => a.mentor === perfil.mentor_nome))
+    if (vertical === 'Medicina') {
+      const params: Record<string, string> = { vertical: 'eq.Medicina', order: 'nome' }
+      const { data: als } = await dbQuery('alunos', params, 'id,nome,mentores(nome)')
+      const lista = (als || []).map((a: any) => ({
+        id_aluno: a.id,
+        nome: a.nome,
+        mentor: a.mentores?.nome || null,
+      }))
+      const mentorNome = perfil?.mentor_nome || perfil?.nome
+      if (perfil?.papel === 'mentor' && mentorNome) {
+        setAlunos(lista.filter((a: any) => a.mentor === mentorNome))
+      } else {
+        setAlunos(lista)
+      }
     } else {
-      setAlunos(als || [])
+      const { data: als } = await dbQuery('alunos_dados', { order: 'nome' })
+      const lista = als || []
+      if (perfil?.papel === 'mentor' && perfil.mentor_nome) {
+        setAlunos(lista.filter((a: any) => a.mentor === perfil.mentor_nome))
+      } else {
+        setAlunos(lista)
+      }
     }
+
     setLoading(false)
   }
 
   function pctAluno(alunoId: string) {
     const total = topicos.length
     if (!total) return 0
-    const finalizados = progressos.filter(p => p.aluno_id === alunoId && p.status === 'finalizada').length
+    const topicoIds = new Set(topicos.map((t: any) => t.id))
+    const finalizados = progressos.filter(p =>
+      p.aluno_id === alunoId && p.status === 'finalizada' && topicoIds.has(p.topico_id)
+    ).length
     return Math.round((finalizados / total) * 100)
   }
 
-  function pctMateria(alunoId: string, materia: string) {
-    const topicosMat = topicos.filter(t => t.materia === materia)
-    if (!topicosMat.length) return 0
-    const finalizados = progressos.filter(p =>
-      p.aluno_id === alunoId &&
-      p.status === 'finalizada' &&
-      topicosMat.some(t => t.id === p.topico_id)
-    ).length
-    return Math.round((finalizados / topicosMat.length) * 100)
-  }
-
-  const materias = [...new Set(topicos.map(t => t.materia))].sort()
+  const materias = [...new Set(topicos.map((t: any) => t.materia))].sort()
 
   const alunosComPct = alunos.map(a => ({ ...a, pct: pctAluno(a.id_aluno) }))
   const criticos = [...alunosComPct].sort((a, b) => a.pct - b.pct).slice(0, 10)
@@ -68,7 +80,7 @@ export default function Cronograma() {
       <div style={{ background: 'white', borderBottom: '0.5px solid rgba(0,0,0,0.08)', padding: '16px', position: 'sticky', top: 0, zIndex: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ fontSize: 17, fontWeight: 600 }}>Cronograma</div>
         {perfil?.papel === 'coordenador' && (
-          <Link href="/cronograma/novo" style={{ textDecoration: 'none', background: '#2563EB', color: 'white', borderRadius: 10, padding: '7px 14px', fontSize: 13, fontWeight: 500 }}>
+          <Link href="/cronograma/novo" style={{ textDecoration: 'none', background: '#f97316', color: 'white', borderRadius: 10, padding: '7px 14px', fontSize: 13, fontWeight: 500 }}>
             {concurso ? '✎ Editar' : '+ Novo'}
           </Link>
         )}
@@ -93,7 +105,7 @@ export default function Cronograma() {
             <div style={{ fontSize: 32, marginBottom: 10 }}>📋</div>
             <div style={{ marginBottom: 12 }}>Nenhum cronograma cadastrado ainda.</div>
             {perfil?.papel === 'coordenador' && (
-              <Link href="/cronograma/novo" style={{ textDecoration: 'none', display: 'inline-block', background: '#2563EB', color: 'white', borderRadius: 12, padding: '10px 20px', fontSize: 14 }}>Criar cronograma</Link>
+              <Link href="/cronograma/novo" style={{ textDecoration: 'none', display: 'inline-block', background: '#f97316', color: 'white', borderRadius: 12, padding: '10px 20px', fontSize: 14 }}>Criar cronograma</Link>
             )}
           </div>
         ) : (
@@ -117,7 +129,7 @@ export default function Cronograma() {
                 <Link key={a.id_aluno} href={`/cronograma/${a.id_aluno}`} style={{ textDecoration: 'none' }}>
                   <div className="card" style={{ marginBottom: 8 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
-                      <div style={{ width: 34, height: 34, borderRadius: '50%', background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 600, color: '#1E40AF', flexShrink: 0 }}>
+                      <div style={{ width: 34, height: 34, borderRadius: '50%', background: '#fff7ed', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 600, color: '#1E40AF', flexShrink: 0 }}>
                         {a.nome.split(' ').map((w: string) => w[0]).slice(0, 2).join('')}
                       </div>
                       <div style={{ flex: 1 }}>

@@ -79,7 +79,7 @@ export default function Simulados() {
       <div style={{ background: 'white', borderBottom: '0.5px solid rgba(0,0,0,0.08)', padding: '16px', position: 'sticky', top: 0, zIndex: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ fontSize: 17, fontWeight: 600 }}>Alunos</div>
         {perfil?.papel === 'coordenador' && (
-          <Link href="/simulados/upload" style={{ textDecoration: 'none', background: '#2563EB', color: 'white', borderRadius: 10, padding: '7px 14px', fontSize: 13, fontWeight: 500 }}>↑ Upload</Link>
+          <Link href="/simulados/upload" style={{ textDecoration: 'none', background: '#f97316', color: 'white', borderRadius: 10, padding: '7px 14px', fontSize: 13, fontWeight: 500 }}>↑ Upload</Link>
         )}
       </div>
 
@@ -93,14 +93,14 @@ export default function Simulados() {
         ) : erro ? (
           <div className="card" style={{ textAlign: 'center', padding: 40 }}>
             <div style={{ fontSize: 13, color: '#DC2626', marginBottom: 12 }}>{erro}</div>
-            <button onClick={load} style={{ padding: '8px 20px', borderRadius: 10, background: '#2563EB', color: 'white', border: 'none', fontSize: 13, cursor: 'pointer', fontFamily: 'DM Sans, sans-serif' }}>Tentar novamente</button>
+            <button onClick={load} style={{ padding: '8px 20px', borderRadius: 10, background: '#f97316', color: 'white', border: 'none', fontSize: 13, cursor: 'pointer', fontFamily: 'DM Sans, sans-serif' }}>Tentar novamente</button>
           </div>
         ) : filtrados.length === 0 ? (
           <div className="card" style={{ textAlign: 'center', color: '#999', padding: 40 }}>
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}><BarChart3 size={36} strokeWidth={1.5} color="#CBD5E1" /></div>
             <div style={{ marginBottom: 12 }}>Nenhum dado ainda.</div>
             {perfil?.papel === 'coordenador' && (
-              <Link href="/simulados/upload" style={{ textDecoration: 'none', display: 'inline-block', background: '#2563EB', color: 'white', borderRadius: 12, padding: '10px 20px', fontSize: 14 }}>Importar planilha</Link>
+              <Link href="/simulados/upload" style={{ textDecoration: 'none', display: 'inline-block', background: '#f97316', color: 'white', borderRadius: 12, padding: '10px 20px', fontSize: 14 }}>Importar planilha</Link>
             )}
           </div>
         ) : filtrados.map(a => {
@@ -112,7 +112,7 @@ export default function Simulados() {
             <Link key={a.id_aluno} href={`/aluno/${a.id_aluno}`} style={{ textDecoration: 'none' }}>
               <div className="card" style={{ marginBottom: 10 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
-                  <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 600, color: '#1E40AF', flexShrink: 0 }}>
+                  <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#fff7ed', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 600, color: '#1E40AF', flexShrink: 0 }}>
                     {a.nome.split(' ').map((w: string) => w[0]).slice(0, 2).join('')}
                   </div>
                   <div style={{ flex: 1 }}>

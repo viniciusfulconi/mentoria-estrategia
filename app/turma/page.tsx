@@ -4,6 +4,8 @@ import { dbQuery } from '@/lib/supabase'
 import Nav from '@/components/Nav'
 import PageLoader from '@/components/PageLoader'
 import Link from 'next/link'
+import { useAuth } from '@/contexts/AuthContext'
+import { useRouter } from 'next/navigation'
 
 const ITA_CORTE = { 2024: 7.1805, 2025: 7.2983 } as const
 const ITA_AVG = {
@@ -20,6 +22,8 @@ function mediaFinalITA(r: any): number | null {
 }
 
 export default function Turma() {
+  const { verticalAtiva } = useAuth()
+  const router = useRouter()
   const [dados, setDados] = useState<any[]>([])
   const [cicloAtivo, setCicloAtivo] = useState<string>('')
   const [ciclos, setCiclos] = useState<string[]>([])
@@ -28,6 +32,7 @@ export default function Turma() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    if (verticalAtiva === 'Medicina') { router.replace('/med/alunos'); return }
     dbQuery('resultados', { fase: 'eq.ranking', order: 'ciclo_nome' })
       .then(({ data }) => {
         const d = data || []
@@ -150,7 +155,7 @@ export default function Turma() {
         {ciclos.map(c => (
           <button key={c} onClick={() => setCicloAtivo(c)} style={{
             padding: '5px 12px', borderRadius: 20, fontSize: 11, border: '0.5px solid rgba(0,0,0,0.12)',
-            background: cicloAtivo === c ? '#2563EB' : 'transparent',
+            background: cicloAtivo === c ? '#f97316' : 'transparent',
             color: cicloAtivo === c ? 'white' : '#666',
             cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'DM Sans,sans-serif'
           }}>
@@ -186,7 +191,7 @@ export default function Turma() {
               return (
                 <Link key={r.id_aluno} href={`/aluno/${r.id_aluno}`} style={{ textDecoration: 'none' }}>
                   <div className="card" style={{ marginBottom: 8, display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <div style={{ width: 28, height: 28, borderRadius: '50%', background: i < 3 ? '#EFF6FF' : '#F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 600, color: i < 3 ? '#2563EB' : '#888', flexShrink: 0 }}>
+                    <div style={{ width: 28, height: 28, borderRadius: '50%', background: i < 3 ? '#fff7ed' : '#F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 600, color: i < 3 ? '#f97316' : '#888', flexShrink: 0 }}>
                       {posicao}
                     </div>
                     <div style={{ flex: 1 }}>
@@ -266,7 +271,7 @@ export default function Turma() {
                     <button key={ano} onClick={() => setAnoITA(ano)} style={{
                       padding: '6px 18px', borderRadius: 20, fontSize: 12, fontWeight: 600,
                       border: 'none',
-                      background: anoITA === ano ? '#2563EB' : '#F1F5F9',
+                      background: anoITA === ano ? '#f97316' : '#F1F5F9',
                       color: anoITA === ano ? 'white' : '#666',
                       cursor: 'pointer', fontFamily: 'DM Sans,sans-serif',
                     }}>ITA {ano}</button>
@@ -311,9 +316,9 @@ export default function Turma() {
 
                     {/* Referência ITA */}
                     <div style={{
-                      fontSize: 11, color: '#2563EB', fontWeight: 500,
+                      fontSize: 11, color: '#f97316', fontWeight: 500,
                       marginBottom: 10, padding: '6px 10px',
-                      background: '#EFF6FF', borderRadius: 8, lineHeight: 1.6,
+                      background: '#fff7ed', borderRadius: 8, lineHeight: 1.6,
                     }}>
                       <strong>ITA {anoITA}</strong> — Mat: {ITA_AVG[anoITA].matematica.toFixed(2)} · Fís: {ITA_AVG[anoITA].fisica.toFixed(2)} · Quím: {ITA_AVG[anoITA].quimica.toFixed(2)} · Port/Red: {ITA_AVG[anoITA].portRed.toFixed(2)} · Nota final média: {ITA_AVG[anoITA].media2fase.toFixed(2)} · Corte: {ITA_CORTE[anoITA].toFixed(4)}
                     </div>

@@ -91,12 +91,12 @@ function LineChart({ pesquisas, dados }: { pesquisas: string[]; dados: number[] 
       {[1, 2, 3, 4, 5].map(v => (
         <line key={v} x1={pad} y1={yScale(v)} x2={w - pad} y2={yScale(v)} stroke="rgba(0,0,0,0.06)" strokeWidth="1" />
       ))}
-      <path d={path} fill="none" stroke="#2563EB" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-      <path d={`${path} L${points[points.length - 1][0]},${h - pad} L${pad},${h - pad} Z`} fill="#2563EB" fillOpacity="0.08" />
+      <path d={path} fill="none" stroke="#f97316" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d={`${path} L${points[points.length - 1][0]},${h - pad} L${pad},${h - pad} Z`} fill="#f97316" fillOpacity="0.08" />
       {points.map(([x, y], i) => (
         <g key={i}>
-          <circle cx={x} cy={y} r="4" fill="#2563EB" stroke="white" strokeWidth="1.5" />
-          <text x={x} y={y - 8} textAnchor="middle" fontSize="9" fontWeight="700" fill="#2563EB">{dados[i].toFixed(1)}</text>
+          <circle cx={x} cy={y} r="4" fill="#f97316" stroke="white" strokeWidth="1.5" />
+          <text x={x} y={y - 8} textAnchor="middle" fontSize="9" fontWeight="700" fill="#f97316">{dados[i].toFixed(1)}</text>
           <text x={x} y={h - 6} textAnchor="middle" fontSize="7" fill="#999">{pesquisas[i].split('—')[0].trim().replace('Pesquisa ', 'P')}</text>
         </g>
       ))}
@@ -106,7 +106,7 @@ function LineChart({ pesquisas, dados }: { pesquisas: string[]; dados: number[] 
 
 // ─── Aba Mentoria ─────────────────────────────────────────────────────────────
 
-function AbaMentoria({ podeUpload }: { podeUpload: boolean }) {
+function AbaMentoria({ podeUpload, vertical }: { podeUpload: boolean; vertical: string }) {
   const [pesquisas, setPesquisas] = useState<PesquisaCsat[]>([])
   const [respostas, setRespostas] = useState<RespostaCsat[]>([])
   const [pesquisaAtiva, setPesquisaAtiva] = useState<string>('todas')
@@ -116,8 +116,8 @@ function AbaMentoria({ podeUpload }: { podeUpload: boolean }) {
   async function carregar() {
     setErro(null)
     const [{ data: ps, error: e1 }, { data: rs, error: e2 }] = await Promise.all([
-      dbQuery('pesquisas_csat', { order: 'data' }),
-      dbQuery('respostas_csat'),
+      dbQuery('pesquisas_csat', { vertical: `eq.${vertical}`, order: 'data' }),
+      dbQuery('respostas_csat', { vertical: `eq.${vertical}` }),
     ])
     if (e1 || e2) { setErro('Falha ao carregar dados de CSAT.'); setLoading(false); return }
     setPesquisas(ps || [])
@@ -125,7 +125,7 @@ function AbaMentoria({ podeUpload }: { podeUpload: boolean }) {
     setLoading(false)
   }
 
-  useEffect(() => { carregar() }, [])
+  useEffect(() => { carregar() }, [vertical])
 
   const respostasFiltradas = pesquisaAtiva === 'todas'
     ? respostas
@@ -141,9 +141,9 @@ function AbaMentoria({ podeUpload }: { podeUpload: boolean }) {
   return (
     <>
       <div style={{ display: 'flex', gap: 6, overflowX: 'auto', padding: '8px 16px 0', background: 'white', borderBottom: '0.5px solid rgba(0,0,0,0.06)' }}>
-        <button onClick={() => setPesquisaAtiva('todas')} style={{ padding: '4px 12px', borderRadius: 16, fontSize: 11, border: 'none', background: pesquisaAtiva === 'todas' ? '#2563EB' : '#F1F5F9', color: pesquisaAtiva === 'todas' ? 'white' : '#666', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'DM Sans,sans-serif' }}>Geral</button>
+        <button onClick={() => setPesquisaAtiva('todas')} style={{ padding: '4px 12px', borderRadius: 16, fontSize: 11, border: 'none', background: pesquisaAtiva === 'todas' ? '#f97316' : '#F1F5F9', color: pesquisaAtiva === 'todas' ? 'white' : '#666', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'DM Sans,sans-serif' }}>Geral</button>
         {pesquisas.map(p => (
-          <button key={p.id} onClick={() => setPesquisaAtiva(p.id)} style={{ padding: '4px 12px', borderRadius: 16, fontSize: 11, border: 'none', background: pesquisaAtiva === p.id ? '#2563EB' : '#F1F5F9', color: pesquisaAtiva === p.id ? 'white' : '#666', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'DM Sans,sans-serif' }}>{p.nome}</button>
+          <button key={p.id} onClick={() => setPesquisaAtiva(p.id)} style={{ padding: '4px 12px', borderRadius: 16, fontSize: 11, border: 'none', background: pesquisaAtiva === p.id ? '#f97316' : '#F1F5F9', color: pesquisaAtiva === p.id ? 'white' : '#666', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'DM Sans,sans-serif' }}>{p.nome}</button>
         ))}
       </div>
 
@@ -153,14 +153,14 @@ function AbaMentoria({ podeUpload }: { podeUpload: boolean }) {
         ) : erro ? (
           <div className="card" style={{ textAlign: 'center', padding: 40 }}>
             <div style={{ fontSize: 13, color: '#DC2626', marginBottom: 12 }}>{erro}</div>
-            <button onClick={carregar} style={{ padding: '8px 20px', borderRadius: 10, background: '#2563EB', color: 'white', border: 'none', fontSize: 13, cursor: 'pointer', fontFamily: 'DM Sans, sans-serif' }}>Tentar novamente</button>
+            <button onClick={carregar} style={{ padding: '8px 20px', borderRadius: 10, background: '#f97316', color: 'white', border: 'none', fontSize: 13, cursor: 'pointer', fontFamily: 'DM Sans, sans-serif' }}>Tentar novamente</button>
           </div>
         ) : respostas.length === 0 ? (
           <div className="card" style={{ textAlign: 'center', padding: 40, color: '#999' }}>
             <div style={{ fontSize: 40, marginBottom: 12 }}>📊</div>
             <div style={{ marginBottom: 16 }}>Nenhuma pesquisa importada ainda.</div>
             {podeUpload && (
-              <Link href="/csat/upload" style={{ textDecoration: 'none', background: '#2563EB', color: 'white', borderRadius: 12, padding: '10px 20px', fontSize: 14 }}>
+              <Link href="/csat/upload" style={{ textDecoration: 'none', background: '#f97316', color: 'white', borderRadius: 12, padding: '10px 20px', fontSize: 14 }}>
                 Importar primeira pesquisa
               </Link>
             )}
@@ -198,7 +198,7 @@ function AbaMentoria({ podeUpload }: { podeUpload: boolean }) {
                 return (
                   <Link key={m.nome} href={`/csat/mentor/${encodeURIComponent(m.nome)}`} style={{ textDecoration: 'none' }}>
                     <div className="card" style={{ marginBottom: 8, display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: '#2563EB', flexShrink: 0 }}>{i + 1}</div>
+                      <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#fff7ed', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: '#f97316', flexShrink: 0 }}>{i + 1}</div>
                       <div style={{ flex: 1 }}>
                         <div style={{ fontSize: 14, fontWeight: 500 }}>{m.nome}</div>
                         <div style={{ fontSize: 11, color: '#999', marginTop: 2 }}>{respostasFiltradas.filter(r => r.mentor === m.nome).length} avaliações</div>
@@ -220,7 +220,7 @@ function AbaMentoria({ podeUpload }: { podeUpload: boolean }) {
 
 // ─── Aba Professores ──────────────────────────────────────────────────────────
 
-function AbaProfessores({ podeUpload }: { podeUpload: boolean }) {
+function AbaProfessores({ podeUpload, vertical }: { podeUpload: boolean; vertical: string }) {
   const [avaliacoes, setAvaliacoes] = useState<any[]>([])
   const [respostas, setRespostas] = useState<any[]>([])
   const [materiaAtiva, setMateriaAtiva] = useState<string>('todas')
@@ -231,8 +231,8 @@ function AbaProfessores({ podeUpload }: { podeUpload: boolean }) {
   async function carregar() {
     setErro(null)
     const [{ data: avs, error: e1 }, { data: rs, error: e2 }] = await Promise.all([
-      dbQuery('avaliacoes_professores', { order: 'data' }),
-      dbQuery('respostas_professor'),
+      dbQuery('avaliacoes_professores', { vertical: `eq.${vertical}`, order: 'data' }),
+      dbQuery('respostas_professor', { vertical: `eq.${vertical}` }),
     ])
     if (e1 || e2) { setErro('Falha ao carregar dados de professores.'); setLoading(false); return }
     setAvaliacoes(avs || [])
@@ -240,7 +240,7 @@ function AbaProfessores({ podeUpload }: { podeUpload: boolean }) {
     setLoading(false)
   }
 
-  useEffect(() => { carregar() }, [])
+  useEffect(() => { carregar() }, [vertical])
 
   const materias = [...new Set(respostas.map(r => r.materia))].sort()
 
@@ -271,9 +271,9 @@ function AbaProfessores({ podeUpload }: { podeUpload: boolean }) {
       {/* Avaliação filter */}
       {avaliacoesDisponiveis.length > 0 && (
         <div style={{ display: 'flex', gap: 6, overflowX: 'auto', padding: '8px 16px 0', background: 'white', borderBottom: '0.5px solid rgba(0,0,0,0.06)' }}>
-          <button onClick={() => setAvaliacaoAtiva('todas')} style={{ padding: '4px 12px', borderRadius: 16, fontSize: 11, border: 'none', background: avaliacaoAtiva === 'todas' ? '#2563EB' : '#F1F5F9', color: avaliacaoAtiva === 'todas' ? 'white' : '#666', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'DM Sans,sans-serif' }}>Geral</button>
+          <button onClick={() => setAvaliacaoAtiva('todas')} style={{ padding: '4px 12px', borderRadius: 16, fontSize: 11, border: 'none', background: avaliacaoAtiva === 'todas' ? '#f97316' : '#F1F5F9', color: avaliacaoAtiva === 'todas' ? 'white' : '#666', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'DM Sans,sans-serif' }}>Geral</button>
           {avaliacoesDisponiveis.map(a => (
-            <button key={a.id} onClick={() => setAvaliacaoAtiva(a.id)} style={{ padding: '4px 12px', borderRadius: 16, fontSize: 11, border: 'none', background: avaliacaoAtiva === a.id ? '#2563EB' : '#F1F5F9', color: avaliacaoAtiva === a.id ? 'white' : '#666', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'DM Sans,sans-serif' }}>{a.nome}</button>
+            <button key={a.id} onClick={() => setAvaliacaoAtiva(a.id)} style={{ padding: '4px 12px', borderRadius: 16, fontSize: 11, border: 'none', background: avaliacaoAtiva === a.id ? '#f97316' : '#F1F5F9', color: avaliacaoAtiva === a.id ? 'white' : '#666', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'DM Sans,sans-serif' }}>{a.nome}</button>
           ))}
         </div>
       )}
@@ -284,14 +284,14 @@ function AbaProfessores({ podeUpload }: { podeUpload: boolean }) {
         ) : erro ? (
           <div className="card" style={{ textAlign: 'center', padding: 40 }}>
             <div style={{ fontSize: 13, color: '#DC2626', marginBottom: 12 }}>{erro}</div>
-            <button onClick={carregar} style={{ padding: '8px 20px', borderRadius: 10, background: '#2563EB', color: 'white', border: 'none', fontSize: 13, cursor: 'pointer', fontFamily: 'DM Sans, sans-serif' }}>Tentar novamente</button>
+            <button onClick={carregar} style={{ padding: '8px 20px', borderRadius: 10, background: '#f97316', color: 'white', border: 'none', fontSize: 13, cursor: 'pointer', fontFamily: 'DM Sans, sans-serif' }}>Tentar novamente</button>
           </div>
         ) : respostas.length === 0 ? (
           <div className="card" style={{ textAlign: 'center', padding: 40, color: '#999' }}>
             <div style={{ fontSize: 40, marginBottom: 12 }}>🎓</div>
             <div style={{ marginBottom: 16 }}>Nenhuma avaliação de professor importada ainda.</div>
             {podeUpload && (
-              <Link href="/csat/upload-professores" style={{ textDecoration: 'none', background: '#2563EB', color: 'white', borderRadius: 12, padding: '10px 20px', fontSize: 14 }}>
+              <Link href="/csat/upload-professores" style={{ textDecoration: 'none', background: '#f97316', color: 'white', borderRadius: 12, padding: '10px 20px', fontSize: 14 }}>
                 Importar primeira avaliação
               </Link>
             )}
@@ -352,9 +352,10 @@ function AbaProfessores({ podeUpload }: { podeUpload: boolean }) {
 // ─── Página principal ─────────────────────────────────────────────────────────
 
 export default function CSAT() {
-  const { perfil } = useAuth()
+  const { perfil, verticalAtiva } = useAuth()
   const [aba, setAba] = useState<'mentoria' | 'professores'>('mentoria')
   const podeUpload = perfil?.papel === 'coordenador'
+  const vertical = verticalAtiva || 'ITA'
 
   return (
     <div style={{ paddingBottom: 80 }}>
@@ -365,7 +366,7 @@ export default function CSAT() {
           {podeUpload && (
             <Link
               href={aba === 'mentoria' ? '/csat/upload' : '/csat/upload-professores'}
-              style={{ textDecoration: 'none', background: '#2563EB', color: 'white', borderRadius: 10, padding: '7px 14px', fontSize: 13, fontWeight: 500 }}
+              style={{ textDecoration: 'none', background: '#f97316', color: 'white', borderRadius: 10, padding: '7px 14px', fontSize: 13, fontWeight: 500 }}
             >
               ↑ Upload
             </Link>
@@ -381,8 +382,8 @@ export default function CSAT() {
               style={{
                 flex: 1, padding: '8px 0', fontSize: 13, fontWeight: aba === t ? 600 : 400,
                 border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'DM Sans,sans-serif',
-                color: aba === t ? '#2563EB' : '#999',
-                borderBottom: aba === t ? '2px solid #2563EB' : '2px solid transparent',
+                color: aba === t ? '#f97316' : '#999',
+                borderBottom: aba === t ? '2px solid #f97316' : '2px solid transparent',
                 transition: 'all 0.15s',
                 textTransform: 'capitalize',
               }}
@@ -394,9 +395,9 @@ export default function CSAT() {
       </div>
 
       {aba === 'mentoria' ? (
-        <AbaMentoria podeUpload={podeUpload} />
+        <AbaMentoria podeUpload={podeUpload} vertical={vertical} />
       ) : (
-        <AbaProfessores podeUpload={podeUpload} />
+        <AbaProfessores podeUpload={podeUpload} vertical={vertical} />
       )}
 
       <Nav />

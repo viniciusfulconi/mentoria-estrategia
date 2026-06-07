@@ -6,14 +6,15 @@ import { useRouter } from 'next/navigation'
 import Nav from '@/components/Nav'
 
 export default function NovoVestibular() {
-  const { perfil } = useAuth()
+  const { perfil, verticalAtiva } = useAuth()
+  const vertical = verticalAtiva || 'ITA'
   const router = useRouter()
   const [turmas, setTurmas] = useState<any[]>([])
   const [form, setForm] = useState({ turma_id: '', nome: '', data: '', hora_inicio: '08:00', hora_fim: '13:00', link_edital: '' })
   const [saving, setSaving] = useState(false)
   const [erro, setErro] = useState('')
 
-  useEffect(() => { dbQuery('turmas').then(({ data }) => setTurmas(data || [])) }, [])
+  useEffect(() => { dbQuery('turmas', { tipo: `eq.${vertical}` }).then(({ data }) => setTurmas(data || [])) }, [vertical])
 
   async function salvar() {
     if (!form.nome || !form.data) { setErro('Preencha nome e data.'); return }
@@ -24,7 +25,7 @@ export default function NovoVestibular() {
       tipo: 'vestibular', titulo: form.nome, turma_id: form.turma_id || null,
       data_inicio: dtInicio.toISOString(), data_fim: dtFim.toISOString(),
       link_edital: form.link_edital,
-      criado_por: 'coordenador', criado_por_id: perfil?.id,
+      criado_por: 'coordenador', criado_por_id: perfil?.id, vertical,
     }])
     if (error) { setErro(error); setSaving(false) }
     else router.push('/horario')

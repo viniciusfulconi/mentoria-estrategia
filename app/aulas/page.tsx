@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { dbQuery } from '@/lib/supabase'
 import Nav from '@/components/Nav'
 import Link from 'next/link'
@@ -7,7 +8,8 @@ import { useAuth } from '@/contexts/AuthContext'
 import { X, PlayCircle, FileText, ExternalLink } from 'lucide-react'
 
 export default function Aulas() {
-  const { perfil } = useAuth()
+  const { perfil, verticalAtiva } = useAuth()
+  const router = useRouter()
   const [aulas, setAulas] = useState<any[]>([])
   const [filtro, setFiltro] = useState('todas')
   const [loading, setLoading] = useState(true)
@@ -15,9 +17,10 @@ export default function Aulas() {
   const [pdfAberto, setPdfAberto] = useState(false)
 
   useEffect(() => {
+    if (verticalAtiva === 'Medicina') { router.replace('/med/alunos'); return }
     dbQuery('aulas', { order: 'created_at.desc' })
       .then(({ data }) => { setAulas(data || []); setLoading(false) })
-  }, [])
+  }, [verticalAtiva])
 
   const filtros = ['todas', 'Física', 'Matemática', 'Química', 'Português', 'Redação', 'Mentoria']
   const aulasFiltradas = filtro === 'todas' ? aulas : aulas.filter(a => a.materia === filtro)
@@ -36,7 +39,7 @@ export default function Aulas() {
       <div style={{ background: 'white', borderBottom: '0.5px solid rgba(0,0,0,0.08)', padding: '16px', position: 'sticky', top: 0, zIndex: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ fontSize: 17, fontWeight: 600 }}>Aulas</div>
         {isCoordenador && (
-          <Link href="/aulas/nova" style={{ textDecoration: 'none', background: '#2563EB', color: 'white', borderRadius: 10, padding: '7px 14px', fontSize: 13, fontWeight: 500 }}>+ Nova</Link>
+          <Link href="/aulas/nova" style={{ textDecoration: 'none', background: '#f97316', color: 'white', borderRadius: 10, padding: '7px 14px', fontSize: 13, fontWeight: 500 }}>+ Nova</Link>
         )}
       </div>
 
@@ -44,7 +47,7 @@ export default function Aulas() {
         {filtros.map(f => (
           <button key={f} onClick={() => setFiltro(f)} style={{
             padding: '5px 12px', borderRadius: 20, fontSize: 12, border: '0.5px solid rgba(0,0,0,0.12)',
-            background: filtro === f ? '#2563EB' : 'transparent', color: filtro === f ? 'white' : '#666',
+            background: filtro === f ? '#f97316' : 'transparent', color: filtro === f ? 'white' : '#666',
             cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'DM Sans,sans-serif'
           }}>{f === 'todas' ? 'Todas' : f}</button>
         ))}
@@ -70,7 +73,7 @@ export default function Aulas() {
             </div>
             <div>Nenhuma aula encontrada.</div>
             {isCoordenador && (
-              <Link href="/aulas/nova" style={{ textDecoration: 'none', display: 'inline-block', marginTop: 14, background: '#2563EB', color: 'white', borderRadius: 12, padding: '10px 20px', fontSize: 14 }}>Adicionar aula</Link>
+              <Link href="/aulas/nova" style={{ textDecoration: 'none', display: 'inline-block', marginTop: 14, background: '#f97316', color: 'white', borderRadius: 12, padding: '10px 20px', fontSize: 14 }}>Adicionar aula</Link>
             )}
           </div>
         ) : (
@@ -88,20 +91,20 @@ export default function Aulas() {
                         <img src={ytThumb(a.youtube_id)} alt={a.titulo} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.85, position: 'absolute', inset: 0 }} onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
                       ) : (
                         <div style={{ position: 'absolute', inset: 0, background: '#F3F0FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <FileText size={32} color="#7C3AED" strokeWidth={1.5} />
+                          <FileText size={32} color="#f97316" strokeWidth={1.5} />
                         </div>
                       )}
                       {/* Ícone de play sobre vídeo */}
                       {tipo !== 'pdf' && (
                         <div style={{ position: 'relative', width: 32, height: 32, borderRadius: '50%', background: 'rgba(255,255,255,0.92)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <PlayCircle size={18} color="#2563EB" strokeWidth={2} />
+                          <PlayCircle size={18} color="#f97316" strokeWidth={2} />
                         </div>
                       )}
                       {tipo === 'video_pdf' && (
-                        <span style={{ position: 'absolute', bottom: 6, right: 6, background: '#7C3AED', color: 'white', fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 6 }}>+ PDF</span>
+                        <span style={{ position: 'absolute', bottom: 6, right: 6, background: '#f97316', color: 'white', fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 6 }}>+ PDF</span>
                       )}
                       {tipo === 'pdf' && (
-                        <span style={{ position: 'absolute', top: 6, right: 6, background: '#7C3AED', color: 'white', fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 6 }}>PDF</span>
+                        <span style={{ position: 'absolute', top: 6, right: 6, background: '#f97316', color: 'white', fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 6 }}>PDF</span>
                       )}
                     </div>
                     <div style={{ padding: '8px 10px 10px' }}>
