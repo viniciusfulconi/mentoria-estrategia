@@ -53,8 +53,12 @@ export default function Turma() {
 
   // Para o ranking geral: média de todos os ciclos por aluno
   const alunosGeralMap: Record<string, any> = {}
+  const _geralSeenKey = new Set<string>()
   dados.forEach(r => {
     if (!alunosGeralMap[r.id_aluno]) alunosGeralMap[r.id_aluno] = { ...r, _todasNotas: [] }
+    const key = `${r.id_aluno}__${r.ciclo_nome}`
+    if (_geralSeenKey.has(key)) return
+    _geralSeenKey.add(key)
     const n = mediaAluno(r)
     if (n > 0) alunosGeralMap[r.id_aluno]._todasNotas.push(n)
   })
@@ -88,8 +92,12 @@ export default function Turma() {
   if (cicloAtivo === 'geral') {
     // Média de todos os ciclos por aluno
     const alunosUnicos: Record<string, any> = {}
+    const _unicosSeenKey = new Set<string>()
     dados.forEach(r => {
       if (!alunosUnicos[r.id_aluno]) alunosUnicos[r.id_aluno] = { ...r, _notas: [] }
+      const key = `${r.id_aluno}__${r.ciclo_nome}`
+      if (_unicosSeenKey.has(key)) return
+      _unicosSeenKey.add(key)
       const nota = mediaAluno(r)
       if (nota > 0) alunosUnicos[r.id_aluno]._notas.push(nota)
     })

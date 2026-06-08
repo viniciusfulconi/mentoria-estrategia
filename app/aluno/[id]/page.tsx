@@ -204,11 +204,15 @@ export default function AlunoPage() {
   )
   const rankingAtivo = rankings.find(r => r.ciclo_nome === cicloAtivo)
 
-  // Ranking geral
+  // Ranking geral — deduplica por ciclo_nome (um aluno pode ter linhas ITA e IME com mesmo ciclo_nome)
   function mediaAluno(alunoId: string) {
     const rs = todos.filter(r => r.id_aluno === alunoId)
     if (!rs.length) return 0
-    const vals = rs.map(r => Number(r.media_2fase) || Number(r.media_1fase) || 0).filter(Boolean)
+    const seen = new Set<string>()
+    const vals = rs
+      .filter(r => { if (seen.has(r.ciclo_nome)) return false; seen.add(r.ciclo_nome); return true })
+      .map(r => Number(r.media_2fase) || Number(r.media_1fase) || 0)
+      .filter(Boolean)
     if (!vals.length) return 0
     return vals.reduce((a, b) => a + b, 0) / vals.length
   }
@@ -245,8 +249,15 @@ export default function AlunoPage() {
     return { materia: mat, pct: ts.length ? Math.round((fin / ts.length) * 100) : 0 }
   })
 
-  // Média geral do aluno
-  const mediaGeralAluno = mediaAluno(targetId)
+  // Média geral do aluno — calculada direto de rankings (mesma deduplicação que as abas mostram)
+  const mediaGeralAluno = (() => {
+    const seen = new Set<string>()
+    const vals = rankings
+      .filter(r => { if (seen.has(r.ciclo_nome)) return false; seen.add(r.ciclo_nome); return true })
+      .map(r => Number(r.media_2fase) || Number(r.media_1fase) || 0)
+      .filter(Boolean)
+    return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0
+  })()
 
   // Notas por ciclo para gráfico de evolução
   function corNota(n: number) { return n >= 7 ? '#16A34A' : n >= 4 ? '#D97706' : '#DC2626' }
