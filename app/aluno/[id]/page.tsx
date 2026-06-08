@@ -110,13 +110,12 @@ export default function AlunoPage() {
       (resultados || []).filter(r => r.fase === 'ranking').map(r => r.ciclo_nome as string)
     )]
 
-    // Rodada 2: apenas ranking da turma (turmaQuestoes carrega lazy ao abrir aba Simulados)
-    const [{ data: todosRanking }] = ciclos.length
-      ? await Promise.all([
-          dbQuery('resultados', { fase: 'eq.ranking', ciclo_nome: `in.(${ciclos.join(',')})` },
-            'id_aluno,nome_aluno,nota_matematica,nota_fisica,nota_quimica,media_linguagens,media_1fase,media_2fase'),
-        ])
-      : [{ data: [] as any[] }]
+    // Rodada 2: todos os rankings de todos os alunos (sem filtrar por ciclo) para que
+    // a posição geral e o ranking por matéria sejam calculados igual à página de turma
+    const [{ data: todosRanking }] = await Promise.all([
+      dbQuery('resultados', { fase: 'eq.ranking' },
+        'id_aluno,nome_aluno,ciclo_nome,nota_matematica,nota_fisica,nota_quimica,media_linguagens,media_1fase,media_2fase'),
+    ])
 
     const rankings = (resultados || []).filter(r => r.fase === 'ranking')
       .sort((a, b) => parseInt((a.ciclo_nome || '').match(/\d+/)?.[0] || '0') - parseInt((b.ciclo_nome || '').match(/\d+/)?.[0] || '0'))
