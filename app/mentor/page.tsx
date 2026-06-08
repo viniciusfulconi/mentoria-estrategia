@@ -68,7 +68,7 @@ export default function MentorDashboard() {
   const reprovados = cicloData.filter(r => r.resultado_ciclo === 'Reprovado')
   const mediaGrupo = cicloData.length
     ? cicloData.reduce((acc, r) => {
-        const m = r.media_2fase !== null ? (Number(r.media_1fase || 0) + Number(r.media_2fase || 0)) / 2 : Number(r.media_1fase || 0)
+        const m = r.media_2fase !== null ? Number(r.media_2fase) : Number(r.media_1fase || 0)
         return acc + m
       }, 0) / cicloData.length
     : 0
@@ -159,7 +159,7 @@ export default function MentorDashboard() {
             {/* Ranking do grupo */}
             <div style={{ fontSize: 11, fontWeight: 600, color: '#999', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>Ranking do grupo</div>
             {cicloData.map((r, i) => {
-              const media = r.media_2fase !== null ? (Number(r.media_1fase || 0) + Number(r.media_2fase || 0)) / 2 : Number(r.media_1fase || 0)
+              const media = r.media_2fase !== null ? Number(r.media_2fase) : Number(r.media_1fase || 0)
               return (
                 <Link key={r.id} href={`/aluno/${r.id_aluno}`} style={{ textDecoration: 'none' }}>
                   <div className="card" style={{ marginBottom: 8, display: 'flex', alignItems: 'center', gap: 12 }}>

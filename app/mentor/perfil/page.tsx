@@ -38,9 +38,7 @@ function corNota(m: number) {
 }
 
 function calcMedia(r: any) {
-  return r.media_2fase != null
-    ? (Number(r.media_1fase || 0) + Number(r.media_2fase)) / 2
-    : Number(r.media_1fase || 0)
+  return r.media_2fase != null ? Number(r.media_2fase) : Number(r.media_1fase || 0)
 }
 
 export default function MentorPerfil() {

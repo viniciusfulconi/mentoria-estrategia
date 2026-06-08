@@ -208,11 +208,8 @@ export default function AlunoPage() {
   function mediaAluno(alunoId: string) {
     const rs = todos.filter(r => r.id_aluno === alunoId)
     if (!rs.length) return 0
-    const vals = rs.map(r => {
-      const m1 = Number(r.media_1fase || 0)
-      const m2 = Number(r.media_2fase || 0)
-      return m1 && m2 ? (m1 + m2) / 2 : m1 || m2
-    })
+    const vals = rs.map(r => Number(r.media_2fase) || Number(r.media_1fase) || 0).filter(Boolean)
+    if (!vals.length) return 0
     return vals.reduce((a, b) => a + b, 0) / vals.length
   }
 
@@ -571,7 +568,7 @@ export default function AlunoPage() {
                   {rankingAtivo.media_linguagens !== null && <NotaBar nota={Number(rankingAtivo.media_linguagens)} label="Port./Redação (2ª fase)" />}
                   {rankingAtivo.media_2fase !== null && (
                     <div style={{ borderTop: '0.5px solid rgba(0,0,0,0.06)', marginTop: 10, paddingTop: 10 }}>
-                      <NotaBar nota={Number(rankingAtivo.media_2fase)} label="Média 2ª Fase" />
+                      <NotaBar nota={Number(rankingAtivo.media_2fase)} label="Média Final" />
                     </div>
                   )}
                 </div>

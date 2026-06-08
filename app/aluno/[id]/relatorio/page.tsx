@@ -216,7 +216,7 @@ export default function RelatorioAluno() {
                     <th>Fís.</th>
                     <th>Quí.</th>
                     <th>Port./Red.</th>
-                    <th>Média 2ª</th>
+                    <th>Média Final</th>
                     <th>Resultado</th>
                   </tr>
                 </thead>
@@ -293,9 +293,7 @@ export default function RelatorioAluno() {
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {rankings.map(r => {
-                  const m1 = Number(r.media_1fase || 0)
-                  const m2 = r.media_2fase != null ? Number(r.media_2fase) : null
-                  const media = m2 !== null ? (m1 + m2) / 2 : m1
+                  const media = r.media_2fase != null ? Number(r.media_2fase) : Number(r.media_1fase || 0)
                   if (!media) return null
                   const cor = corNota(media)
                   const pct = Math.min(100, (media / 10) * 100)

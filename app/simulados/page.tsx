@@ -57,12 +57,9 @@ export default function Simulados() {
   const filtrados = alunos.filter(a => a.nome.toLowerCase().includes(busca.toLowerCase()) || a.mentor?.toLowerCase().includes(busca.toLowerCase()))
 
   function mediaGeral(aluno: any) {
-    const vals = Object.values(aluno.ciclos).map((c: any) => {
-      const m1 = Number(c.media_1fase || 0)
-      const m2 = Number(c.media_2fase || 0)
-      if (m1 && m2) return (m1 + m2) / 2
-      return m1 || m2
-    }).filter(Boolean) as number[]
+    const vals = Object.values(aluno.ciclos).map((c: any) =>
+      Number(c.media_2fase) || Number(c.media_1fase) || 0
+    ).filter(Boolean) as number[]
     if (!vals.length) return null
     return vals.reduce((a, b) => a + b, 0) / vals.length
   }

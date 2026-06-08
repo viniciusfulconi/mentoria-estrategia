@@ -25,7 +25,7 @@ export function calcularRisco(dados: any[], rankingAtivo: any, cicloAtivo: strin
     if (n(rankingAtivo.nota_fisica) !== null) c2.push({ label: 'Fís.', val: n(rankingAtivo.nota_fisica)!, min: 4 })
     if (n(rankingAtivo.nota_quimica) !== null) c2.push({ label: 'Quí.', val: n(rankingAtivo.nota_quimica)!, min: 4 })
     if (n(rankingAtivo.media_linguagens) !== null) c2.push({ label: 'Port.', val: n(rankingAtivo.media_linguagens)!, min: 4 })
-    if (n(rankingAtivo.media_2fase) !== null) c2.push({ label: 'Média 2ª', val: n(rankingAtivo.media_2fase)!, min: 5 })
+    if (n(rankingAtivo.media_2fase) !== null) c2.push({ label: 'Média Final', val: n(rankingAtivo.media_2fase)!, min: 5 })
   } else {
     if (reg1f?.acertos_mat_1f != null) c1.push({ label: 'Mat.', val: +reg1f.acertos_mat_1f, min: 6, ac: true })
     if (reg1f?.acertos_fis_1f != null) c1.push({ label: 'Fís.', val: +reg1f.acertos_fis_1f, min: 6, ac: true })

@@ -48,15 +48,7 @@ export default function Turma() {
 
   function mediaAluno(r: any): number {
     if (r._mediaGeral !== undefined) return r._mediaGeral
-    const notas = [
-      r.media_1fase,
-      r.nota_matematica,
-      r.nota_fisica,
-      r.nota_quimica,
-      r.media_linguagens,
-    ].map(v => v !== null && v !== undefined ? Number(v) : null).filter(v => v !== null) as number[]
-    if (!notas.length) return 0
-    return notas.reduce((a, b) => a + b, 0) / notas.length
+    return r.media_2fase != null ? Number(r.media_2fase) : Number(r.media_1fase || 0)
   }
 
   // Para o ranking geral: média de todos os ciclos por aluno
@@ -76,11 +68,13 @@ export default function Turma() {
     : dados.filter(r => r.ciclo_nome === cicloAtivo).sort((a, b) => mediaAluno(b) - mediaAluno(a))
 
   // Alunos que precisam de atenção: reprovados ou média < 5
-  const atencao = cicloData.filter(r =>
-    r.resultado_ciclo === 'Reprovado' ||
-    (r.media_2fase !== null && ((Number(r.media_1fase || 0) + Number(r.media_2fase || 0)) / 2) < 5) ||
-    (r.media_2fase === null && Number(r.media_1fase || 0) < 5)
-  )
+  const atencao = cicloData.filter(r => {
+    if (r.resultado_ciclo === 'Reprovado') return true
+    const media = r._mediaGeral !== undefined
+      ? r._mediaGeral
+      : Number(r.media_2fase ?? r.media_1fase ?? 0)
+    return media < 5
+  })
 
   // Destaques por matéria (top 3 de cada)
   function top10(campo: string) {
