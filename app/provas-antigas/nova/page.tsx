@@ -102,7 +102,6 @@ export default function NovaProvaAntiga() {
       num_questoes: numQuestoes,
       modelo,
       pdf_url: pdf_url || null,
-      criado_por_id: perfil?.id,
     }], true)
 
     if (provaErr || !provaArr?.[0]) {
