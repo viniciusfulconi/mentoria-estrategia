@@ -29,6 +29,8 @@ export default function NovaProvaAntiga() {
   const [saving, setSaving] = useState(false)
   const [uploadProgress, setUploadProgress] = useState('')
   const [erro, setErro] = useState('')
+  const [searchOpen, setSearchOpen] = useState<number | null>(null)
+  const [searchText, setSearchText] = useState('')
 
   const config = tipo && fase ? EXAM_CONFIG[tipo]?.[Number(fase)] : null
   const numQuestoes = config?.questoes || 0
@@ -205,6 +207,12 @@ export default function NovaProvaAntiga() {
 
           {questoes.map((q, idx) => {
             const topicosDaMateria = getTopicosDaMateria(q.materia)
+            const isSearchOpen = searchOpen === idx
+            const topicosJaSelecionados = q.topicos.map(id => topicosDB.find((t: any) => t.id === id)).filter(Boolean)
+            const topicosDisponiveis = topicosDaMateria
+              .filter((t: any) => !q.topicos.includes(t.id))
+              .filter((t: any) => !searchText || t.topico.toLowerCase().includes(searchText.toLowerCase()))
+
             return (
               <div
                 key={idx}
@@ -216,7 +224,8 @@ export default function NovaProvaAntiga() {
                   background: q.materia ? 'white' : '#FFFBEB',
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                {/* Número + select de matéria */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <div style={{
                     width: 26, height: 26, borderRadius: 6, background: '#EDE9FE',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -226,7 +235,7 @@ export default function NovaProvaAntiga() {
                   </div>
                   <select
                     value={q.materia}
-                    onChange={e => setQuestaoMateria(idx, e.target.value)}
+                    onChange={e => { setQuestaoMateria(idx, e.target.value); setSearchOpen(null) }}
                     style={{ flex: 1, margin: 0, padding: '6px 8px', fontSize: 13 }}
                   >
                     <option value="">— Selecione a matéria —</option>
@@ -234,32 +243,88 @@ export default function NovaProvaAntiga() {
                   </select>
                 </div>
 
-                {q.materia && topicosDaMateria.length > 0 && (
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, paddingLeft: 36 }}>
-                    {topicosDaMateria.map((t: any) => {
-                      const selecionado = q.topicos.includes(t.id)
-                      return (
+                {/* Tópicos selecionados como chips + botão + */}
+                {q.materia && (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: 8, paddingLeft: 36 }}>
+                    {topicosJaSelecionados.map((t: any) => (
+                      <span key={t.id} style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 4,
+                        padding: '3px 8px 3px 10px', borderRadius: 20, fontSize: 11,
+                        background: '#fff7ed', color: '#f97316',
+                        border: '1px solid rgba(249,115,22,0.3)',
+                      }}>
+                        {t.topico}
                         <button
-                          key={t.id}
                           onClick={() => toggleQuestaoTopico(idx, t.id)}
                           style={{
-                            padding: '3px 10px', borderRadius: 20, fontSize: 11,
-                            border: '0.5px solid rgba(0,0,0,0.12)',
-                            background: selecionado ? '#f97316' : 'transparent',
-                            color: selecionado ? 'white' : '#666',
-                            cursor: 'pointer', fontFamily: 'DM Sans, sans-serif',
+                            background: 'none', border: 'none', cursor: 'pointer',
+                            color: '#f97316', fontSize: 13, padding: 0, lineHeight: 1,
+                            display: 'flex', alignItems: 'center',
                           }}
-                        >
-                          {t.topico}
-                        </button>
-                      )
-                    })}
+                        >×</button>
+                      </span>
+                    ))}
+
+                    {/* Botão + */}
+                    {topicosDaMateria.length > 0 && !isSearchOpen && (
+                      <button
+                        onClick={() => { setSearchOpen(idx); setSearchText('') }}
+                        style={{
+                          display: 'inline-flex', alignItems: 'center', gap: 3,
+                          padding: '3px 10px', borderRadius: 20, fontSize: 11,
+                          border: '1px dashed rgba(0,0,0,0.2)', background: 'transparent',
+                          color: '#999', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif',
+                        }}
+                      >+ tópico</button>
+                    )}
                   </div>
                 )}
 
-                {q.materia && topicosDaMateria.length === 0 && (
-                  <div style={{ paddingLeft: 36, fontSize: 11, color: '#999' }}>
-                    Nenhum tópico cadastrado para {q.materia}.
+                {/* Campo de busca de tópico */}
+                {isSearchOpen && (
+                  <div style={{ marginTop: 8, paddingLeft: 36, position: 'relative' }}>
+                    <input
+                      autoFocus
+                      value={searchText}
+                      onChange={e => setSearchText(e.target.value)}
+                      onKeyDown={e => e.key === 'Escape' && setSearchOpen(null)}
+                      placeholder="Buscar tópico..."
+                      style={{ margin: 0, fontSize: 12, padding: '6px 10px' }}
+                    />
+                    {topicosDisponiveis.length > 0 && (
+                      <div style={{
+                        position: 'absolute', top: '100%', left: 0, right: 0,
+                        background: 'white', border: '0.5px solid rgba(0,0,0,0.12)',
+                        borderRadius: 10, marginTop: 4, maxHeight: 180, overflowY: 'auto',
+                        boxShadow: '0 4px 16px rgba(0,0,0,0.1)', zIndex: 20,
+                      }}>
+                        {topicosDisponiveis.map((t: any) => (
+                          <div
+                            key={t.id}
+                            onClick={() => { toggleQuestaoTopico(idx, t.id); setSearchText('') }}
+                            style={{
+                              padding: '8px 12px', fontSize: 12, cursor: 'pointer',
+                              borderBottom: '0.5px solid rgba(0,0,0,0.06)',
+                              color: '#1a1a1a',
+                            }}
+                            onMouseEnter={e => e.currentTarget.style.background = '#fff7ed'}
+                            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                          >
+                            {t.topico}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {topicosDisponiveis.length === 0 && searchText && (
+                      <div style={{ fontSize: 11, color: '#999', marginTop: 4 }}>Nenhum tópico encontrado.</div>
+                    )}
+                    <button
+                      onClick={() => setSearchOpen(null)}
+                      style={{
+                        marginTop: 4, fontSize: 11, color: '#999', background: 'none',
+                        border: 'none', cursor: 'pointer', padding: 0,
+                      }}
+                    >Fechar</button>
                   </div>
                 )}
               </div>
