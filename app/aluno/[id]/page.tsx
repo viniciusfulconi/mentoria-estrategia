@@ -99,7 +99,7 @@ export default function AlunoPage() {
       dbQuery('resultados', { id_aluno: `eq.${targetId}`, order: 'ciclo_nome' }),
       dbQuery('perfis', { aluno_id: `eq.${targetId}` }),
       dbQuery('alunos_dados', { id_aluno: `eq.${targetId}` }),
-      dbQuery('topicos', {}, 'id,materia,nome'),
+      dbQuery('topicos', {}, 'id,materia,topico'),
       dbQuery('progresso_topicos', { aluno_id: `eq.${targetId}` }, 'topico_id,status'),
     ])
     const perfilData = perfilArr?.[0] ?? null

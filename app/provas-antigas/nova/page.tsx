@@ -35,7 +35,7 @@ export default function NovaProvaAntiga() {
   const modelo = config?.modelo || ''
 
   useEffect(() => {
-    dbQuery('topicos', {}, 'id,materia,topico,nome').then(({ data }) => {
+    dbQuery('topicos', {}, 'id,materia,topico').then(({ data }) => {
       const t = data || []
       setTopicosDB(t)
       setMaterias([...new Set(t.map((x: any) => x.materia))].sort() as string[])
@@ -250,7 +250,7 @@ export default function NovaProvaAntiga() {
                             cursor: 'pointer', fontFamily: 'DM Sans, sans-serif',
                           }}
                         >
-                          {t.nome || t.topico}
+                          {t.topico}
                         </button>
                       )
                     })}
