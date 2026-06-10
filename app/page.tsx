@@ -534,7 +534,7 @@ export default function Home() {
                           </div>
                         ) : (
                           <div style={{ fontSize: 11, color: '#D97706', fontWeight: 600 }}>
-                            Média {Number(r.media_2fase).toFixed(1)}
+                            {r.media_2fase != null ? `Média ${Number(r.media_2fase).toFixed(1)}` : 'Próximo do limite'}
                           </div>
                         )}
                         <div style={{ fontSize: 10, color: '#bbb', marginTop: 1 }}>

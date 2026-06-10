@@ -93,7 +93,7 @@ function RadarProfessor({ dados }: { dados: { label: string; value: number }[] }
 
   const pontos = dados.map((d, i) => pontoEixo(i, (d.value / max) * raio))
   const polyPath = pontos.map(([x, y]) => `${x},${y}`).join(' ')
-  const mediaG = dados.reduce((a, b) => a + b.value, 0) / dados.length
+  const mediaG = dados.length ? dados.reduce((a, b) => a + b.value, 0) / dados.length : 0
   const cor = corMedia(mediaG)
 
   return (
