@@ -6,7 +6,8 @@ import { useAuth } from '@/contexts/AuthContext'
 import Nav from '@/components/Nav'
 import Link from 'next/link'
 import type { AtendimentoMentoria } from '@/lib/supabase'
-import { List, DollarSign, Brain, CheckCircle2, Pin, FileText, Link2, Play, Sparkles, X, Copy, Check } from 'lucide-react'
+import { List, DollarSign, Brain, CheckCircle2, Pin, FileText, Link2, Play, Sparkles, X, Copy, Check, Pencil } from 'lucide-react'
+import { dbUpdate } from '@/lib/supabase'
 
 export default function Atendimentos() {
   const { perfil, verticalAtiva } = useAuth()
@@ -18,6 +19,13 @@ export default function Atendimentos() {
   const [filtroMes, setFiltroMes] = useState('todos')
   const [aba, setAba] = useState<'lista' | 'financeiro' | 'psico'>('lista')
   const [limite, setLimite] = useState(50)
+
+  // Edição
+  const [editando, setEditando] = useState<AtendimentoMentoria | null>(null)
+  const [editForm, setEditForm] = useState<any>({})
+  const [editSaving, setEditSaving] = useState(false)
+  const [editErro, setEditErro] = useState('')
+  const [alunosEdit, setAlunosEdit] = useState<any[]>([])
 
   // Resumo IA
   const [showResumo, setShowResumo] = useState(false)
@@ -88,6 +96,51 @@ export default function Atendimentos() {
     const h = Math.floor(min / 60)
     const m = min % 60
     return h > 0 ? `${h}h${m > 0 ? ` ${m}min` : ''}` : `${m}min`
+  }
+
+  function abrirEdicao(d: AtendimentoMentoria) {
+    setEditando(d)
+    setEditErro('')
+    setEditForm({
+      tipo: d.tipo || 'Individual',
+      aluno: d.aluno || '',
+      data_atendimento: d.data_atendimento || '',
+      hora_inicio: (d as any).hora_inicio || '',
+      hora_fim: (d as any).hora_fim || '',
+      encaminhamento_psico: d.encaminhamento_psico || false,
+      solicitacao_aluno: d.solicitacao_aluno || '',
+      descricao: d.descricao || '',
+      link_gravacao: d.link_gravacao || '',
+      link_gemini: d.link_gemini || '',
+    })
+    if (!alunosEdit.length) {
+      dbQuery('alunos_dados', { order: 'nome' }, 'nome,mentor').then(({ data }) => setAlunosEdit(data || []))
+    }
+  }
+
+  function calcDuracaoEdit() {
+    if (!editForm.hora_inicio || !editForm.hora_fim) return 0
+    const [hi, mi] = editForm.hora_inicio.split(':').map(Number)
+    const [hf, mf] = editForm.hora_fim.split(':').map(Number)
+    return (hf * 60 + mf) - (hi * 60 + mi)
+  }
+
+  async function salvarEdicao() {
+    if (!editando) return
+    setEditSaving(true); setEditErro('')
+    const durMin = calcDuracaoEdit()
+    const valor = durMin > 0 ? Math.round((durMin / 60) * 200 * 100) / 100 : editando.valor_pago
+    const mes = new Date(editForm.data_atendimento).toLocaleDateString('pt-BR', { month: '2-digit', year: 'numeric' })
+    const ano = new Date(editForm.data_atendimento).getFullYear()
+    const { error } = await dbUpdate('atendimentos_mentoria', { id: `eq.${editando.id}` }, {
+      ...editForm,
+      duracao_minutos: durMin > 0 ? durMin : editando.duracao_minutos,
+      valor_pago: valor,
+      mes, ano,
+    })
+    if (error) { setEditErro(error); setEditSaving(false); return }
+    setEditando(null)
+    carregar()
   }
 
   async function abrirResumo() {
@@ -229,13 +282,24 @@ export default function Atendimentos() {
             {aba === 'lista' && filtrados.slice(0, limite).map(d => (
               <div key={d.id} className="card" style={{ marginBottom: 10 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
-                  <div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 13, fontWeight: 600, color: '#1a1a1a' }}>{d.aluno || 'Atendimento coletivo'}</div>
                     <div style={{ fontSize: 11, color: '#999', marginTop: 2 }}>{d.mentor} · {new Date(d.data_atendimento).toLocaleDateString('pt-BR')}</div>
                   </div>
-                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: '#16A34A' }}>R$ {Number(d.valor_pago || 0).toFixed(2)}</div>
-                    <div style={{ fontSize: 10, color: '#999' }}>{formatMin(d.duracao_minutos || 0)}</div>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, flexShrink: 0 }}>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: '#16A34A' }}>R$ {Number(d.valor_pago || 0).toFixed(2)}</div>
+                      <div style={{ fontSize: 10, color: '#999' }}>{formatMin(d.duracao_minutos || 0)}</div>
+                    </div>
+                    {(perfil?.papel === 'coordenador' || d.mentor === perfil?.mentor_nome) && (
+                      <button onClick={() => abrirEdicao(d)} style={{
+                        background: '#F1F5F9', border: 'none', borderRadius: 8,
+                        padding: '5px 7px', cursor: 'pointer', display: 'flex', alignItems: 'center',
+                        color: '#64748B', marginTop: 1,
+                      }}>
+                        <Pencil size={13} strokeWidth={2} />
+                      </button>
+                    )}
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
@@ -305,6 +369,112 @@ export default function Atendimentos() {
         )}
       </div>
       <Nav />
+
+      {/* Drawer de edição */}
+      {editando && (
+        <div onClick={() => setEditando(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 60, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: 'white', borderRadius: '20px 20px 0 0', width: '100%', maxWidth: 560, maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '18px 20px 14px', borderBottom: '0.5px solid rgba(0,0,0,0.08)', flexShrink: 0 }}>
+              <Pencil size={16} strokeWidth={2} color="#f97316" />
+              <div style={{ flex: 1, fontSize: 16, fontWeight: 600 }}>Editar atendimento</div>
+              <button onClick={() => setEditando(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#999', display: 'flex' }}>
+                <X size={20} strokeWidth={2} />
+              </button>
+            </div>
+
+            <div style={{ padding: '16px 20px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {/* Tipo */}
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: '#555', display: 'block', marginBottom: 6 }}>Tipo</label>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  {['Individual', 'Coletiva'].map(t => (
+                    <button key={t} onClick={() => setEditForm((f: any) => ({ ...f, tipo: t, aluno: t === 'Coletiva' ? '' : f.aluno }))} style={{
+                      flex: 1, padding: '8px', borderRadius: 10,
+                      border: `1.5px solid ${editForm.tipo === t ? '#f97316' : 'rgba(0,0,0,0.1)'}`,
+                      background: editForm.tipo === t ? '#fff7ed' : 'transparent',
+                      color: editForm.tipo === t ? '#f97316' : '#666',
+                      cursor: 'pointer', fontFamily: 'DM Sans,sans-serif', fontSize: 13, fontWeight: 500,
+                    }}>{t}</button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Aluno */}
+              {editForm.tipo === 'Individual' && (
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: '#555', display: 'block', marginBottom: 6 }}>Aluno</label>
+                  <select value={editForm.aluno} onChange={e => setEditForm((f: any) => ({ ...f, aluno: e.target.value }))} style={{ margin: 0, fontSize: 13 }}>
+                    <option value="">Selecione o aluno</option>
+                    {(editForm.mentor
+                      ? alunosEdit.filter((a: any) => a.mentor === (editando.mentor))
+                      : alunosEdit
+                    ).map((a: any) => <option key={a.nome} value={a.nome}>{a.nome}</option>)}
+                  </select>
+                </div>
+              )}
+
+              {/* Data */}
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: '#555', display: 'block', marginBottom: 6 }}>Data do atendimento</label>
+                <input type="date" value={editForm.data_atendimento} onChange={e => setEditForm((f: any) => ({ ...f, data_atendimento: e.target.value }))} style={{ margin: 0, fontSize: 13 }} />
+              </div>
+
+              {/* Horários */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: '#555', display: 'block', marginBottom: 6 }}>Início</label>
+                  <input type="time" value={editForm.hora_inicio} onChange={e => setEditForm((f: any) => ({ ...f, hora_inicio: e.target.value }))} style={{ margin: 0, fontSize: 13 }} />
+                </div>
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: '#555', display: 'block', marginBottom: 6 }}>Fim</label>
+                  <input type="time" value={editForm.hora_fim} onChange={e => setEditForm((f: any) => ({ ...f, hora_fim: e.target.value }))} style={{ margin: 0, fontSize: 13 }} />
+                </div>
+              </div>
+
+              {/* Psico */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: editForm.encaminhamento_psico ? '#FEF2F2' : '#F7F6F3', borderRadius: 12, padding: '10px 14px', cursor: 'pointer' }}
+                onClick={() => setEditForm((f: any) => ({ ...f, encaminhamento_psico: !f.encaminhamento_psico }))}>
+                <div style={{ width: 20, height: 20, borderRadius: 6, border: `2px solid ${editForm.encaminhamento_psico ? '#DC2626' : 'rgba(0,0,0,0.15)'}`, background: editForm.encaminhamento_psico ? '#DC2626' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  {editForm.encaminhamento_psico && <span style={{ color: 'white', fontSize: 12 }}>✓</span>}
+                </div>
+                <span style={{ fontSize: 13, fontWeight: 500, color: editForm.encaminhamento_psico ? '#DC2626' : '#1a1a1a' }}>Encaminhamento psicológico</span>
+              </div>
+
+              {/* Solicitação */}
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: '#555', display: 'block', marginBottom: 6 }}>Solicitação do aluno</label>
+                <input value={editForm.solicitacao_aluno} onChange={e => setEditForm((f: any) => ({ ...f, solicitacao_aluno: e.target.value }))} placeholder="O que o aluno solicitou?" style={{ margin: 0, fontSize: 13 }} />
+              </div>
+
+              {/* Descrição */}
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: '#555', display: 'block', marginBottom: 6 }}>Descrição</label>
+                <textarea value={editForm.descricao} onChange={e => setEditForm((f: any) => ({ ...f, descricao: e.target.value }))} rows={4} style={{ resize: 'vertical', margin: 0, fontSize: 13, width: '100%', padding: '8px 12px', borderRadius: 10, border: '0.5px solid rgba(0,0,0,0.12)', fontFamily: 'DM Sans,sans-serif' }} />
+              </div>
+
+              {/* Links */}
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: '#555', display: 'block', marginBottom: 6 }}>Link da gravação</label>
+                <input value={editForm.link_gravacao} onChange={e => setEditForm((f: any) => ({ ...f, link_gravacao: e.target.value }))} placeholder="https://drive.google.com/..." style={{ margin: 0, fontSize: 13 }} />
+              </div>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: '#555', display: 'block', marginBottom: 6 }}>Link do relatório Gemini</label>
+                <input value={editForm.link_gemini} onChange={e => setEditForm((f: any) => ({ ...f, link_gemini: e.target.value }))} placeholder="https://docs.google.com/..." style={{ margin: 0, fontSize: 13 }} />
+              </div>
+
+              {editErro && <div style={{ color: '#DC2626', fontSize: 12, background: '#FEF2F2', padding: '8px 12px', borderRadius: 8 }}>{editErro}</div>}
+
+              <button onClick={salvarEdicao} disabled={editSaving} style={{
+                padding: '12px', borderRadius: 12, border: 'none',
+                background: '#f97316', color: 'white', fontSize: 14, fontWeight: 600,
+                cursor: 'pointer', fontFamily: 'DM Sans,sans-serif', marginTop: 4,
+              }}>
+                {editSaving ? 'Salvando...' : 'Salvar alterações'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal Resumo IA */}
       {showResumo && (
