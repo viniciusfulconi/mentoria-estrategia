@@ -4,7 +4,7 @@ import { supabase, dbQuery } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import Nav from '@/components/Nav'
 import Link from 'next/link'
-import { Clock, Brain, CalendarCheck } from 'lucide-react'
+import { Clock, Brain, CalendarCheck, Video } from 'lucide-react'
 
 export default function MentorDashboard() {
   const { perfil, signOut } = useAuth()
@@ -161,12 +161,12 @@ export default function MentorDashboard() {
             {cicloData.map((r, i) => {
               const media = r.media_2fase !== null ? Number(r.media_2fase) : Number(r.media_1fase || 0)
               return (
-                <Link key={r.id} href={`/aluno/${r.id_aluno}`} style={{ textDecoration: 'none' }}>
-                  <div className="card" style={{ marginBottom: 8, display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div key={r.id} className="card" style={{ marginBottom: 8, display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <Link href={`/aluno/${r.id_aluno}`} style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0 }}>
                     <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#fff7ed', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 600, color: '#f97316', flexShrink: 0 }}>
                       {r.classificacao || i + 1}
                     </div>
-                    <div style={{ flex: 1 }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 13, fontWeight: 500 }}>{r.nome_aluno}</div>
                       <div style={{ display: 'flex', gap: 8, fontSize: 10, color: '#999', marginTop: 2 }}>
                         {r.media_1fase !== null && <span>1ª: {Number(r.media_1fase).toFixed(1)}</span>}
@@ -175,14 +175,29 @@ export default function MentorDashboard() {
                         {r.nota_quimica !== null && <span>Quí: {Number(r.nota_quimica).toFixed(1)}</span>}
                       </div>
                     </div>
-                    <div style={{ textAlign: 'right' }}>
+                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
                       <div style={{ fontSize: 16, fontWeight: 600, color: corNota(media) }}>{media.toFixed(1)}</div>
                       <span style={{ fontSize: 9, padding: '1px 6px', borderRadius: 8, background: r.resultado_ciclo === 'Aprovado' ? '#DCFCE7' : r.resultado_ciclo === 'Reprovado' ? '#FEF2F2' : '#FEF9C3', color: r.resultado_ciclo === 'Aprovado' ? '#14532D' : r.resultado_ciclo === 'Reprovado' ? '#991B1B' : '#713F12' }}>
                         {r.resultado_ciclo === 'Aprovado' ? '✓' : r.resultado_ciclo === 'Reprovado' ? '✗' : '⏳'}
                       </span>
                     </div>
-                  </div>
-                </Link>
+                  </Link>
+                  <Link
+                    href={`/videochamada/mentoria-estrategia-${r.id_aluno}`}
+                    title="Iniciar videochamada"
+                    style={{
+                      flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      width: 34, height: 34, borderRadius: 10,
+                      background: '#f0fdf4', border: '1px solid #bbf7d0',
+                      color: '#16a34a', textDecoration: 'none',
+                      transition: 'background 0.15s',
+                    }}
+                    onMouseEnter={(e: any) => e.currentTarget.style.background = '#dcfce7'}
+                    onMouseLeave={(e: any) => e.currentTarget.style.background = '#f0fdf4'}
+                  >
+                    <Video size={15} strokeWidth={2} />
+                  </Link>
+                </div>
               )
             })}
           </>

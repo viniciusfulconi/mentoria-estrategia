@@ -8,7 +8,7 @@ import { dbQuery, dbUpdate } from '@/lib/supabase'
 import {
   LayoutDashboard, Users, Handshake, Calendar,
   GraduationCap, Star, ClipboardList, FileText, KeyRound,
-  PlayCircle, LogOut, MoreHorizontal, Menu, X, Bell, UserCircle, Bot, Trophy, BookOpen,
+  PlayCircle, LogOut, MoreHorizontal, Menu, X, Bell, UserCircle, Bot, Trophy, BookOpen, NotebookPen,
 } from 'lucide-react'
 
 type LucideIcon = React.ComponentType<{ size?: number; strokeWidth?: number; color?: string }>
@@ -50,6 +50,7 @@ const tabsAluno = [
   { href: '/cronograma/meu', label: 'Cronograma', icon: ClipboardList },
   { href: '/horario',        label: 'Horário',    icon: Calendar },
   { href: '/aulas',          label: 'Aulas',      icon: PlayCircle },
+  { href: '/quadro',         label: 'Quadro',     icon: NotebookPen },
 ]
 const tabsProfessor = [
   { href: '/simulados', label: 'Alunos',  icon: Users },

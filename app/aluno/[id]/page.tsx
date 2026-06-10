@@ -8,7 +8,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import Link from 'next/link'
 import { CORES_MATERIA as CORES_MAT_IMPORT } from '@/lib/cores'
 import { BarChart, GraficoQuestoes, RadarQuestoesChart, GraficoEvolucaoLinhas, RadarSection } from '@/components/aluno/AlunoCharts'
-import { FileDown } from 'lucide-react'
+import { FileDown, Video } from 'lucide-react'
 import { BannerRisco, DiagnosticoCorte } from '@/components/aluno/AlunoRisco'
 import Termometro from './Termometro'
 
@@ -438,12 +438,40 @@ export default function AlunoPage() {
           </Link>
         )}
         {!isOwn && (
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+            <Link
+              href={`/videochamada/mentoria-estrategia-${targetId}`}
+              title="Iniciar videochamada"
+              style={{
+                textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 5,
+                fontSize: 11, color: '#16a34a',
+                border: '0.5px solid #bbf7d0', borderRadius: 8, padding: '5px 10px',
+                background: '#f0fdf4',
+              }}
+            >
+              <Video size={13} strokeWidth={2} /> Chamada
+            </Link>
+            <Link
+              href={`/aluno/${targetId}/relatorio`}
+              target="_blank"
+              style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#f97316', border: '0.5px solid rgba(124,58,237,0.4)', borderRadius: 8, padding: '5px 10px' }}
+            >
+              <FileDown size={13} strokeWidth={2} /> PDF
+            </Link>
+          </div>
+        )}
+        {isOwn && (
           <Link
-            href={`/aluno/${targetId}/relatorio`}
-            target="_blank"
-            style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#f97316', border: '0.5px solid rgba(124,58,237,0.4)', borderRadius: 8, padding: '5px 10px' }}
+            href={`/videochamada/mentoria-estrategia-${targetId}`}
+            title="Videochamada com mentor"
+            style={{
+              textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 5,
+              fontSize: 11, color: '#16a34a',
+              border: '0.5px solid #bbf7d0', borderRadius: 8, padding: '5px 10px',
+              background: '#f0fdf4',
+            }}
           >
-            <FileDown size={13} strokeWidth={2} /> PDF
+            <Video size={13} strokeWidth={2} /> Chamada
           </Link>
         )}
       </div>
