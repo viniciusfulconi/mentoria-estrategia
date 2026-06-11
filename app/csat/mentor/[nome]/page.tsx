@@ -4,13 +4,24 @@ import { dbQuery } from '@/lib/supabase'
 import Nav from '@/components/Nav'
 import { useParams, useRouter } from 'next/navigation'
 
-const CRITERIOS = [
-  { key: 'qualidade_atendimento', label: 'Qualidade dos atendimentos', icon: '⭐' },
-  { key: 'organizacao_planejamento', label: 'Organização e planejamento', icon: '📋' },
-  { key: 'diferencial_mentoria', label: 'Diferencial da mentoria', icon: '🚀' },
-  { key: 'clareza_orientacoes', label: 'Clareza e objetividade', icon: '🎯' },
-  { key: 'acompanhamento_cobranca', label: 'Acompanhamento e cobrança', icon: '📊' },
-  { key: 'comunicacao_relacao', label: 'Comunicação e relação', icon: '💬' },
+const CRITERIOS_ITA = [
+  { key: 'qualidade_atendimento',    label: 'Qualidade dos atendimentos', icon: '⭐' },
+  { key: 'organizacao_planejamento', label: 'Organização e planejamento',  icon: '📋' },
+  { key: 'diferencial_mentoria',     label: 'Diferencial da mentoria',     icon: '🚀' },
+  { key: 'clareza_orientacoes',      label: 'Clareza e objetividade',      icon: '🎯' },
+  { key: 'acompanhamento_cobranca',  label: 'Acompanhamento e cobrança',   icon: '📊' },
+  { key: 'comunicacao_relacao',      label: 'Comunicação e relação',       icon: '💬' },
+]
+
+const CRITERIOS_MED = [
+  { key: 'rapidez_respostas',        label: 'Rapidez nas respostas',       icon: '⚡' },
+  { key: 'qualidade_atendimento',    label: 'Qualidade dos atendimentos',  icon: '⭐' },
+  { key: 'organizacao_planejamento', label: 'Organização e planejamento',  icon: '📋' },
+  { key: 'diferencial_mentoria',     label: 'Diferencial da mentoria',     icon: '🚀' },
+  { key: 'clareza_orientacoes',      label: 'Clareza e objetividade',      icon: '🎯' },
+  { key: 'acompanhamento_cobranca',  label: 'Acompanhamento e cobrança',   icon: '📊' },
+  { key: 'personalizacao_realidade', label: 'Personalização',              icon: '🎨' },
+  { key: 'comunicacao_relacao',      label: 'Comunicação e relação',       icon: '💬' },
 ]
 
 function mediaNotas(respostas: any[], campo: string): number {
@@ -19,8 +30,8 @@ function mediaNotas(respostas: any[], campo: string): number {
   return vals.reduce((a, b) => a + b, 0) / vals.length
 }
 
-function mediaGeral(respostas: any[]): number {
-  const todas = CRITERIOS.map(c => mediaNotas(respostas, c.key)).filter(v => v > 0)
+function mediaGeral(respostas: any[], criterios: typeof CRITERIOS_ITA): number {
+  const todas = criterios.map(c => mediaNotas(respostas, c.key)).filter(v => v > 0)
   if (!todas.length) return 0
   return todas.reduce((a, b) => a + b, 0) / todas.length
 }
@@ -149,7 +160,10 @@ export default function MentorCSAT() {
     ? respostas
     : respostas.filter(r => r.pesquisa_id === pesquisaAtiva)
 
-  const media = mediaGeral(respostasFiltradas)
+  // Detecta vertical pelos dados carregados
+  const criterios = respostas.some(r => r.vertical === 'Medicina') ? CRITERIOS_MED : CRITERIOS_ITA
+
+  const media = mediaGeral(respostasFiltradas, criterios)
   const cor = corMedia(media)
   const bg = bgMedia(media)
   const texto = textoMedia(media)
@@ -157,11 +171,11 @@ export default function MentorCSAT() {
   // Evolução por pesquisa (para gráfico de linha)
   const evolucao = pesquisas.map(p => ({
     nome: p.nome,
-    media: mediaGeral(respostas.filter(r => r.pesquisa_id === p.id))
+    media: mediaGeral(respostas.filter(r => r.pesquisa_id === p.id), criterios)
   })).filter(e => e.media > 0)
 
   // Dados radar
-  const dadosRadar = CRITERIOS.map(c => ({
+  const dadosRadar = criterios.map(c => ({
     label: c.label, value: mediaNotas(respostasFiltradas, c.key)
   })).filter(d => d.value > 0)
 
@@ -227,7 +241,7 @@ export default function MentorCSAT() {
         {/* Critérios detalhados */}
         <div className="card" style={{ marginBottom: 14 }}>
           <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 14 }}>Por critério</div>
-          {CRITERIOS.map(c => {
+          {criterios.map(c => {
             const m = mediaNotas(respostasFiltradas, c.key)
             const pct = (m / 5) * 100
             const co = corMedia(m)
@@ -252,7 +266,7 @@ export default function MentorCSAT() {
             <div style={{ fontSize: 11, color: '#999', marginBottom: 4 }}>Média geral ao longo do tempo</div>
             <LineChart pesquisas={evolucao.map(e => e.nome)} dados={evolucao.map(e => e.media)} label="Média geral" />
             {/* Evolução por critério */}
-            {CRITERIOS.map(c => {
+            {criterios.map(c => {
               const evolCrit = pesquisas.map(p => ({
                 nome: p.nome,
                 val: mediaNotas(respostas.filter(r => r.pesquisa_id === p.id), c.key)

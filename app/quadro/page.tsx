@@ -31,13 +31,29 @@ export default function QuadroListPage() {
   const [novaMateria, setNovaMateria] = useState('Geral')
   const [criando, setCriando] = useState(false)
 
-  const alunoId = perfil?.aluno_id
+  const [alunoId, setAlunoId] = useState<string | null>(null)
+
+  // Resolve aluno_id: ITA usa perfil.aluno_id direto; Medicina faz fallback por email
+  useEffect(() => {
+    if (authLoading || !perfil) return
+    if (perfil.papel !== 'aluno') { setLoading(false); return }
+    if (perfil.aluno_id) { setAlunoId(perfil.aluno_id); return }
+    if (perfil.vertical === 'Medicina') {
+      dbQuery('alunos', { email: `eq.${perfil.email}`, vertical: 'eq.Medicina' }, 'id')
+        .then(({ data }) => {
+          const id = (data as any)?.[0]?.id || null
+          if (id) setAlunoId(id)
+          else setLoading(false)
+        })
+    } else {
+      setLoading(false)
+    }
+  }, [authLoading, perfil])
 
   useEffect(() => {
-    if (authLoading) return
-    if (!alunoId) { setLoading(false); return }
+    if (!alunoId) return
     load()
-  }, [authLoading, alunoId])
+  }, [alunoId])
 
   async function load() {
     setLoading(true)

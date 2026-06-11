@@ -39,16 +39,25 @@ export default function Atendimentos() {
   const [tipoResumo, setTipoResumo] = useState<'geral' | 'ultimo' | 'ultimos_dois'>('geral')
   const abortRef = useRef<AbortController | null>(null)
 
-  useEffect(() => {
-    if (verticalAtiva === 'Medicina') { router.replace('/med/alunos'); return }
-    carregar()
-  }, [perfil, verticalAtiva])
+  useEffect(() => { carregar() }, [perfil, verticalAtiva])
 
   async function carregar() {
     setErro(null)
-    const params: Record<string, string> = { order: 'data_atendimento.desc' }
+    const vertical = verticalAtiva || 'ITA'
+    const params: Record<string, string> = { order: 'data_atendimento.desc', vertical: `eq.${vertical}` }
     if (perfil?.papel === 'mentor') params['mentor'] = `eq.${perfil.mentor_nome || ''}`
-    const { data, error } = await dbQuery('atendimentos_mentoria', params)
+
+    let { data, error } = await dbQuery('atendimentos_mentoria', params)
+
+    // Coluna vertical ainda não existe (migration pendente) — carrega sem filtro
+    if (error && error.includes('vertical')) {
+      const fallback = { order: 'data_atendimento.desc' } as Record<string, string>
+      if (perfil?.papel === 'mentor') fallback['mentor'] = `eq.${perfil.mentor_nome || ''}`
+      const res = await dbQuery('atendimentos_mentoria', fallback)
+      data = res.data
+      error = res.error
+    }
+
     if (error) { setErro('Falha ao carregar atendimentos.'); setLoading(false); return }
     setDados(data || [])
     setLoading(false)
@@ -200,10 +209,12 @@ export default function Atendimentos() {
           <div style={{ display: 'flex', gap: 6 }}>
             {perfil?.papel === 'coordenador' && (
               <>
-                <button onClick={abrirResumo}
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#F3F0FF', color: '#f97316', border: 'none', borderRadius: 10, padding: '6px 12px', fontSize: 12, fontWeight: 500, cursor: 'pointer', fontFamily: 'DM Sans,sans-serif' }}>
-                  <Sparkles size={13} strokeWidth={2} />Resumo IA
-                </button>
+                {verticalAtiva !== 'Medicina' && (
+                  <button onClick={abrirResumo}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#F3F0FF', color: '#f97316', border: 'none', borderRadius: 10, padding: '6px 12px', fontSize: 12, fontWeight: 500, cursor: 'pointer', fontFamily: 'DM Sans,sans-serif' }}>
+                    <Sparkles size={13} strokeWidth={2} />Resumo IA
+                  </button>
+                )}
                 <Link href="/atendimentos/upload" style={{ textDecoration: 'none', background: '#F1F5F9', color: '#666', borderRadius: 10, padding: '6px 12px', fontSize: 12 }}>↑ Import</Link>
               </>
             )}

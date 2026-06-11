@@ -18,7 +18,7 @@ async function getOrCreateRoom(roomName: string): Promise<string> {
     return data.url
   }
 
-  // Cria nova sala com gravação em nuvem habilitada
+  // Cria nova sala
   const exp = Math.floor(Date.now() / 1000) + 4 * 60 * 60 // expira em 4h
   const post = await fetch('https://api.daily.co/v1/rooms', {
     method: 'POST',
@@ -36,7 +36,10 @@ async function getOrCreateRoom(roomName: string): Promise<string> {
     }),
   })
   const data = await post.json()
-  if (!post.ok) throw new Error(data.info || 'Erro ao criar sala')
+  if (!post.ok) {
+    console.error('[Daily] Erro ao criar sala:', JSON.stringify(data))
+    throw new Error(data.error || data.info || 'Erro ao criar sala')
+  }
   return data.url
 }
 
@@ -55,7 +58,10 @@ async function createToken(roomName: string, userName: string, isOwner: boolean)
     }),
   })
   const data = await resp.json()
-  if (!resp.ok) throw new Error(data.info || 'Erro ao criar token')
+  if (!resp.ok) {
+    console.error('[Daily] Erro ao criar token:', JSON.stringify(data))
+    throw new Error(data.error || data.info || 'Erro ao criar token')
+  }
   return data.token
 }
 
@@ -91,10 +97,9 @@ export async function POST(req: NextRequest) {
     const roomName = `mentoria-${aluno_id}`
     const isOwner = papel === 'mentor' || papel === 'coordenador' || papel === 'direcao'
 
-    const [roomUrl, token] = await Promise.all([
-      getOrCreateRoom(roomName),
-      createToken(roomName, user_name, isOwner),
-    ])
+    // Sala deve existir antes de criar o token (exigência do Daily.co para salas privadas)
+    const roomUrl = await getOrCreateRoom(roomName)
+    const token = await createToken(roomName, user_name, isOwner)
 
     // Notifica o aluno quando mentor/coord inicia
     if (notificar && isOwner) {

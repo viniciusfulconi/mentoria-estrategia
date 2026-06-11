@@ -22,8 +22,8 @@ export default function VideoChamadaPage() {
   const [preparando, setPreparando] = useState(false)
   const [entrou, setEntrou] = useState(false)
 
-  // Extrai aluno_id do slug
-  const alunoId = slug?.replace('mentoria-', '') || ''
+  // Extrai aluno_id do slug (slug = "mentoria-estrategia-<id>")
+  const alunoId = slug?.replace('mentoria-estrategia-', '') || ''
 
   // Busca nome do aluno para exibir
   useEffect(() => {

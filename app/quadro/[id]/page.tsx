@@ -57,7 +57,14 @@ export default function QuadroEditorPage() {
     const { data, error } = await dbQuery<any>('quadros_aluno', { id: `eq.${id}` }, 'id,titulo,materia,conteudo,aluno_id')
     if (error || !data?.[0]) { router.replace('/quadro'); return }
     const q = data[0]
-    if (perfil?.papel === 'aluno' && q.aluno_id !== perfil.aluno_id) { router.replace('/quadro'); return }
+    if (perfil?.papel === 'aluno') {
+      let alunoIdEfetivo = perfil.aluno_id || null
+      if (!alunoIdEfetivo && perfil.vertical === 'Medicina') {
+        const { data: a } = await dbQuery('alunos', { email: `eq.${perfil.email}`, vertical: 'eq.Medicina' }, 'id')
+        alunoIdEfetivo = (a as any)?.[0]?.id || null
+      }
+      if (alunoIdEfetivo && q.aluno_id !== alunoIdEfetivo) { router.replace('/quadro'); return }
+    }
     setTitulo(q.titulo || 'Sem título')
     setMateria(q.materia || 'Geral')
     const c = q.conteudo || {}

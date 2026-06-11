@@ -31,12 +31,13 @@ const tabsCoordenadorSecundarioITA = [
   { href: '/coruja',         label: 'Coruja',     icon: Bot },
 ]
 const tabsCoordenadorSecundarioMed = [
-  { href: '/turmas',     label: 'Turmas',     icon: GraduationCap },
-  { href: '/mentores',   label: 'Mentores',   icon: Users },
-  { href: '/cronograma', label: 'Cronograma', icon: ClipboardList },
-  { href: '/csat',       label: 'CSAT',       icon: Star },
-  { href: '/admin',      label: 'Acessos',    icon: KeyRound },
-  { href: '/coruja',     label: 'Coruja',     icon: Bot },
+  { href: '/med/simulados', label: 'Simulados', icon: BookOpen },
+  { href: '/turmas',        label: 'Turmas',    icon: GraduationCap },
+  { href: '/mentores',      label: 'Mentores',  icon: Users },
+  { href: '/cronograma',    label: 'Cronograma', icon: ClipboardList },
+  { href: '/csat',          label: 'CSAT',      icon: Star },
+  { href: '/admin',         label: 'Acessos',   icon: KeyRound },
+  { href: '/coruja',        label: 'Coruja',    icon: Bot },
 ]
 const tabsMentor = [
   { href: '/mentor',        label: 'Alunos',  icon: Users },
@@ -160,7 +161,6 @@ export default function Nav() {
   const tabsPrimarioFinal = isGestor && verticalAtiva === 'Medicina'
     ? tabsCoordenadorPrimario.map(t => {
         if (t.href === '/simulados') return { ...t, href: '/med/alunos' }
-        if (t.href === '/atendimentos') return { ...t, href: '/med/simulados', label: 'Simulados', icon: BookOpen }
         return t
       })
     : tabsCoordenadorPrimario

@@ -111,7 +111,7 @@ export default function Horario() {
     return String(dataAtual.getFullYear())
   }
 
-  const isCoord = perfil?.papel === 'coordenador'
+  const isCoord = perfil?.papel === 'coordenador' || perfil?.papel === 'direcao'
   const isMentor = perfil?.papel === 'mentor'
   const isAluno = perfil?.papel === 'aluno'
 
@@ -127,6 +127,9 @@ export default function Horario() {
                 <Link href="/horario/nova-aula" style={{ textDecoration: 'none', background: '#E8E8E8', color: '#333', borderRadius: 8, padding: '5px 10px', fontSize: 11 }}>+ Aula</Link>
                 <Link href="/horario/novo-simulado" style={{ textDecoration: 'none', background: '#FF7043', color: 'white', borderRadius: 8, padding: '5px 10px', fontSize: 11 }}>+ Simulado</Link>
                 <Link href="/horario/novo-vestibular" style={{ textDecoration: 'none', background: '#212121', color: 'white', borderRadius: 8, padding: '5px 10px', fontSize: 11 }}>+ Vest.</Link>
+                {verticalAtiva === 'ITA' && (
+                  <Link href="/horario/nova-prova-antiga" style={{ textDecoration: 'none', background: '#f97316', color: 'white', borderRadius: 8, padding: '5px 10px', fontSize: 11 }}>+ Prova</Link>
+                )}
               </div>
             )}
             {isMentor && (

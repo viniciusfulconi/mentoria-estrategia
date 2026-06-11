@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { dbInsert, dbDelete } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
+import { useAuth } from '@/contexts/AuthContext'
 import Nav from '@/components/Nav'
 
 // Parser CSV robusto: suporta campos com aspas, quebras de linha e separador `;`
@@ -29,7 +30,7 @@ function parseCSV(text: string, sep = ';'): string[][] {
 
 // Mapeamento dos nomes de coluna do AppSheet para índices
 const COL_MAP: Record<string, string[]> = {
-  mentor:       ['Quem é o mentor (a)?', 'Mentor'],
+  mentor:       ['Quem é o mentor (a)?', 'Quem é o mentor?', 'Mentor'],
   tipo:         ['A mentoria foi individual ou coletiva?', 'Individual / Coletiva'],
   aluno:        ['Qual foi o aluno atendido?', 'Aluno'],
   data:         ['Qual foi a data do atendimento?', 'Data Mentoria'],
@@ -76,6 +77,8 @@ function parseData(d: string): string | null {
 
 export default function UploadAtendimentos() {
   const router = useRouter()
+  const { verticalAtiva } = useAuth()
+  const vertical = verticalAtiva || 'ITA'
   const [loading, setLoading] = useState(false)
   const [log, setLog] = useState<string[]>([])
   const [done, setDone] = useState(false)
@@ -135,8 +138,16 @@ export default function UploadAtendimentos() {
   async function importar() {
     if (!preview.length) return
     setLoading(true)
-    addLog('\n🗑 Limpando dados anteriores...')
-    await dbDelete('atendimentos_mentoria', { id: 'neq.00000000-0000-0000-0000-000000000000' })
+
+    addLog(`\n🗑 Limpando dados anteriores (${vertical})...`)
+    const { error: delErr } = await dbDelete('atendimentos_mentoria', { vertical: `eq.${vertical}` })
+    if (delErr) {
+      addLog(`❌ Falha ao limpar dados: ${delErr}`)
+      addLog('⛔ Importação cancelada para não sobrescrever dados existentes.')
+      setLoading(false)
+      return
+    }
+    addLog(`✅ Dados anteriores (${vertical}) removidos.`)
 
     const cols: Record<string, number> = (window as any).__atendimentosCols || {}
     const get = (row: string[], key: string) => cols[key] >= 0 ? (row[cols[key]] || '') : ''
@@ -161,22 +172,32 @@ export default function UploadAtendimentos() {
         mes: get(r, 'mes') || null,
         ano: Number(get(r, 'ano')) || null,
         valor_pago: valor,
+        vertical,
       }
     }).filter(r => r.data_atendimento)
 
     addLog(`📊 Importando ${records.length} atendimentos...`)
 
+    let importOk = true
     for (let i = 0; i < records.length; i += 100) {
       const lote = records.slice(i, i + 100)
       const { error } = await dbInsert('atendimentos_mentoria', lote)
-      if (error) { addLog(`❌ Erro no lote ${Math.floor(i / 100) + 1}: ${error}`); break }
+      if (error) {
+        addLog(`❌ Erro no lote ${Math.floor(i / 100) + 1}: ${error}`)
+        importOk = false
+        break
+      }
       addLog(`  ✅ Lote ${Math.floor(i / 100) + 1}/${Math.ceil(records.length / 100)} importado`)
     }
 
-    const valorTotal = records.reduce((a, r) => a + r.valor_pago, 0)
-    addLog(`\n💰 Valor total: R$ ${valorTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`)
-    addLog('🎉 Importação concluída!')
-    setDone(true)
+    if (importOk) {
+      const valorTotal = records.reduce((a, r) => a + r.valor_pago, 0)
+      addLog(`\n💰 Valor total: R$ ${valorTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`)
+      addLog('🎉 Importação concluída!')
+      setDone(true)
+    } else {
+      addLog('⚠️ Importação incompleta. Verifique os erros acima e tente novamente.')
+    }
     setLoading(false)
   }
 

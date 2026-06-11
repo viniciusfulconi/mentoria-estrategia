@@ -18,6 +18,17 @@ const CRITERIOS_MENTORIA = [
   { key: 'comunicacao_relacao', label: 'Comunicação e relação' },
 ]
 
+const CRITERIOS_MENTORIA_MED = [
+  { key: 'rapidez_respostas',        label: 'Rapidez nas respostas' },
+  { key: 'qualidade_atendimento',    label: 'Qualidade dos atendimentos' },
+  { key: 'organizacao_planejamento', label: 'Organização e planejamento' },
+  { key: 'diferencial_mentoria',     label: 'Diferencial da mentoria' },
+  { key: 'clareza_orientacoes',      label: 'Clareza e objetividade' },
+  { key: 'acompanhamento_cobranca',  label: 'Acompanhamento e cobrança' },
+  { key: 'personalizacao_realidade', label: 'Personalização' },
+  { key: 'comunicacao_relacao',      label: 'Comunicação e relação' },
+]
+
 // ─── Professores ──────────────────────────────────────────────────────────────
 
 // Ritmo excluído da média — exibido apenas como info complementar no detalhe
@@ -113,6 +124,8 @@ function AbaMentoria({ podeUpload, vertical }: { podeUpload: boolean; vertical: 
   const [loading, setLoading] = useState(true)
   const [erro, setErro] = useState<string | null>(null)
 
+  const criterios = vertical === 'Medicina' ? CRITERIOS_MENTORIA_MED : CRITERIOS_MENTORIA
+
   async function carregar() {
     setErro(null)
     const [{ data: ps, error: e1 }, { data: rs, error: e2 }] = await Promise.all([
@@ -132,10 +145,10 @@ function AbaMentoria({ podeUpload, vertical }: { podeUpload: boolean; vertical: 
     : respostas.filter(r => r.pesquisa_id === pesquisaAtiva)
 
   const mentores = [...new Set(respostas.map(r => r.mentor))].sort()
-  const mediaGeralGeral = mediaNotas(respostasFiltradas, CRITERIOS_MENTORIA)
+  const mediaGeralGeral = mediaNotas(respostasFiltradas, criterios)
   const evolucaoGeral = pesquisas.map(p => {
     const rs = respostas.filter(r => r.pesquisa_id === p.id)
-    return mediaNotas(rs, CRITERIOS_MENTORIA)
+    return mediaNotas(rs, criterios)
   })
 
   return (
@@ -184,14 +197,14 @@ function AbaMentoria({ podeUpload, vertical }: { podeUpload: boolean; vertical: 
 
             <div className="card" style={{ marginBottom: 14 }}>
               <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 14 }}>Por critério</div>
-              {CRITERIOS_MENTORIA.map(c => (
-                <CriterioBar key={c.key} label={c.label} media={mediaNotas(respostasFiltradas, CRITERIOS_MENTORIA, c.key)} />
+              {criterios.map(c => (
+                <CriterioBar key={c.key} label={c.label} media={mediaNotas(respostasFiltradas, criterios, c.key)} />
               ))}
             </div>
 
             <div style={{ fontSize: 11, fontWeight: 600, color: '#999', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>Ranking de mentores</div>
             {mentores
-              .map(m => ({ nome: m, media: mediaNotas(respostasFiltradas.filter(r => r.mentor === m), CRITERIOS_MENTORIA) }))
+              .map(m => ({ nome: m, media: mediaNotas(respostasFiltradas.filter(r => r.mentor === m), criterios) }))
               .sort((a, b) => b.media - a.media)
               .map((m, i) => {
                 const co = m.media > 4.5 ? '#16A34A' : m.media >= 4.0 ? '#D97706' : '#DC2626'
@@ -356,16 +369,17 @@ export default function CSAT() {
   const [aba, setAba] = useState<'mentoria' | 'professores'>('mentoria')
   const podeUpload = perfil?.papel === 'coordenador'
   const vertical = verticalAtiva || 'ITA'
+  const isMed = vertical === 'Medicina'
 
   return (
     <div style={{ paddingBottom: 80 }}>
-      {/* Header com tabs */}
+      {/* Header */}
       <div style={{ background: 'white', borderBottom: '0.5px solid rgba(0,0,0,0.08)', padding: '16px 16px 0', position: 'sticky', top: 0, zIndex: 10 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
           <div style={{ fontSize: 17, fontWeight: 600 }}>CSAT — Satisfação</div>
           {podeUpload && (
             <Link
-              href={aba === 'mentoria' ? '/csat/upload' : '/csat/upload-professores'}
+              href={!isMed && aba === 'professores' ? '/csat/upload-professores' : '/csat/upload'}
               style={{ textDecoration: 'none', background: '#f97316', color: 'white', borderRadius: 10, padding: '7px 14px', fontSize: 13, fontWeight: 500 }}
             >
               ↑ Upload
@@ -373,28 +387,30 @@ export default function CSAT() {
           )}
         </div>
 
-        {/* Tabs */}
-        <div style={{ display: 'flex', gap: 0, borderBottom: 'none' }}>
-          {(['mentoria', 'professores'] as const).map(t => (
-            <button
-              key={t}
-              onClick={() => setAba(t)}
-              style={{
-                flex: 1, padding: '8px 0', fontSize: 13, fontWeight: aba === t ? 600 : 400,
-                border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'DM Sans,sans-serif',
-                color: aba === t ? '#f97316' : '#999',
-                borderBottom: aba === t ? '2px solid #f97316' : '2px solid transparent',
-                transition: 'all 0.15s',
-                textTransform: 'capitalize',
-              }}
-            >
-              {t === 'mentoria' ? 'Mentoria' : 'Professores'}
-            </button>
-          ))}
-        </div>
+        {/* Tabs — Medicina só tem Mentoria */}
+        {!isMed && (
+          <div style={{ display: 'flex', gap: 0, borderBottom: 'none' }}>
+            {(['mentoria', 'professores'] as const).map(t => (
+              <button
+                key={t}
+                onClick={() => setAba(t)}
+                style={{
+                  flex: 1, padding: '8px 0', fontSize: 13, fontWeight: aba === t ? 600 : 400,
+                  border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'DM Sans,sans-serif',
+                  color: aba === t ? '#f97316' : '#999',
+                  borderBottom: aba === t ? '2px solid #f97316' : '2px solid transparent',
+                  transition: 'all 0.15s',
+                  textTransform: 'capitalize',
+                }}
+              >
+                {t === 'mentoria' ? 'Mentoria' : 'Professores'}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
-      {aba === 'mentoria' ? (
+      {isMed || aba === 'mentoria' ? (
         <AbaMentoria podeUpload={podeUpload} vertical={vertical} />
       ) : (
         <AbaProfessores podeUpload={podeUpload} vertical={vertical} />
