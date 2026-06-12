@@ -71,6 +71,9 @@ export default function Turma() {
     ? alunosGeral
     : dados.filter(r => r.ciclo_nome === cicloAtivo).sort((a, b) => mediaAluno(b) - mediaAluno(a))
 
+  // Verifica se o ciclo ativo tem redação lançada
+  const temRedacao = cicloData.some(r => r.nota_redacao !== null && r.nota_redacao !== undefined)
+
   // Alunos que precisam de atenção: reprovados ou média < 5
   const atencao = cicloData.filter(r => {
     if (r.resultado_ciclo === 'Reprovado') return true
@@ -241,7 +244,9 @@ export default function Turma() {
                   { label: '🏆 Top 10 Matemática', campo: 'nota_matematica' },
                   { label: '⚡ Top 10 Física', campo: 'nota_fisica' },
                   { label: '🧪 Top 10 Química', campo: 'nota_quimica' },
-                  { label: '📝 Top 10 Linguagens', campo: 'media_linguagens' },
+                  { label: '📖 Top 10 Português', campo: 'nota_portugues' },
+                  ...(temRedacao ? [{ label: '✍️ Top 10 Redação', campo: 'nota_redacao' }] : []),
+                  { label: temRedacao ? '📝 Top 10 Média Linguagens' : '📝 Top 10 Linguagens', campo: 'media_linguagens' },
                   { label: '🎯 Top 10 — 1ª Fase', campo: 'media_1fase' },
                 ].map(({ label, campo }) => {
                   const top = top10(campo)

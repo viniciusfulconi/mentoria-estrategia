@@ -11,6 +11,9 @@ export function calcularRisco(dados: any[], rankingAtivo: any, cicloAtivo: strin
   const reg1f = dados.find(r =>
     String(r.ciclo_nome || '').match(/\d+/)?.[0] === cicloNum && r.fase === '1fase'
   )
+  const reg2fPort = dados.find(r =>
+    String(r.ciclo_nome || '').match(/\d+/)?.[0] === cicloNum && r.fase === '2fase_port'
+  )
 
   type C = { label: string; val: number; min: number; ac?: boolean }
   const c1: C[] = [], c2: C[] = []
@@ -24,7 +27,9 @@ export function calcularRisco(dados: any[], rankingAtivo: any, cicloAtivo: strin
     if (n(rankingAtivo.nota_matematica) !== null) c2.push({ label: 'Mat.', val: n(rankingAtivo.nota_matematica)!, min: 4 })
     if (n(rankingAtivo.nota_fisica) !== null) c2.push({ label: 'Fís.', val: n(rankingAtivo.nota_fisica)!, min: 4 })
     if (n(rankingAtivo.nota_quimica) !== null) c2.push({ label: 'Quí.', val: n(rankingAtivo.nota_quimica)!, min: 4 })
-    if (n(rankingAtivo.media_linguagens) !== null) c2.push({ label: 'Port.', val: n(rankingAtivo.media_linguagens)!, min: 4 })
+    if (n(reg2fPort?.nota_portugues) !== null) c2.push({ label: 'Port.', val: n(reg2fPort.nota_portugues)!, min: 6 })
+    else if (n(rankingAtivo.media_linguagens) !== null) c2.push({ label: 'Port.', val: n(rankingAtivo.media_linguagens)!, min: 4 })
+    if (n(reg2fPort?.nota_redacao) !== null) c2.push({ label: 'Red.', val: n(reg2fPort.nota_redacao)!, min: 4 })
     if (n(rankingAtivo.media_2fase) !== null) c2.push({ label: 'Média Final', val: n(rankingAtivo.media_2fase)!, min: 5 })
   } else {
     if (reg1f?.acertos_mat_1f != null) c1.push({ label: 'Mat.', val: +reg1f.acertos_mat_1f, min: 6, ac: true })
@@ -145,6 +150,10 @@ export function DiagnosticoCorte({ dados, rankingAtivo, cicloAtivo }: { dados: a
     const num = String(r.ciclo_nome || '').match(/\d+/)?.[0] || ''
     return num === cicloNum && r.fase === '1fase'
   })
+  const reg2fPort = dados.find(r => {
+    const num = String(r.ciclo_nome || '').match(/\d+/)?.[0] || ''
+    return num === cicloNum && r.fase === '2fase_port'
+  })
 
   const criterios1f: CriterioCorte[] = []
   const criterios2f: CriterioCorte[] = []
@@ -161,7 +170,12 @@ export function DiagnosticoCorte({ dados, rankingAtivo, cicloAtivo }: { dados: a
     if (n(rankingAtivo.nota_matematica) !== null) criterios2f.push({ label: 'Matemática', valor: n(rankingAtivo.nota_matematica), minimo: 4.0, escala: 10 })
     if (n(rankingAtivo.nota_fisica) !== null) criterios2f.push({ label: 'Física', valor: n(rankingAtivo.nota_fisica), minimo: 4.0, escala: 10 })
     if (n(rankingAtivo.nota_quimica) !== null) criterios2f.push({ label: 'Química', valor: n(rankingAtivo.nota_quimica), minimo: 4.0, escala: 10 })
-    if (n(rankingAtivo.media_linguagens) !== null) criterios2f.push({ label: 'Port./Redação', valor: n(rankingAtivo.media_linguagens), minimo: 4.0, escala: 10 })
+    if (n(reg2fPort?.nota_portugues) !== null) {
+      criterios2f.push({ label: 'Português (obj.)', valor: n(reg2fPort.nota_portugues), minimo: 6.0, escala: 10 })
+    } else if (n(rankingAtivo.media_linguagens) !== null) {
+      criterios2f.push({ label: 'Port./Redação', valor: n(rankingAtivo.media_linguagens), minimo: 4.0, escala: 10 })
+    }
+    if (n(reg2fPort?.nota_redacao) !== null) criterios2f.push({ label: 'Redação', valor: n(reg2fPort.nota_redacao), minimo: 4.0, escala: 10 })
     if (n(rankingAtivo.media_2fase) !== null) criterios2f.push({ label: 'Média final', valor: n(rankingAtivo.media_2fase), minimo: 5.0, escala: 10 })
   }
 
@@ -173,7 +187,12 @@ export function DiagnosticoCorte({ dados, rankingAtivo, cicloAtivo }: { dados: a
     if (n(rankingAtivo.nota_matematica) !== null) criterios2f.push({ label: 'Matemática', valor: n(rankingAtivo.nota_matematica), minimo: 4.0, escala: 10 })
     if (n(rankingAtivo.nota_fisica) !== null) criterios2f.push({ label: 'Física', valor: n(rankingAtivo.nota_fisica), minimo: 4.0, escala: 10 })
     if (n(rankingAtivo.nota_quimica) !== null) criterios2f.push({ label: 'Química', valor: n(rankingAtivo.nota_quimica), minimo: 4.0, escala: 10 })
-    if (n(rankingAtivo.media_linguagens) !== null) criterios2f.push({ label: 'Port./Redação', valor: n(rankingAtivo.media_linguagens), minimo: 4.0, escala: 10 })
+    if (n(reg2fPort?.nota_portugues) !== null) {
+      criterios2f.push({ label: 'Português (obj.)', valor: n(reg2fPort.nota_portugues), minimo: 6.0, escala: 10 })
+    } else if (n(rankingAtivo.media_linguagens) !== null) {
+      criterios2f.push({ label: 'Port./Redação', valor: n(rankingAtivo.media_linguagens), minimo: 4.0, escala: 10 })
+    }
+    if (n(reg2fPort?.nota_redacao) !== null) criterios2f.push({ label: 'Redação', valor: n(reg2fPort.nota_redacao), minimo: 4.0, escala: 10 })
   }
 
   if (!criterios1f.length && !criterios2f.length) return null

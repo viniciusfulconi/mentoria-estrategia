@@ -114,7 +114,7 @@ export default function AlunoPage() {
     // a posição geral e o ranking por matéria sejam calculados igual à página de turma
     const [{ data: todosRanking }] = await Promise.all([
       dbQuery('resultados', { fase: 'eq.ranking' },
-        'id_aluno,nome_aluno,ciclo_nome,nota_matematica,nota_fisica,nota_quimica,media_linguagens,media_1fase,media_2fase'),
+        'id_aluno,nome_aluno,ciclo_nome,nota_matematica,nota_fisica,nota_quimica,nota_portugues,nota_redacao,media_linguagens,media_1fase,media_2fase'),
     ])
 
     const rankings = (resultados || []).filter(r => r.fase === 'ranking')
@@ -234,6 +234,19 @@ export default function AlunoPage() {
     { label: 'Port./Redação', campo: 'media_linguagens' },
   ]
 
+  // Busca o registro 2fase_port do ciclo ativo (onde nota_portugues/nota_redacao vivem)
+  const cicloNum = String(cicloAtivo || '').match(/\d+/)?.[0] || ''
+  const reg2fPort = dados.find(r =>
+    String(r.ciclo_nome || '').match(/\d+/)?.[0] === cicloNum && r.fase === '2fase_port'
+  )
+
+  // Ciclo tem redação = aluno tem registro 2fase_port para este ciclo
+  function temRedacaoCiclo(ciclo: string | null) {
+    if (!ciclo) return false
+    const num = String(ciclo).match(/\d+/)?.[0] || ''
+    return dados.some(r => String(r.ciclo_nome || '').match(/\d+/)?.[0] === num && r.fase === '2fase_port')
+  }
+
   function rankingMateria(campo: string) {
     return [...alunosUnicos]
       .sort((a, b) => mediaMateriaAluno(b.id_aluno, campo) - mediaMateriaAluno(a.id_aluno, campo))
@@ -261,7 +274,13 @@ export default function AlunoPage() {
   // Notas por ciclo para gráfico de evolução
   function corNota(n: number) { return n >= 7 ? '#16A34A' : n >= 4 ? '#D97706' : '#DC2626' }
 
-  function NotaBar({ nota, label }: { nota: number, label: string }) {
+  function NotaBar({ nota, label, naoFez }: { nota: number, label: string, naoFez?: boolean }) {
+    if (naoFez) return (
+      <div style={{ marginBottom: 8, display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
+        <span style={{ color: '#666' }}>{label}</span>
+        <span style={{ color: '#94a3b8', fontStyle: 'italic' }}>Não fez</span>
+      </div>
+    )
     const cor = corNota(nota)
     return (
       <div style={{ marginBottom: 8 }}>
@@ -603,7 +622,20 @@ export default function AlunoPage() {
                   {rankingAtivo.nota_matematica !== null && <NotaBar nota={Number(rankingAtivo.nota_matematica)} label="Matemática (2ª fase)" />}
                   {rankingAtivo.nota_fisica !== null && <NotaBar nota={Number(rankingAtivo.nota_fisica)} label="Física (2ª fase)" />}
                   {rankingAtivo.nota_quimica !== null && <NotaBar nota={Number(rankingAtivo.nota_quimica)} label="Química (2ª fase)" />}
-                  {rankingAtivo.media_linguagens !== null && <NotaBar nota={Number(rankingAtivo.media_linguagens)} label="Port./Redação (2ª fase)" />}
+                  {reg2fPort?.nota_portugues != null
+                    ? <NotaBar nota={Number(reg2fPort.nota_portugues)} label="Português (2ª fase)" />
+                    : rankingAtivo.media_linguagens !== null && !reg2fPort
+                      ? <NotaBar nota={Number(rankingAtivo.media_linguagens)} label="Port./Redação (2ª fase)" />
+                      : null
+                  }
+                  {reg2fPort && (
+                    reg2fPort.nota_redacao != null
+                      ? <NotaBar nota={Number(reg2fPort.nota_redacao)} label="Redação (2ª fase)" />
+                      : <NotaBar nota={0} label="Redação (2ª fase)" naoFez />
+                  )}
+                  {reg2fPort?.nota_portugues != null && rankingAtivo.media_linguagens !== null && (
+                    <NotaBar nota={Number(rankingAtivo.media_linguagens)} label="Média Linguagens (2ª fase)" />
+                  )}
                   {rankingAtivo.media_2fase !== null && (
                     <div style={{ borderTop: '0.5px solid rgba(0,0,0,0.06)', marginTop: 10, paddingTop: 10 }}>
                       <NotaBar nota={Number(rankingAtivo.media_2fase)} label="Média Final" />
@@ -655,18 +687,32 @@ export default function AlunoPage() {
 
             <div className="card">
               <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 12 }}>Médias gerais (todos os ciclos)</div>
-              {[
-                { label: 'Matemática', campo: 'nota_matematica' },
-                { label: 'Física', campo: 'nota_fisica' },
-                { label: 'Química', campo: 'nota_quimica' },
-                { label: 'Port./Redação', campo: 'media_linguagens' },
-                { label: '1ª Fase', campo: 'media_1fase' },
-              ].map(({ label, campo }) => {
-                const vals = rankings.map(r => Number(r[campo])).filter(v => v > 0)
-                if (!vals.length) return null
-                const media = vals.reduce((a, b) => a + b, 0) / vals.length
-                return <NotaBar key={campo} nota={media} label={label} />
-              })}
+              {(() => {
+                const dados2fPort = dados.filter(r => r.fase === '2fase_port')
+                const temPort = dados2fPort.some(r => r.nota_portugues != null)
+                const temRed = dados2fPort.some(r => r.nota_redacao != null)
+                const media = (arr: any[], campo: string) => {
+                  const vals = arr.map(r => Number(r[campo])).filter(v => v > 0)
+                  return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null
+                }
+                const campos: { label: string; valor: number | null }[] = [
+                  { label: 'Matemática',     valor: media(rankings, 'nota_matematica') },
+                  { label: 'Física',         valor: media(rankings, 'nota_fisica') },
+                  { label: 'Química',        valor: media(rankings, 'nota_quimica') },
+                  ...(temPort
+                    ? [{ label: 'Português', valor: media(dados2fPort, 'nota_portugues') }]
+                    : []),
+                  ...(temRed
+                    ? [{ label: 'Redação',   valor: media(dados2fPort.filter(r => r.nota_redacao != null), 'nota_redacao') }]
+                    : []),
+                  { label: temPort ? 'Média Linguagens' : 'Port./Redação', valor: media(rankings, 'media_linguagens') },
+                  { label: '1ª Fase',        valor: media(rankings, 'media_1fase') },
+                ]
+                return campos.map(({ label, valor }) => {
+                  if (valor === null || valor === 0) return null
+                  return <NotaBar key={label} nota={valor} label={label} />
+                })
+              })()}
             </div>
           </>
         )}
