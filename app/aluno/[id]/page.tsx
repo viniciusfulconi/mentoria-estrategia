@@ -152,7 +152,7 @@ export default function AlunoPage() {
     const provaIds = [...new Set(pa.map((p: any) => p.prova_id))].join(',')
     const [{ data: detalhes }, { data: questoes }] = await Promise.all([
       dbQuery('provas_antigas', { id: `in.(${provaIds})` }),
-      dbQuery('questoes_prova_antiga', { prova_id: `in.(${provaIds})` }, 'prova_id,numero,materia'),
+      dbQuery('questoes_prova_antiga', { prova_id: `in.(${provaIds})` }, 'prova_id,numero,materia,topicos'),
     ])
     const detalheMap = Object.fromEntries((detalhes || []).map((d: any) => [d.id, d]))
     setProvasAluno(pa.map((p: any) => ({ ...p, prova: detalheMap[p.prova_id] })))
@@ -163,27 +163,38 @@ export default function AlunoPage() {
 
   function analiseCumulativaProvas() {
     const corrigidasCompletas = correcoesProva.filter(c => c.confirmed_at)
-    const errorCount: Record<string, number> = {}
+    const errosPorMateria: Record<string, number> = {}
+    const errosPorTopico: Record<string, { materia: string; count: number }> = {}
+
     corrigidasCompletas.forEach(c => {
       const provaInfo = provasAluno.find(pa => pa.id === c.prova_aluno_id)?.prova
       const questoesDaProva = questoesProvas.filter((q: any) => q.prova_id === c.prova_id)
-      if (provaInfo?.modelo === 'multipla_escolha') {
-        const resps = c.respostas || {}
-        questoesDaProva.forEach((q: any) => {
-          if (resps[String(q.numero)] && resps[String(q.numero)] !== 'acertou') {
-            errorCount[q.materia] = (errorCount[q.materia] || 0) + 1
-          }
-        })
-      } else {
-        const notas = c.notas || {}
-        questoesDaProva.forEach((q: any) => {
-          if (Number(notas[String(q.numero)] ?? 1) < 0.7) {
-            errorCount[q.materia] = (errorCount[q.materia] || 0) + 1
-          }
-        })
+      const errou = (q: any): boolean => {
+        if (provaInfo?.modelo === 'multipla_escolha') {
+          const r = (c.respostas || {})[String(q.numero)]
+          return !!r && r !== 'acertou'
+        } else {
+          return Number((c.notas || {})[String(q.numero)] ?? 1) < 0.7
+        }
       }
+      questoesDaProva.forEach((q: any) => {
+        if (!errou(q)) return
+        errosPorMateria[q.materia] = (errosPorMateria[q.materia] || 0) + 1
+        ;(q.topicos || []).forEach((tid: string) => {
+          const nomeTopico = topicos.find((t: any) => t.id === tid)?.topico
+          if (!nomeTopico) return
+          if (!errosPorTopico[nomeTopico]) errosPorTopico[nomeTopico] = { materia: q.materia, count: 0 }
+          errosPorTopico[nomeTopico].count++
+        })
+      })
     })
-    return Object.entries(errorCount).sort((a, b) => b[1] - a[1])
+
+    const materias = Object.entries(errosPorMateria).sort((a, b) => b[1] - a[1])
+    const topicosRanking = Object.entries(errosPorTopico)
+      .map(([nome, v]) => ({ nome, materia: v.materia, count: v.count }))
+      .sort((a, b) => b.count - a.count)
+
+    return { materias, topicosRanking }
   }
 
   async function loadTurmaQuestoes() {
@@ -740,8 +751,8 @@ export default function AlunoPage() {
             ) : (() => {
               const feitas = correcoesProva.filter(c => c.confirmed_at).length
               const pendentes = provasAluno.length - feitas
-              const errosCumulativos = feitas > 0 ? analiseCumulativaProvas() : []
-              const totalErros = errosCumulativos.reduce((s, [, n]) => s + n, 0)
+              const analise = feitas > 0 ? analiseCumulativaProvas() : null
+              const totalErros = analise?.materias.reduce((s, [, n]) => s + n, 0) || 0
               return (
                 <>
                   {/* Painel de análise geral */}
@@ -758,13 +769,13 @@ export default function AlunoPage() {
                       </div>
                     </div>
 
-                    {/* Top assuntos mais errados */}
-                    {errosCumulativos.length > 0 && (
+                    {/* Erros por matéria */}
+                    {analise && analise.materias.length > 0 && (
                       <>
                         <div style={{ fontSize: 12, fontWeight: 600, color: '#DC2626', marginBottom: 8 }}>
-                          📊 Assuntos para revisar (todas as provas)
+                          📊 Erros por matéria (todas as provas)
                         </div>
-                        {errosCumulativos.slice(0, 6).map(([mat, qtd]) => {
+                        {analise.materias.slice(0, 6).map(([mat, qtd]) => {
                           const pct = Math.round((qtd / totalErros) * 100)
                           return (
                             <div key={mat} style={{ marginBottom: 7 }}>
@@ -781,6 +792,33 @@ export default function AlunoPage() {
                       </>
                     )}
                   </div>
+
+                  {/* Top tópicos mais errados */}
+                  {analise && analise.topicosRanking.length > 0 && (
+                    <div className="card" style={{ marginBottom: 14 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 12 }}>🔁 Tópicos com mais erros</div>
+                      {analise.topicosRanking.slice(0, 10).map((t, i) => {
+                        const maxCount = analise.topicosRanking[0].count
+                        const pct = Math.round((t.count / maxCount) * 100)
+                        return (
+                          <div key={t.nome} style={{ marginBottom: 10 }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12, marginBottom: 3 }}>
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <span style={{ fontWeight: i < 3 ? 600 : 400, color: '#1a1a1a' }}>{t.nome}</span>
+                                <span style={{ fontSize: 10, color: '#94a3b8', marginLeft: 6 }}>{t.materia}</span>
+                              </div>
+                              <span style={{ fontWeight: 700, color: '#DC2626', marginLeft: 8, flexShrink: 0 }}>
+                                {t.count}×
+                              </span>
+                            </div>
+                            <div style={{ height: 4, background: '#F1F5F9', borderRadius: 2, overflow: 'hidden' }}>
+                              <div style={{ height: '100%', width: `${pct}%`, background: i === 0 ? '#DC2626' : i < 3 ? '#EA580C' : '#f97316', borderRadius: 2, transition: 'width 0.5s' }} />
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
 
                   {/* Cards individuais */}
                   {provasAluno.map(pa => {

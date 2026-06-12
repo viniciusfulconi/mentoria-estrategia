@@ -40,6 +40,7 @@ export default function MinhaProva() {
   // Resultados
   const [ranking, setRanking] = useState<any[]>([])
   const [rankingLoaded, setRankingLoaded] = useState(false)
+  const [topicosDB, setTopicosDB] = useState<any[]>([])
 
   const targetId = perfil?.papel === 'aluno' ? perfil.aluno_id! : ''
 
@@ -54,12 +55,14 @@ export default function MinhaProva() {
     if (!paData) { setLoading(false); return }
     setProvaAluno(paData)
 
-    const [{ data: provaData }, { data: qData }] = await Promise.all([
+    const [{ data: provaData }, { data: qData }, { data: topData }] = await Promise.all([
       dbQuery('provas_antigas', { id: `eq.${paData.prova_id}` }),
       dbQuery('questoes_prova_antiga', { prova_id: `eq.${paData.prova_id}`, order: 'numero' }),
+      dbQuery('topicos', {}, 'id,materia,topico'),
     ])
     setProva(provaData?.[0] || null)
     setQuestoes(qData || [])
+    setTopicosDB(topData || [])
 
     const corrData = corr?.[0] || null
     setCorrecao(corrData)
@@ -96,18 +99,25 @@ export default function MinhaProva() {
     return { pos, total: pontuacoes.length }
   }
 
+  function resolverTopicos(ids: string[]): string[] {
+    if (!ids?.length) return []
+    return ids
+      .map(id => topicosDB.find((t: any) => t.id === id)?.topico)
+      .filter(Boolean) as string[]
+  }
+
   function assuntosErrados() {
     if (!correcao || !questoes.length || !prova) return []
     if (prova.modelo === 'multipla_escolha') {
       const resps = correcao.respostas || {}
       return questoes
         .filter(q => resps[String(q.numero)] && resps[String(q.numero)] !== 'acertou')
-        .map(q => ({ numero: q.numero, materia: q.materia, tipo: resps[String(q.numero)] }))
+        .map(q => ({ numero: q.numero, materia: q.materia, tipo: resps[String(q.numero)], topicos: resolverTopicos(q.topicos || []) }))
     } else {
       const notas = correcao.notas || {}
       return questoes
         .filter(q => Number(notas[String(q.numero)] ?? 1) < 0.7)
-        .map(q => ({ numero: q.numero, materia: q.materia, nota: notas[String(q.numero)] }))
+        .map(q => ({ numero: q.numero, materia: q.materia, nota: notas[String(q.numero)], topicos: resolverTopicos(q.topicos || []) }))
     }
   }
 
@@ -287,28 +297,47 @@ export default function MinhaProva() {
             {/* Assuntos errados */}
             {errados.length > 0 && (
               <div className="card">
-                <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 10 }}>Assuntos para revisar nesta prova</div>
+                <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 14 }}>Tópicos para revisar</div>
                 {Object.entries(errosPorMateria)
                   .sort((a, b) => b[1] - a[1])
-                  .map(([mat, qtd]) => (
-                    <div key={mat} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                      <span style={{ fontSize: 13, color: '#333' }}>{mat}</span>
-                      <span style={{ fontSize: 12, fontWeight: 600, color: '#DC2626', padding: '2px 8px', background: '#FEE2E2', borderRadius: 8 }}>
-                        {qtd} erro{qtd > 1 ? 's' : ''}
-                      </span>
-                    </div>
-                  ))}
+                  .map(([mat, qtd]) => {
+                    const qsMateria = errados.filter(e => e.materia === mat)
+                    // Tópicos únicos desta matéria (das questões erradas)
+                    const topicosUnicos = [...new Set(qsMateria.flatMap(e => e.topicos || []))]
+                    return (
+                      <div key={mat} style={{ marginBottom: 14, paddingBottom: 14, borderBottom: '0.5px solid rgba(0,0,0,0.06)' }}>
+                        {/* Cabeçalho matéria */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                          <span style={{ fontSize: 13, fontWeight: 600, color: '#1a1a1a' }}>{mat}</span>
+                          <span style={{ fontSize: 11, fontWeight: 600, color: '#DC2626', padding: '2px 8px', background: '#FEE2E2', borderRadius: 8 }}>
+                            {qtd} erro{qtd > 1 ? 's' : ''}
+                          </span>
+                        </div>
 
-                <div style={{ marginTop: 10, borderTop: '0.5px solid rgba(0,0,0,0.08)', paddingTop: 10 }}>
-                  <div style={{ fontSize: 11, color: '#999', marginBottom: 8 }}>Questões individuais</div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
-                    {errados.map(e => (
-                      <span key={e.numero} style={{ fontSize: 10, padding: '2px 8px', borderRadius: 10, background: '#FEE2E2', color: '#DC2626', fontWeight: 500 }}>
-                        Q{e.numero} · {e.materia}
-                      </span>
-                    ))}
-                  </div>
-                </div>
+                        {/* Tópicos */}
+                        {topicosUnicos.length > 0 ? (
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 8 }}>
+                            {topicosUnicos.map(t => (
+                              <span key={t} style={{ fontSize: 11, padding: '3px 10px', borderRadius: 20, background: '#FFF7ED', color: '#EA580C', border: '1px solid rgba(234,88,12,0.2)', fontWeight: 500 }}>
+                                {t}
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          <div style={{ fontSize: 11, color: '#999', marginBottom: 6, fontStyle: 'italic' }}>Sem tópicos classificados</div>
+                        )}
+
+                        {/* Questões */}
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                          {qsMateria.map(e => (
+                            <span key={e.numero} style={{ fontSize: 10, padding: '2px 7px', borderRadius: 6, background: '#FEE2E2', color: '#DC2626', fontWeight: 500 }}>
+                              Q{e.numero}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )
+                  })}
               </div>
             )}
           </>
