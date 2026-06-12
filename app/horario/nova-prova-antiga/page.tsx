@@ -95,8 +95,8 @@ export default function NovaProvaAntigaHorario() {
 
     const dataFormatada = new Date(form.data + 'T12:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' })
     const vertical = verticalAtiva || 'ITA'
-    const dtInicio = `${form.data}T${form.hora_inicio}:00`
-    const dtFim = `${form.data}T${form.hora_fim}:00`
+    const dtInicio = new Date(`${form.data}T${form.hora_inicio}`).toISOString()
+    const dtFim = new Date(`${form.data}T${form.hora_fim}`).toISOString()
 
     function atividadeEntry(alunoId: string) {
       return {
