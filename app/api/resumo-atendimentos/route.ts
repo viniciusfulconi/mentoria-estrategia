@@ -4,6 +4,7 @@ import { verifyAuth, requirePapel } from '@/lib/auth-server'
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY!
 
 type Tipo = 'geral' | 'ultimo' | 'ultimos_dois'
@@ -17,15 +18,45 @@ async function querySupabase(table: string, select: string, params: Record<strin
   return resp.json() as Promise<any[]>
 }
 
+// Detecta URL de storage do Supabase (formato público OU privado) e extrai bucket + path.
+// Aceita: ${SUPABASE_URL}/storage/v1/object/{public|sign}/{bucket}/{path}
+function parseStorageUrl(url: string): { bucket: string; path: string } | null {
+  if (!url.startsWith(SUPABASE_URL)) return null
+  const m = url.match(/\/storage\/v1\/object\/(?:public\/|sign\/)?([^/]+)\/(.+?)(?:\?.*)?$/)
+  if (!m) return null
+  return { bucket: m[1], path: m[2] }
+}
+
+async function fetchDocxBuffer(url: string): Promise<Buffer | null> {
+  // URLs do nosso storage: baixa server-side com service_role (funciona para bucket público ou privado)
+  const parsed = parseStorageUrl(url)
+  if (parsed && SERVICE_ROLE_KEY) {
+    const resp = await fetch(
+      `${SUPABASE_URL}/storage/v1/object/${parsed.bucket}/${parsed.path}`,
+      {
+        headers: { apikey: SERVICE_ROLE_KEY, Authorization: `Bearer ${SERVICE_ROLE_KEY}` },
+        signal: AbortSignal.timeout(15000),
+      },
+    )
+    if (!resp.ok) {
+      console.error(`[docx] storage download falhou: ${resp.status} ${parsed.bucket}/${parsed.path}`)
+      return null
+    }
+    return Buffer.from(await resp.arrayBuffer())
+  }
+  // URL externa — fetch normal
+  const resp = await fetch(url, { signal: AbortSignal.timeout(15000) })
+  if (!resp.ok) {
+    console.error(`[docx] fetch falhou: ${resp.status} ${url}`)
+    return null
+  }
+  return Buffer.from(await resp.arrayBuffer())
+}
+
 async function extrairTextoDocx(url: string): Promise<string> {
   try {
-    const resp = await fetch(url, { signal: AbortSignal.timeout(15000) })
-    if (!resp.ok) {
-      console.error(`[docx] fetch falhou: ${resp.status} ${url}`)
-      return ''
-    }
-    const arrayBuffer = await resp.arrayBuffer()
-    const buffer = Buffer.from(arrayBuffer)
+    const buffer = await fetchDocxBuffer(url)
+    if (!buffer) return ''
     const { value, messages } = await mammoth.extractRawText({ buffer })
     if (messages?.length) console.warn(`[docx] mammoth warnings:`, messages)
     console.log(`[docx] extraído ${value.length} chars de ${url}`)
