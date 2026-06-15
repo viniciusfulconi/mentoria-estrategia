@@ -7,6 +7,7 @@ import { dbQuery, dbInsert, dbUpdate } from '@/lib/supabase'
 import type { Desafio, DesafioResposta } from '@/lib/questoes'
 import { difficultyColor, difficultyBg } from '@/lib/questoes'
 import LatexRenderer from '@/components/LatexRenderer'
+import Nav from '@/components/Nav'
 import { Plus, Feather, CheckCircle, Clock, XCircle, ChevronDown, ChevronUp, Send } from 'lucide-react'
 
 type DesafioComResposta = Desafio & { resposta?: DesafioResposta }
@@ -305,6 +306,7 @@ export default function DesafiosPage() {
           )
         })}
       </div>
+      <Nav />
     </div>
   )
 }

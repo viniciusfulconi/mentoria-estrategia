@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { dbQuery, dbUpdate, dbInsert } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { useParams, useRouter } from 'next/navigation'
+import Nav from '@/components/Nav'
 
 const STATUS_OPTS = [
   { value: 'nao_iniciada', label: 'Não iniciada', cor: '#94a3b8' },
@@ -297,6 +298,7 @@ export default function CronogramaAluno() {
           </>
         )}
       </div>
+      <Nav />
     </div>
   )
 }

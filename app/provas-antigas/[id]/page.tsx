@@ -7,6 +7,7 @@ import { dbQuery } from '@/lib/supabase'
 import { ArrowLeft, Trophy, Clock, Users, ArrowUpDown } from 'lucide-react'
 import { BarChart } from '@/components/aluno/AlunoCharts'
 import { corMateria } from '@/lib/cores'
+import Nav from '@/components/Nav'
 
 const TIPO_LABEL: Record<string, string> = { ime: 'IME', ita: 'ITA' }
 
@@ -841,6 +842,7 @@ export default function RankingProvaAntigaPage() {
 
         </div>
       )}
+      <Nav />
     </div>
   )
 }

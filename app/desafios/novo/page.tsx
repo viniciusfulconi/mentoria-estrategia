@@ -7,6 +7,7 @@ import { dbInsert, dbQuery } from '@/lib/supabase'
 import { DIFFICULTIES, SUBJECTS } from '@/lib/questoes'
 import type { Question } from '@/lib/questoes'
 import RichTextArea from '@/components/RichTextArea'
+import Nav from '@/components/Nav'
 import { ArrowLeft } from 'lucide-react'
 
 export default function NovoDesafioPage() {
@@ -182,6 +183,7 @@ export default function NovoDesafioPage() {
           </button>
         </div>
       </form>
+      <Nav />
     </div>
   )
 }

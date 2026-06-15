@@ -8,6 +8,7 @@ import { Plus, Search, BookOpen, CheckCircle, Eye, EyeOff, RotateCcw, ArrowLeft,
 import { DIFFICULTIES, SOURCES, difficultyColor, difficultyBg } from '@/lib/questoes'
 import type { Question, QuestaoProgresso, ProgressStatus, ArvoreMateria, ArvoreTopico, ArvoreSubtopico } from '@/lib/questoes'
 import LatexRenderer from '@/components/LatexRenderer'
+import Nav from '@/components/Nav'
 
 function QuestoesContent() {
   const { perfil, loading } = useAuth()
@@ -467,6 +468,7 @@ function QuestoesContent() {
           </>
         )}
       </div>
+      <Nav />
     </div>
   )
 }

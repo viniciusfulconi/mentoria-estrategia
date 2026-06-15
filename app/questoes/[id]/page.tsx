@@ -7,6 +7,7 @@ import { dbQuery, dbDelete } from '@/lib/supabase'
 import { difficultyColor, difficultyBg } from '@/lib/questoes'
 import type { Question } from '@/lib/questoes'
 import LatexRenderer from '@/components/LatexRenderer'
+import Nav from '@/components/Nav'
 import { ArrowLeft, Pencil, Trash2 } from 'lucide-react'
 
 export default function QuestaoDetalhePage() {
@@ -190,6 +191,7 @@ export default function QuestaoDetalhePage() {
           </div>
         )}
       </div>
+      <Nav />
     </div>
   )
 }
