@@ -5,6 +5,8 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useRouter, useParams } from 'next/navigation'
 import Nav from '@/components/Nav'
 
+const EXATAS = ['Matemática', 'Física', 'Química']
+
 const OPCOES_FASE1 = [
   { value: 'acertou',   label: 'Acertei',                  cor: '#16A34A', bg: '#DCFCE7' },
   { value: 'chute',     label: 'Acertei no chute',          cor: '#D97706', bg: '#FEF3C7' },
@@ -79,13 +81,16 @@ export default function MinhaProva() {
     setRankingLoaded(true)
   }
 
-  function calcularPontuacao(corr: any, modelo: string): number {
+  function calcularPontosExatas(corr: any, modelo: string): number {
+    const exatasNums = new Set(questoes.filter(q => EXATAS.includes(q.materia)).map(q => q.numero))
     if (modelo === 'multipla_escolha') {
-      const resps = corr.respostas || {}
-      return Object.values(resps).filter((v: any) => v === 'acertou').length
+      const resps: Record<string, string> = corr.respostas || {}
+      return Object.entries(resps).filter(([num, v]) => exatasNums.has(parseInt(num)) && v === 'acertou').length
     } else {
-      const notas = corr.notas || {}
-      return Object.values(notas).reduce((acc: number, v: any) => acc + Number(v || 0), 0)
+      const notas: Record<string, number> = corr.notas || {}
+      return Object.entries(notas)
+        .filter(([num]) => exatasNums.has(parseInt(num)))
+        .reduce((acc, [, v]) => acc + Number(v || 0), 0)
     }
   }
 
@@ -93,7 +98,7 @@ export default function MinhaProva() {
     if (!ranking.length || !prova) return null
     const pontuacoes = ranking.map(c => ({
       aluno_id: c.aluno_id,
-      pts: calcularPontuacao(c, prova.modelo),
+      pts: calcularPontosExatas(c, prova.modelo),
     })).sort((a, b) => b.pts - a.pts)
     const pos = pontuacoes.findIndex(p => p.aluno_id === targetId) + 1
     return { pos, total: pontuacoes.length }
