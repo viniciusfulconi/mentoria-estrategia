@@ -17,10 +17,10 @@ export default function NovoSimulado() {
   const [erro, setErro] = useState('')
 
   useEffect(() => {
-    Promise.all([dbQuery('turmas', { tipo: `eq.${vertical}` }), dbQuery('topicos', { vertical: `eq.${vertical}` }, 'materia')])
+    Promise.all([dbQuery('turmas', { tipo: `eq.${vertical}` }), dbQuery('arvore_materias', { vertical: `eq.${vertical}`, order: 'ordem.asc' }, 'nome')])
       .then(([{ data: t }, { data: m }]) => {
         setTurmas(t || [])
-        setMaterias([...new Set((m || []).map((x: any) => x.materia))].sort() as string[])
+        setMaterias([...new Set((m || []).map((x: any) => x.nome))].sort() as string[])
       })
   }, [vertical])
 

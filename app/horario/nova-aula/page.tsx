@@ -24,10 +24,10 @@ export default function NovaAula() {
   useEffect(() => {
     Promise.all([
       dbQuery('turmas', { tipo: `eq.${vertical}` }),
-      dbQuery('topicos', { vertical: `eq.${vertical}` }, 'materia'),
+      dbQuery('arvore_materias', { vertical: `eq.${vertical}`, order: 'ordem.asc' }, 'nome'),
     ]).then(([{ data: t }, { data: m }]) => {
       setTurmas(t || [])
-      const ms = [...new Set((m || []).map((x: any) => x.materia))].sort() as string[]
+      const ms = [...new Set((m || []).map((x: any) => x.nome))].sort() as string[]
       setMaterias(ms)
     })
   }, [vertical])

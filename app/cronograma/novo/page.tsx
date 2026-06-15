@@ -147,33 +147,13 @@ export default function NovoCronograma() {
           </div>
         </div>
 
-        {/* Upload planilha */}
-        <div className="card">
-          <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 6 }}>Planilha de tópicos</div>
-          <div style={{ fontSize: 12, color: '#999', marginBottom: 14, lineHeight: 1.6 }}>
-            Coluna A: Matéria · Coluna B: Tópico · Coluna C: Incidência (0 a 1)
+        {/* Info sobre a árvore */}
+        <div className="card" style={{ background: '#f0fdf4', border: '0.5px solid #86efac' }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: '#15803d', marginBottom: 4 }}>✅ Árvore de conteúdo carregada</div>
+          <div style={{ fontSize: 12, color: '#166534', lineHeight: 1.6 }}>
+            Os tópicos e subtópicos do edital já estão na plataforma (Física, Matemática, Química, Português e Literatura).
+            Não é necessário importar planilha.
           </div>
-          <input type="file" accept=".xlsx,.xls" onChange={handlePlanilha}
-            style={{ padding: '8px', borderRadius: 10, border: '0.5px solid rgba(0,0,0,0.12)', background: '#F7F6F3', fontSize: 13, width: '100%' }} />
-
-          {topicosPreview.length > 0 && (
-            <div style={{ marginTop: 14 }}>
-              <div style={{ fontSize: 12, color: '#16A34A', marginBottom: 8 }}>✅ {topicosPreview.length} tópicos · {materias.length} matérias detectadas</div>
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                {materias.map(m => (
-                  <span key={m} style={{ fontSize: 10, padding: '3px 8px', borderRadius: 10, background: '#fff7ed', color: '#1E40AF' }}>{m}</span>
-                ))}
-              </div>
-              <div style={{ marginTop: 10, maxHeight: 200, overflowY: 'auto', fontSize: 11, color: '#666' }}>
-                {topicosPreview.slice(0, 5).map((t, i) => (
-                  <div key={i} style={{ padding: '3px 0', borderBottom: '0.5px solid rgba(0,0,0,0.06)' }}>
-                    <span style={{ color: '#f97316', fontWeight: 500 }}>{t.materia}</span> · {t.topico} · <span style={{ color: '#D97706' }}>{(t.incidencia * 100).toFixed(0)}%</span>
-                  </div>
-                ))}
-                {topicosPreview.length > 5 && <div style={{ color: '#999', marginTop: 4 }}>... e mais {topicosPreview.length - 5} tópicos</div>}
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Log */}

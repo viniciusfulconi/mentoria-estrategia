@@ -8,7 +8,7 @@ import { dbQuery, dbUpdate } from '@/lib/supabase'
 import {
   LayoutDashboard, Users, Handshake, Calendar,
   GraduationCap, Star, ClipboardList, FileText, KeyRound,
-  PlayCircle, LogOut, MoreHorizontal, Menu, X, Bell, UserCircle, Bot, Trophy, BookOpen, NotebookPen,
+  PlayCircle, LogOut, MoreHorizontal, Menu, X, Bell, UserCircle, Bot, Trophy, BookOpen, NotebookPen, Feather, Swords,
 } from 'lucide-react'
 
 type LucideIcon = React.ComponentType<{ size?: number; strokeWidth?: number; color?: string }>
@@ -25,6 +25,8 @@ const tabsCoordenadorSecundarioITA = [
   { href: '/cronograma',     label: 'Cronograma', icon: ClipboardList },
   { href: '/provas-antigas', label: 'Provas',     icon: FileText },
   { href: '/aulas',          label: 'Aulas',      icon: PlayCircle },
+  { href: '/questoes',       label: 'Questões',   icon: BookOpen },
+  { href: '/desafios',       label: 'Desafios',   icon: Swords },
   { href: '/aprovados-ita',  label: 'ITA',        icon: Trophy },
   { href: '/aprovados-ime',  label: 'IME',        icon: Trophy },
   { href: '/admin',          label: 'Acessos',    icon: KeyRound },
@@ -35,6 +37,8 @@ const tabsCoordenadorSecundarioMed = [
   { href: '/turmas',        label: 'Turmas',    icon: GraduationCap },
   { href: '/mentores',      label: 'Mentores',  icon: Users },
   { href: '/cronograma',    label: 'Cronograma', icon: ClipboardList },
+  { href: '/questoes',      label: 'Questões',  icon: BookOpen },
+  { href: '/desafios',      label: 'Desafios',  icon: Swords },
   { href: '/csat',          label: 'CSAT',      icon: Star },
   { href: '/admin',         label: 'Acessos',   icon: KeyRound },
   { href: '/coruja',        label: 'Coruja',    icon: Bot },
@@ -50,8 +54,8 @@ const tabsAluno = [
   { href: '/meu-perfil',     label: 'Início',     icon: LayoutDashboard },
   { href: '/cronograma/meu', label: 'Cronograma', icon: ClipboardList },
   { href: '/horario',        label: 'Horário',    icon: Calendar },
-  { href: '/aulas',          label: 'Aulas',      icon: PlayCircle },
-  { href: '/quadro',         label: 'Quadro',     icon: NotebookPen },
+  { href: '/questoes',       label: 'Questões',   icon: BookOpen },
+  { href: '/desafios',       label: 'Desafios',   icon: Feather },
 ]
 const tabsProfessor = [
   { href: '/simulados', label: 'Alunos',  icon: Users },
@@ -98,8 +102,17 @@ export default function Nav() {
   const [navVisible, setNavVisible] = useState(true)
   const [notificacoes, setNotificacoes] = useState<any[]>([])
   const [naoLidas, setNaoLidas] = useState(0)
+  const [saldoPenas, setSaldoPenas] = useState<number | null>(null)
   const lastScrollY = useRef(0)
   const ticking = useRef(false)
+
+  useEffect(() => {
+    if (perfil?.papel === 'aluno' && perfil.id) {
+      dbQuery('moedas_saldo', { aluno_id: `eq.${perfil.id}` }, 'saldo')
+        .then(({ data }) => setSaldoPenas(data?.[0]?.saldo ?? 0))
+        .catch(() => {})
+    }
+  }, [perfil])
 
   useEffect(() => {
     if (!perfil?.aluno_id) return
@@ -285,6 +298,12 @@ export default function Nav() {
               <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>
                 {PAPEL_LABEL[papel || ''] || ''}
               </div>
+              {papel === 'aluno' && saldoPenas !== null && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 3 }}>
+                  <Feather size={11} color="#fb923c" strokeWidth={2.5} />
+                  <span style={{ fontSize: 11, fontWeight: 700, color: '#fb923c' }}>{saldoPenas} penas</span>
+                </div>
+              )}
             </div>
             {papel === 'aluno' && (
               <button onClick={() => { setNotifAberto(v => !v); if (naoLidas > 0) marcarTodasLidas() }} style={{
@@ -438,7 +457,15 @@ export default function Nav() {
           boxShadow: '0 -4px 24px rgba(9,30,66,0.12)',
         }}>
           <div style={{ width: 36, height: 4, borderRadius: 2, background: '#e2e8f0', margin: '0 auto 16px' }} />
-          <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 12 }}>Avisos</div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <div style={{ fontSize: 15, fontWeight: 700 }}>Avisos</div>
+            {saldoPenas !== null && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5, background: '#fff7ed', borderRadius: 20, padding: '4px 12px' }}>
+                <Feather size={13} color="#f97316" strokeWidth={2.5} />
+                <span style={{ fontSize: 13, fontWeight: 700, color: '#f97316' }}>{saldoPenas} penas</span>
+              </div>
+            )}
+          </div>
           <div style={{ flex: 1, overflowY: 'auto', marginBottom: 10 }}>
             {notificacoes.length === 0 ? (
               <div style={{ textAlign: 'center', color: 'var(--text-hint)', padding: 32, fontSize: 13 }}>Nenhum aviso ainda.</div>

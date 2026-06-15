@@ -4,7 +4,7 @@ import { dbQuery } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import Nav from '@/components/Nav'
 import Link from 'next/link'
-import { FileText } from 'lucide-react'
+import { FileText, BarChart2 } from 'lucide-react'
 
 const TIPO_LABEL: Record<string, string> = { ime: 'IME', ita: 'ITA' }
 const FASE_LABEL: Record<number, string> = { 1: '1ª Fase', 2: '2ª Fase' }
@@ -26,7 +26,7 @@ export default function ProvasAntigas() {
     setLoading(false)
   }
 
-  const isCoordenador = perfil?.papel === 'coordenador'
+  const isCoordenador = perfil?.papel === 'coordenador' || perfil?.papel === 'direcao'
 
   return (
     <div style={{ paddingBottom: 80 }}>
@@ -80,11 +80,18 @@ export default function ProvasAntigas() {
                   </span>
                 </div>
               </div>
-              {p.pdf_url && (
-                <a href={p.pdf_url} target="_blank" rel="noreferrer" style={{ flexShrink: 0, fontSize: 11, color: '#f97316', textDecoration: 'none', padding: '4px 8px', border: '0.5px solid #f97316', borderRadius: 8 }}>
-                  PDF
-                </a>
-              )}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flexShrink: 0, alignItems: 'flex-end' }}>
+                {isCoordenador && (
+                  <Link href={`/provas-antigas/${p.id}`} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#0f2554', textDecoration: 'none', padding: '4px 9px', border: '0.5px solid #0f2554', borderRadius: 8, fontWeight: 600 }}>
+                    <BarChart2 size={12} strokeWidth={2} /> Ranking
+                  </Link>
+                )}
+                {p.pdf_url && (
+                  <a href={p.pdf_url} target="_blank" rel="noreferrer" style={{ flexShrink: 0, fontSize: 11, color: '#f97316', textDecoration: 'none', padding: '4px 8px', border: '0.5px solid #f97316', borderRadius: 8 }}>
+                    PDF
+                  </a>
+                )}
+              </div>
             </div>
             <div style={{ marginTop: 8, fontSize: 11, color: '#999' }}>
               Cadastrada em {new Date(p.created_at).toLocaleDateString('pt-BR')}

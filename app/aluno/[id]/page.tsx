@@ -11,12 +11,15 @@ import { BarChart, GraficoQuestoes, RadarQuestoesChart, GraficoEvolucaoLinhas, R
 import { FileDown, Video } from 'lucide-react'
 import { BannerRisco, DiagnosticoCorte } from '@/components/aluno/AlunoRisco'
 import Termometro from './Termometro'
+import PenasConquistas from '@/components/aluno/PenasConquistas'
 
 type AlunoCache = {
   dados: any[]; perfil: any; alunoInfo: any
   topicos: any[]; progressos: any[]; todos: any[]; ciclosDoAluno: string[]
   cicloAtivo: string | null
+  cachedAt: number
 }
+const CACHE_TTL_MS = 3 * 60 * 1000 // 3 minutos
 const alunoCache = new Map<string, AlunoCache>()
 const CORES_MAT: Record<string, string> = {
   ...CORES_MAT_IMPORT,
@@ -39,7 +42,7 @@ export default function AlunoPage() {
   const [ciclosDoAluno, setCiclosDoAluno] = useState<string[]>([])
   const [turmaQuestoesLoaded, setTurmaQuestoesLoaded] = useState(false)
   const [cicloAtivo, setCicloAtivo] = useState<string | null>(null)
-  const [aba, setAba] = useState<'geral' | 'simulados' | 'listas' | 'provas' | 'termometro'>('geral')
+  const [aba, setAba] = useState<'geral' | 'simulados' | 'listas' | 'provas' | 'termometro' | 'penas'>('geral')
   const [loading, setLoading] = useState(true)
   const [provasAluno, setProvasAluno] = useState<any[]>([])
   const [correcoesProva, setCorrecoesProva] = useState<any[]>([])
@@ -75,7 +78,7 @@ export default function AlunoPage() {
 
   async function load() {
     const cached = alunoCache.get(targetId)
-    if (cached) {
+    if (cached && (Date.now() - cached.cachedAt) < CACHE_TTL_MS) {
       setDados(cached.dados)
       setPerfil(cached.perfil)
       setAlunoInfo(cached.alunoInfo)
@@ -96,11 +99,11 @@ export default function AlunoPage() {
       { data: ts },
       { data: ps },
     ] = await Promise.all([
-      dbQuery('resultados', { id_aluno: `eq.${targetId}`, order: 'ciclo_nome' }),
+      dbQuery('resultados', { id_aluno: `eq.${targetId}`, order: 'ciclo_nome', limit: '500' }),
       dbQuery('perfis', { aluno_id: `eq.${targetId}` }),
       dbQuery('alunos_dados', { id_aluno: `eq.${targetId}` }),
-      dbQuery('topicos', {}, 'id,materia,topico'),
-      dbQuery('progresso_topicos', { aluno_id: `eq.${targetId}` }, 'topico_id,status'),
+      dbQuery('arvore_subtopicos', {}, 'id,nome,topico_id'),
+      dbQuery('progresso_subtopicos', { aluno_id: `eq.${targetId}` }, 'subtopico_id,status'),
     ])
     const perfilData = perfilArr?.[0] ?? null
     const alunoData = alunoArr?.[0] ?? null
@@ -113,7 +116,7 @@ export default function AlunoPage() {
     // Rodada 2: todos os rankings de todos os alunos (sem filtrar por ciclo) para que
     // a posição geral e o ranking por matéria sejam calculados igual à página de turma
     const [{ data: todosRanking }] = await Promise.all([
-      dbQuery('resultados', { fase: 'eq.ranking' },
+      dbQuery('resultados', { fase: 'eq.ranking', limit: '5000' },
         'id_aluno,nome_aluno,ciclo_nome,nota_matematica,nota_fisica,nota_quimica,nota_portugues,nota_redacao,media_linguagens,media_1fase,media_2fase'),
     ])
 
@@ -140,6 +143,7 @@ export default function AlunoPage() {
       todos: todosRanking || [],
       ciclosDoAluno: ciclos,
       cicloAtivo: ultimoCiclo,
+      cachedAt: Date.now(),
     })
   }
 
@@ -264,13 +268,13 @@ export default function AlunoPage() {
       .findIndex(r => r.id_aluno === targetId) + 1
   }
 
-  // Cronograma por matéria
-  const materiasTopicos = [...new Set(topicos.map(t => t.materia))].sort()
-  const cronogramaBarras = materiasTopicos.map(mat => {
-    const ts = topicos.filter(t => t.materia === mat)
-    const fin = progressos.filter(p => p.status === 'finalizada' && ts.some(t => t.id === p.topico_id)).length
-    return { materia: mat, pct: ts.length ? Math.round((fin / ts.length) * 100) : 0 }
-  })
+  // Cronograma por matéria — usando arvore_subtopicos + progresso_subtopicos
+  const progressoMap = new Map((progressos as any[]).map((p: any) => [p.subtopico_id, p.status]))
+  const cronogramaBarras: { materia: string; pct: number }[] = []
+  // topicos aqui são arvore_subtopicos — sem materia direta, simplificamos como % geral
+  const totalSubs  = topicos.length
+  const finGeral   = (topicos as any[]).filter(s => progressoMap.get(s.id) === 'finalizada').length
+  const pctCrono   = totalSubs ? Math.round(finGeral / totalSubs * 100) : 0
 
   // Média geral do aluno — calculada direto de rankings (mesma deduplicação que as abas mostram)
   const mediaGeralAluno = (() => {
@@ -512,6 +516,7 @@ export default function AlunoPage() {
           { id: 'geral', label: 'Visão geral' },
           { id: 'simulados', label: 'Simulados' },
           { id: 'termometro', label: '🌡 Termômetro' },
+          { id: 'penas', label: '🪶 Penas' },
           { id: 'listas', label: 'Listas' },
           { id: 'provas', label: '📄 Provas' },
         ].map(a => (
@@ -593,10 +598,16 @@ export default function AlunoPage() {
             )}
 
             {/* Cronograma */}
-            {cronogramaBarras.length > 0 && (
+            {totalSubs > 0 && (
               <div className="card" style={{ marginBottom: 14 }}>
-                <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 14 }}>Cronograma por matéria</div>
-                <BarChart dados={cronogramaBarras} />
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600 }}>Cronograma</div>
+                  <div style={{ fontSize: 18, fontWeight: 700, color: pctCrono >= 70 ? '#16A34A' : pctCrono >= 40 ? '#D97706' : '#DC2626' }}>{pctCrono}%</div>
+                </div>
+                <div style={{ height: 6, background: '#f1f5f9', borderRadius: 4 }}>
+                  <div style={{ height: '100%', width: `${pctCrono}%`, borderRadius: 4, background: pctCrono >= 70 ? '#16A34A' : pctCrono >= 40 ? '#D97706' : '#DC2626', transition: 'width 0.4s' }} />
+                </div>
+                <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 6 }}>{finGeral}/{totalSubs} subtópicos finalizados</div>
               </div>
             )}
           </>
@@ -731,6 +742,15 @@ export default function AlunoPage() {
         {/* === ABA TERMÔMETRO === */}
         {aba === 'termometro' && (
           <Termometro rankings={rankings} />
+        )}
+
+        {/* === ABA PENAS === */}
+        {aba === 'penas' && (
+          <PenasConquistas
+            authUserId={perfil?.id || ''}
+            todos={todos}
+            targetId={targetId}
+          />
         )}
 
         {/* === ABA LISTAS === */}

@@ -23,9 +23,9 @@ export default function Cronograma() {
     const vertical = verticalAtiva || 'ITA'
 
     const [{ data: cs }, { data: ts }, { data: ps }] = await Promise.all([
-      dbQuery('concursos', { vertical: `eq.${vertical}`, order: 'created_at.desc' }),
-      dbQuery('topicos', { vertical: `eq.${vertical}` }),
-      dbQuery('progresso_topicos'),
+      dbQuery('concursos',            { vertical: `eq.${vertical}`, order: 'created_at.desc' }),
+      dbQuery('arvore_subtopicos',    {}, 'id'),
+      dbQuery('progresso_subtopicos', {}, 'aluno_id,subtopico_id,status'),
     ])
     setConcursos(cs || [])
     setTopicos(ts || [])
@@ -61,14 +61,11 @@ export default function Cronograma() {
   function pctAluno(alunoId: string) {
     const total = topicos.length
     if (!total) return 0
-    const topicoIds = new Set(topicos.map((t: any) => t.id))
-    const finalizados = progressos.filter(p =>
-      p.aluno_id === alunoId && p.status === 'finalizada' && topicoIds.has(p.topico_id)
+    const finalizados = progressos.filter((p: any) =>
+      p.aluno_id === alunoId && p.status === 'finalizada'
     ).length
     return Math.round((finalizados / total) * 100)
   }
-
-  const materias = [...new Set(topicos.map((t: any) => t.materia))].sort()
 
   const alunosComPct = alunos.map(a => ({ ...a, pct: pctAluno(a.id_aluno) }))
   const criticos = [...alunosComPct].sort((a, b) => a.pct - b.pct).slice(0, 10)
@@ -117,7 +114,7 @@ export default function Cronograma() {
               )}
               <div>
                 <div style={{ fontWeight: 600, fontSize: 15 }}>{concurso.nome}</div>
-                <div style={{ fontSize: 12, color: '#999', marginTop: 2 }}>{topicos.length} tópicos · {materias.length} matérias</div>
+                <div style={{ fontSize: 12, color: '#999', marginTop: 2 }}>{topicos.length} subtópicos no edital</div>
               </div>
             </div>
 
