@@ -4,7 +4,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import dynamic from 'next/dynamic'
 import { ArrowLeft, Video, Loader2 } from 'lucide-react'
-import { dbQuery } from '@/lib/supabase'
+import { dbQuery, getToken } from '@/lib/supabase'
 
 const DailyCall = dynamic(() => import('@/components/DailyCall'), { ssr: false })
 
@@ -42,11 +42,12 @@ export default function VideoChamadaPage() {
     try {
       const resp = await fetch('/api/videochamada', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${getToken()}`,
+        },
         body: JSON.stringify({
           aluno_id: alunoId,
-          user_name: perfil.nome,
-          papel: perfil.papel,
           notificar: true,
         }),
       })

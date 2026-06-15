@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import mammoth from 'mammoth'
+import { verifyAuth, requirePapel } from '@/lib/auth-server'
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -113,9 +114,18 @@ ${contexto}`
 }
 
 export async function POST(req: NextRequest) {
-  const { alunoId, alunoNome, token, tipo = 'geral' } = await req.json() as { alunoId: string; alunoNome: string; token: string; tipo: Tipo }
+  const body = await req.json() as { alunoId: string; alunoNome: string; token?: string; tipo?: Tipo }
+  const auth = await verifyAuth(req, body)
+  if ('error' in auth) return auth.error
+  const { user } = auth
 
-  if (!token) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  // Só staff acessa resumos de outros alunos
+  const perm = requirePapel(user, ['mentor', 'coordenador', 'direcao'])
+  if (perm) return perm
+
+  const { alunoId, alunoNome, tipo = 'geral' } = body
+  const token = user.token
+
   if (!alunoId || !alunoNome) return NextResponse.json({ error: 'Aluno não informado.' }, { status: 400 })
   if (!ANTHROPIC_API_KEY) return NextResponse.json({ error: 'ANTHROPIC_API_KEY não configurada no servidor.' }, { status: 500 })
 

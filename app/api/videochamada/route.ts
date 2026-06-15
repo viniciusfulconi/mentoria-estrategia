@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { verifyAuth } from '@/lib/auth-server'
 
 const DAILY_KEY = process.env.DAILY_API_KEY!
 const DAILY_DOMAIN = process.env.DAILY_DOMAIN!
@@ -85,25 +86,41 @@ async function notificarAluno(alunoId: string, nomeIniciador: string, roomName: 
 }
 
 // POST /api/videochamada
-// Body: { aluno_id, user_name, papel, notificar? }
+// Body: { aluno_id, notificar? }
+// Header: Authorization: Bearer <jwt>
+// Papel e nome vêm do perfil autenticado — nunca do body
 // Retorna: { room_url, token }
 export async function POST(req: NextRequest) {
   try {
-    const { aluno_id, user_name, papel, notificar } = await req.json()
-    if (!aluno_id || !user_name) {
-      return NextResponse.json({ error: 'aluno_id e user_name são obrigatórios' }, { status: 400 })
+    const body = await req.json()
+    const auth = await verifyAuth(req, body)
+    if ('error' in auth) return auth.error
+    const { user } = auth
+
+    const { aluno_id, notificar } = body
+    if (!aluno_id) {
+      return NextResponse.json({ error: 'aluno_id obrigatório' }, { status: 400 })
+    }
+
+    const isStaff = user.papel === 'mentor' || user.papel === 'coordenador' || user.papel === 'direcao'
+    const isOwnRoom = user.papel === 'aluno' && user.aluno_id === aluno_id
+    if (!isStaff && !isOwnRoom) {
+      return NextResponse.json({ error: 'Sem permissão para esta sala' }, { status: 403 })
     }
 
     const roomName = `mentoria-${aluno_id}`
-    const isOwner = papel === 'mentor' || papel === 'coordenador' || papel === 'direcao'
+    const isOwner = isStaff
+
+    // Nome do usuário vem do perfil
+    const userName = user.nome || user.email?.split('@')[0] || 'Convidado'
 
     // Sala deve existir antes de criar o token (exigência do Daily.co para salas privadas)
     const roomUrl = await getOrCreateRoom(roomName)
-    const token = await createToken(roomName, user_name, isOwner)
+    const token = await createToken(roomName, userName, isOwner)
 
     // Notifica o aluno quando mentor/coord inicia
     if (notificar && isOwner) {
-      await notificarAluno(aluno_id, user_name, roomName)
+      await notificarAluno(aluno_id, userName, roomName)
     }
 
     return NextResponse.json({ room_url: roomUrl, token, room_name: roomName })

@@ -1,42 +1,44 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { verifyAuth, requirePapel } from '@/lib/auth-server'
 
-const SUPA_URL  = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const SUPA_KEY  = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const SUPA_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
-async function restFetch(path: string, method: string, body?: object, token?: string) {
-  const res = await fetch(`${SUPA_URL}/rest/v1/${path}`, {
+async function restFetch(path: string, method: string, body: object | undefined, token: string) {
+  return fetch(`${SUPA_URL}/rest/v1/${path}`, {
     method,
     headers: {
       apikey: SUPA_KEY,
       'Content-Type': 'application/json',
       Prefer: 'return=minimal',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      Authorization: `Bearer ${token}`,
     },
     ...(body ? { body: JSON.stringify(body) } : {}),
   })
-  return res
 }
 
 export async function POST(req: NextRequest) {
-  const { aluno_id, valor, tipo, descricao } = await req.json()
+  const body = await req.json()
+  const auth = await verifyAuth(req, body)
+  if ('error' in auth) return auth.error
+  const { user } = auth
 
+  // Só coordenador/direção credita penas — credito vem de validação de desafio
+  const perm = requirePapel(user, ['coordenador', 'direcao'])
+  if (perm) return perm
+
+  const { aluno_id, valor, tipo, descricao } = body
   if (!aluno_id || !valor || valor <= 0 || !tipo) {
     return NextResponse.json({ error: 'Parâmetros inválidos' }, { status: 400 })
   }
 
-  const token = req.headers.get('authorization')?.replace('Bearer ', '')
-
   // Upsert no saldo (cria linha ou incrementa)
-  const saldoRes = await fetch(`${SUPA_URL}/rest/v1/moedas_saldo?aluno_id=eq.${aluno_id}`, {
-    method: 'POST',
-    headers: {
-      apikey: SUPA_KEY,
-      'Content-Type': 'application/json',
-      Prefer: 'return=minimal,resolution=merge-duplicates',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    body: JSON.stringify({ aluno_id, saldo: valor, updated_at: new Date().toISOString() }),
-  })
+  const saldoRes = await restFetch(
+    `moedas_saldo?aluno_id=eq.${aluno_id}`,
+    'POST',
+    { aluno_id, saldo: valor, updated_at: new Date().toISOString() },
+    user.token,
+  )
 
   // Se já existe, faz PATCH para incrementar
   if (!saldoRes.ok) {
@@ -44,17 +46,16 @@ export async function POST(req: NextRequest) {
       `moedas_saldo?aluno_id=eq.${aluno_id}`,
       'PATCH',
       { saldo: valor, updated_at: new Date().toISOString() },
-      token ?? undefined
+      user.token,
     )
   }
 
-  // Registra transação
   await restFetch('moedas_transacoes', 'POST', {
     aluno_id,
     tipo,
     valor,
     descricao: descricao || `+${valor} penas`,
-  }, token ?? undefined)
+  }, user.token)
 
   return NextResponse.json({ ok: true })
 }

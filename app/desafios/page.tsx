@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
-import { dbQuery, dbInsert, dbUpdate } from '@/lib/supabase'
+import { dbQuery, dbInsert, dbUpdate, getToken } from '@/lib/supabase'
 import type { Desafio, DesafioResposta } from '@/lib/questoes'
 import { difficultyColor, difficultyBg } from '@/lib/questoes'
 import LatexRenderer from '@/components/LatexRenderer'
@@ -115,7 +115,10 @@ export default function DesafiosPage() {
       // Credita penas ao aluno
       await fetch('/api/penas/creditar', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${getToken()}`,
+        },
         body: JSON.stringify({ aluno_id: alunoId, valor: penas, tipo: 'desafio', descricao: `Desafio concluído — ${penas} penas` }),
       }).catch(() => {})
     }

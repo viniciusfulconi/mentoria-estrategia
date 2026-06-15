@@ -1,8 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { verifyAuth, requirePapel } from '@/lib/auth-server'
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY!
+
+// Defesa em profundidade: o system prompt pede SELECT, mas prompt-injection pode burlar.
+// Como rodamos com SERVICE_ROLE_KEY (bypass de RLS), validamos o SQL antes de executar.
+const SQL_FORBIDDEN = /\b(insert|update|delete|drop|truncate|alter|create|grant|revoke|comment|copy|vacuum|reindex|cluster|do\b|call\b|merge\b|listen|notify|set\s)\b/i
+function sqlIsSafeSelect(sql: string): boolean {
+  const trimmed = sql.trim().replace(/;+\s*$/, '')
+  if (!trimmed) return false
+  // Sem múltiplos statements
+  if (trimmed.includes(';')) return false
+  // Tem que começar com SELECT (ou WITH … SELECT)
+  if (!/^(select|with)\b/i.test(trimmed)) return false
+  // Nada de palavras-chave de mutação
+  if (SQL_FORBIDDEN.test(trimmed)) return false
+  return true
+}
 
 const SCHEMA = `
 Tabelas disponíveis no banco de dados (PostgreSQL):
@@ -110,9 +126,17 @@ function truncarHistorico(historico: any[], maxMensagens = 6) {
 
 export async function POST(req: NextRequest) {
   try {
-    const { pergunta, historico = [], token } = await req.json()
+    const body = await req.json()
+    const auth = await verifyAuth(req, body)
+    if ('error' in auth) return auth.error
+    const { user } = auth
 
-    if (!token) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+    // Coruja roda com service_role (bypass de RLS) — só staff de gestão acessa
+    const perm = requirePapel(user, ['coordenador', 'direcao'])
+    if (perm) return perm
+
+    const { pergunta, historico = [] } = body
+
     if (!SERVICE_ROLE_KEY) return NextResponse.json({ error: 'SUPABASE_SERVICE_ROLE_KEY não configurada.' }, { status: 500 })
     if (!ANTHROPIC_API_KEY) return NextResponse.json({ error: 'ANTHROPIC_API_KEY não configurada.' }, { status: 500 })
 
@@ -166,11 +190,16 @@ Regras:
     let fallbackUsado = false
 
     if (sql && sql !== 'NAO_SQL') {
-      try {
-        dados = await executarQuery(sql)
-      } catch (e: any) {
-        erroQuery = e.message
-        console.error('[coruja] erro na query:', erroQuery)
+      if (!sqlIsSafeSelect(sql)) {
+        console.error('[coruja] SQL recusada (não é SELECT seguro):', sql)
+        erroQuery = 'Query rejeitada por segurança (apenas SELECT é permitido).'
+      } else {
+        try {
+          dados = await executarQuery(sql)
+        } catch (e: any) {
+          erroQuery = e.message
+          console.error('[coruja] erro na query:', erroQuery)
+        }
       }
 
       // ── Fallback: se 0 resultados e havia ILIKE, tenta com o primeiro nome apenas ──
@@ -186,10 +215,12 @@ Regras:
               new RegExp(`ilike\\s+'%${nomeOriginal.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}%'`, 'i'),
               `ILIKE '%${primeiroNomeSeguro}%'`
             )
-            try {
-              dados = await executarQuery(sqlFallback)
-              if (dados.length > 0) fallbackUsado = true
-            } catch { /* mantém dados vazio */ }
+            if (sqlIsSafeSelect(sqlFallback)) {
+              try {
+                dados = await executarQuery(sqlFallback)
+                if (dados.length > 0) fallbackUsado = true
+              } catch { /* mantém dados vazio */ }
+            }
           }
         }
       }
