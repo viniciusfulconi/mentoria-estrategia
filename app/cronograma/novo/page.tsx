@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { supabase, dbQuery, dbInsert, dbUpdate, dbDelete } from '@/lib/supabase'
+import { supabase, dbQuery, dbInsert, dbUpdate } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import Nav from '@/components/Nav'
@@ -13,8 +13,6 @@ export default function NovoCronograma() {
   const [nome, setNome] = useState('')
   const [logo, setLogo] = useState<File | null>(null)
   const [logoPreview, setLogoPreview] = useState('')
-  const [planilha, setPlanilha] = useState<File | null>(null)
-  const [topicosPreview, setTopicosPreview] = useState<any[]>([])
   const [saving, setSaving] = useState(false)
   const [log, setLog] = useState<string[]>([])
   const [modo, setModo] = useState<'novo' | 'editar'>('novo')
@@ -37,26 +35,6 @@ export default function NovoCronograma() {
     if (!f) return
     setLogo(f)
     setLogoPreview(URL.createObjectURL(f))
-  }
-
-  async function handlePlanilha(e: React.ChangeEvent<HTMLInputElement>) {
-    const f = e.target.files?.[0]
-    if (!f) return
-    setPlanilha(f)
-    const XLSX = await import('xlsx')
-    const reader = new FileReader()
-    reader.onload = (ev) => {
-      const wb = XLSX.read(ev.target?.result, { type: 'array' })
-      const ws = wb.Sheets[wb.SheetNames[0]]
-      const rows = XLSX.utils.sheet_to_json(ws, { header: 1 }) as any[][]
-      const parsed = rows.filter(r => r[0] && r[1]).map(r => ({
-        materia: String(r[0]).trim(),
-        topico: String(r[1]).trim(),
-        incidencia: Number(r[2]) || 0,
-      }))
-      setTopicosPreview(parsed)
-    }
-    reader.readAsArrayBuffer(f)
   }
 
   function addLog(msg: string) { setLog(prev => [...prev, msg]) }
@@ -96,32 +74,10 @@ export default function NovoCronograma() {
       addLog('✅ Concurso atualizado!')
     }
 
-    // Importar tópicos se tiver planilha
-    if (topicosPreview.length > 0) {
-      addLog(`📊 Importando ${topicosPreview.length} tópicos...`)
-
-      // Remove tópicos antigos
-      await dbDelete('topicos', { concurso_id: `eq.${concursoId}` })
-
-      const records = topicosPreview.map(t => ({
-        concurso_id: concursoId,
-        materia: t.materia,
-        topico: t.topico,
-        incidencia: t.incidencia,
-        vertical,
-      }))
-
-      const { error: topErr } = await dbInsert('topicos', records)
-      if (topErr) { addLog(`❌ Erro tópicos: ${topErr}`) }
-      else addLog(`✅ ${records.length} tópicos importados!`)
-    }
-
     addLog('🎉 Cronograma salvo com sucesso!')
     setTimeout(() => router.push('/cronograma'), 1500)
     setSaving(false)
   }
-
-  const materias = [...new Set(topicosPreview.map(t => t.materia))]
 
   return (
     <div style={{ paddingBottom: 80 }}>

@@ -24,7 +24,7 @@ export default function Cronograma() {
 
     const [{ data: cs }, { data: ts }, { data: ps }] = await Promise.all([
       dbQuery('concursos',            { vertical: `eq.${vertical}`, order: 'created_at.desc' }),
-      dbQuery('arvore_subtopicos',    {}, 'id'),
+      dbQuery('arvore_subtopicos',    { vertical: `eq.${vertical}` }, 'id'),
       dbQuery('progresso_subtopicos', {}, 'aluno_id,subtopico_id,status'),
     ])
     setConcursos(cs || [])
@@ -90,7 +90,7 @@ export default function Cronograma() {
             padding: '5px 14px', borderRadius: 16, fontSize: 11, border: 'none',
             background: aba === a.id ? '#1a1a1a' : '#F1F5F9',
             color: aba === a.id ? 'white' : '#666',
-            cursor: 'pointer', fontFamily: 'DM Sans,sans-serif'
+            cursor: 'pointer', fontFamily: 'inherit'
           }}>{a.label}</button>
         ))}
       </div>
