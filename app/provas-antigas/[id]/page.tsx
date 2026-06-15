@@ -13,6 +13,8 @@ const TIPO_LABEL: Record<string, string> = { ime: 'IME', ita: 'ITA' }
 type Aba    = 'ranking' | 'materias' | 'questoes' | 'distribuicao'
 type Filtro = 'todos'   | 'corrigida' | 'pendente'
 
+const EXATAS = ['Matemática', 'Física', 'Química']
+
 type EntradaRanking = {
   aluno_id: string
   nome: string
@@ -20,6 +22,7 @@ type EntradaRanking = {
   total: number
   pct: number | null
   pontosSemIngles: number | null
+  pontosExatas: number | null
   data_correcao: string | null
   porMateria: Record<string, number> | null
   chute?: number
@@ -155,7 +158,7 @@ export default function RankingProvaAntigaPage() {
       if (!c) {
         return {
           aluno_id: a.aluno_id, nome: nomeMap[a.aluno_id] || a.aluno_id,
-          pontos: null, total, pct: null, pontosSemIngles: null, data_correcao: null, porMateria: null,
+          pontos: null, total, pct: null, pontosSemIngles: null, pontosExatas: null, data_correcao: null, porMateria: null,
         }
       }
       if (p.modelo === 'multipla_escolha') {
@@ -169,11 +172,13 @@ export default function RankingProvaAntigaPage() {
           if (val === 'besteira') besteira++
           if (val === 'nao_sabia') nao_sabia++
         })
+        const pontosExatas = EXATAS.reduce((acc, m) => acc + (porMateria[m] || 0), 0)
         return {
           aluno_id: a.aluno_id, nome: nomeMap[a.aluno_id] || a.aluno_id,
           pontos: acertouTotal, total,
           pct: Math.round((acertouTotal / total) * 100),
           pontosSemIngles: acertouTotal - (porMateria['Inglês'] || 0),
+          pontosExatas,
           data_correcao: c.confirmed_at,
           porMateria, chute, besteira, nao_sabia,
         }
@@ -186,19 +191,21 @@ export default function RankingProvaAntigaPage() {
         })
         const soma = Object.values(notas).reduce((acc, v) => acc + Number(v || 0), 0)
         const somaSemIngles = soma - (porMateria['Inglês'] || 0)
+        const pontosExatas = parseFloat(EXATAS.reduce((acc, m) => acc + (porMateria[m] || 0), 0).toFixed(2))
         return {
           aluno_id: a.aluno_id, nome: nomeMap[a.aluno_id] || a.aluno_id,
           pontos: parseFloat(soma.toFixed(1)), total,
           pct: total > 0 ? Math.round((soma / total) * 100) : 0,
           pontosSemIngles: parseFloat(somaSemIngles.toFixed(1)),
+          pontosExatas,
           data_correcao: c.confirmed_at, porMateria,
         }
       }
     })
     lista.sort((a, b) => {
-      if (a.pontos !== null && b.pontos !== null) return b.pontos - a.pontos
-      if (a.pontos !== null) return -1
-      if (b.pontos !== null) return 1
+      if (a.pontosExatas !== null && b.pontosExatas !== null) return b.pontosExatas - a.pontosExatas
+      if (a.pontosExatas !== null) return -1
+      if (b.pontosExatas !== null) return 1
       return (a.nome || '').localeCompare(b.nome || '')
     })
     setRanking(lista)
