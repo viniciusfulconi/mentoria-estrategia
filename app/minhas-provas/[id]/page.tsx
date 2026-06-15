@@ -229,6 +229,19 @@ export default function MinhaProva() {
         {/* ── JÁ CORRIGIDA: mostrar resultados ── */}
         {jaCorrigida && (
           <>
+            {/* PDF de resolução — liberado após corrigir */}
+            {prova.pdf_resolucao_url && (
+              <a href={prova.pdf_resolucao_url} target="_blank" rel="noreferrer" style={{
+                display: 'flex', alignItems: 'center', gap: 10,
+                background: '#FFF7ED', borderRadius: 12, padding: '12px 16px',
+                textDecoration: 'none', color: '#EA580C', fontWeight: 500, fontSize: 14,
+                border: '0.5px solid rgba(234,88,12,0.25)',
+              }}>
+                <span style={{ fontSize: 20 }}>📘</span>
+                Abrir PDF de resolução
+              </a>
+            )}
+
             {/* Pontuação */}
             <div className="card">
               <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 12 }}>Resultado</div>

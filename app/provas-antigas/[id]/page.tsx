@@ -3,8 +3,8 @@ import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
-import { dbQuery } from '@/lib/supabase'
-import { ArrowLeft, Trophy, Clock, Users, ArrowUpDown } from 'lucide-react'
+import { dbQuery, dbUpdate, supabase } from '@/lib/supabase'
+import { ArrowLeft, Trophy, Clock, Users, ArrowUpDown, FileText, Upload } from 'lucide-react'
 import { BarChart } from '@/components/aluno/AlunoCharts'
 import { corMateria } from '@/lib/cores'
 import Nav from '@/components/Nav'
@@ -97,6 +97,8 @@ export default function RankingProvaAntigaPage() {
   const [aba,            setAba]            = useState<Aba>('ranking')
   const [filtro,         setFiltro]         = useState<Filtro>('todos')
   const [sortQuestoes,   setSortQuestoes]   = useState<'numero' | 'dificuldade'>('numero')
+  const [uploadingRes,   setUploadingRes]   = useState(false)
+  const [resErro,        setResErro]        = useState('')
 
   useEffect(() => {
     if (!loading && !perfil) router.replace('/login')
@@ -315,6 +317,20 @@ export default function RankingProvaAntigaPage() {
     setFetching(false)
   }
 
+  async function uploadResolucao(file: File) {
+    if (!prova) return
+    setResErro('')
+    setUploadingRes(true)
+    const path = `${prova.tipo}-fase${prova.fase}/resolucao-${Date.now()}-${file.name}`
+    const { error: upErr } = await supabase.storage.from('provas-antigas').upload(path, file, { upsert: true })
+    if (upErr) { setResErro('Erro ao enviar: ' + upErr.message); setUploadingRes(false); return }
+    const { data: urlData } = supabase.storage.from('provas-antigas').getPublicUrl(path)
+    const { error: dbErr } = await dbUpdate('provas_antigas', { id: `eq.${prova.id}` }, { pdf_resolucao_url: urlData.publicUrl })
+    if (dbErr) { setResErro('Erro ao salvar: ' + dbErr); setUploadingRes(false); return }
+    setProva({ ...prova, pdf_resolucao_url: urlData.publicUrl })
+    setUploadingRes(false)
+  }
+
   if (loading || !perfil) return null
 
   const corrigidas = ranking.filter(r => r.pontos !== null)
@@ -385,6 +401,54 @@ export default function RankingProvaAntigaPage() {
                 <div style={{ fontSize: 26, fontWeight: 800, color: s.color }}>{s.value}</div>
               </div>
             ))}
+          </div>
+
+          {/* ── PDFs: prova + resolução ────────────────────────────────────── */}
+          <div style={{ background: 'white', border: '1.5px solid #e2e8f0', borderRadius: 12, padding: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <FileText size={16} strokeWidth={2} color="#5B21B6" />
+                <span style={{ fontSize: 13, fontWeight: 700, color: '#1a1a1a' }}>PDF da prova</span>
+              </div>
+              {prova.pdf_url ? (
+                <a href={prova.pdf_url} target="_blank" rel="noreferrer" style={{ fontSize: 12, color: '#5B21B6', textDecoration: 'none', padding: '5px 12px', border: '1.5px solid #5B21B6', borderRadius: 8, fontWeight: 600 }}>
+                  Abrir
+                </a>
+              ) : (
+                <span style={{ fontSize: 11, color: '#94a3b8' }}>não enviado</span>
+              )}
+            </div>
+
+            <div style={{ height: 1, background: '#f1f5f9' }} />
+
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <FileText size={16} strokeWidth={2} color="#f97316" />
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#1a1a1a' }}>PDF de resolução</div>
+                  <div style={{ fontSize: 11, color: '#94a3b8' }}>Liberado ao aluno só depois da correção</div>
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                {prova.pdf_resolucao_url && (
+                  <a href={prova.pdf_resolucao_url} target="_blank" rel="noreferrer" style={{ fontSize: 12, color: '#f97316', textDecoration: 'none', padding: '5px 12px', border: '1.5px solid #f97316', borderRadius: 8, fontWeight: 600 }}>
+                    Abrir
+                  </a>
+                )}
+                <label style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#475569', padding: '5px 12px', border: '1.5px dashed #cbd5e1', borderRadius: 8, cursor: uploadingRes ? 'wait' : 'pointer', fontWeight: 600 }}>
+                  <Upload size={12} strokeWidth={2} />
+                  {uploadingRes ? 'Enviando…' : prova.pdf_resolucao_url ? 'Trocar' : 'Enviar'}
+                  <input
+                    type="file"
+                    accept="application/pdf"
+                    disabled={uploadingRes}
+                    onChange={e => { const f = e.target.files?.[0]; if (f) uploadResolucao(f); e.target.value = '' }}
+                    style={{ display: 'none' }}
+                  />
+                </label>
+              </div>
+            </div>
+            {resErro && <div style={{ fontSize: 12, color: '#DC2626' }}>{resErro}</div>}
           </div>
 
           {/* ── Tabs ───────────────────────────────────────────────────────── */}

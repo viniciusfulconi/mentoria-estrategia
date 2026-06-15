@@ -87,8 +87,13 @@ export default function ProvasAntigas() {
                   </Link>
                 )}
                 {p.pdf_url && (
-                  <a href={p.pdf_url} target="_blank" rel="noreferrer" style={{ flexShrink: 0, fontSize: 11, color: '#f97316', textDecoration: 'none', padding: '4px 8px', border: '0.5px solid #f97316', borderRadius: 8 }}>
-                    PDF
+                  <a href={p.pdf_url} target="_blank" rel="noreferrer" style={{ flexShrink: 0, fontSize: 11, color: '#5B21B6', textDecoration: 'none', padding: '4px 8px', border: '0.5px solid #5B21B6', borderRadius: 8 }}>
+                    Prova
+                  </a>
+                )}
+                {isCoordenador && p.pdf_resolucao_url && (
+                  <a href={p.pdf_resolucao_url} target="_blank" rel="noreferrer" style={{ flexShrink: 0, fontSize: 11, color: '#f97316', textDecoration: 'none', padding: '4px 8px', border: '0.5px solid #f97316', borderRadius: 8 }}>
+                    Resolução
                   </a>
                 )}
               </div>

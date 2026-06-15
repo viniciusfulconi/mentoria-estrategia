@@ -21,6 +21,7 @@ export default function NovaProvaAntiga() {
   const [tipo, setTipo] = useState('')
   const [fase, setFase] = useState('')
   const [pdfFile, setPdfFile] = useState<File | null>(null)
+  const [pdfResolucaoFile, setPdfResolucaoFile] = useState<File | null>(null)
 
   const [questoes, setQuestoes] = useState<QuestaoForm[]>([])
   const [topicosDB, setTopicosDB] = useState<any[]>([])
@@ -84,14 +85,24 @@ export default function NovaProvaAntiga() {
     setErro('')
 
     let pdf_url = ''
+    let pdf_resolucao_url = ''
 
     if (pdfFile) {
-      setUploadProgress('Enviando PDF...')
+      setUploadProgress('Enviando PDF da prova...')
       const path = `${tipo}-fase${fase}/${Date.now()}-${pdfFile.name}`
       const { error: upErr } = await supabase.storage.from('provas-antigas').upload(path, pdfFile, { upsert: true })
       if (upErr) { setErro('Erro ao enviar PDF: ' + upErr.message); setSaving(false); return }
       const { data: urlData } = supabase.storage.from('provas-antigas').getPublicUrl(path)
       pdf_url = urlData.publicUrl
+    }
+
+    if (pdfResolucaoFile) {
+      setUploadProgress('Enviando PDF da resolução...')
+      const path = `${tipo}-fase${fase}/resolucao-${Date.now()}-${pdfResolucaoFile.name}`
+      const { error: upErr } = await supabase.storage.from('provas-antigas').upload(path, pdfResolucaoFile, { upsert: true })
+      if (upErr) { setErro('Erro ao enviar resolução: ' + upErr.message); setSaving(false); return }
+      const { data: urlData } = supabase.storage.from('provas-antigas').getPublicUrl(path)
+      pdf_resolucao_url = urlData.publicUrl
     }
 
     setUploadProgress('Cadastrando prova...')
@@ -102,6 +113,7 @@ export default function NovaProvaAntiga() {
       num_questoes: numQuestoes,
       modelo,
       pdf_url: pdf_url || null,
+      pdf_resolucao_url: pdf_resolucao_url || null,
     }], true)
 
     if (provaErr || !provaArr?.[0]) {
@@ -186,6 +198,20 @@ export default function NovaProvaAntiga() {
               style={{ padding: '8px 0' }}
             />
             {pdfFile && <div style={{ fontSize: 11, color: '#16A34A', marginTop: 4 }}>✓ {pdfFile.name}</div>}
+          </div>
+
+          <div>
+            <label>PDF de resolução (opcional)</label>
+            <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 4 }}>
+              Liberado para o aluno apenas após ele corrigir a prova.
+            </div>
+            <input
+              type="file"
+              accept="application/pdf"
+              onChange={e => setPdfResolucaoFile(e.target.files?.[0] || null)}
+              style={{ padding: '8px 0' }}
+            />
+            {pdfResolucaoFile && <div style={{ fontSize: 11, color: '#16A34A', marginTop: 4 }}>✓ {pdfResolucaoFile.name}</div>}
           </div>
 
           {erro && <div style={{ color: '#DC2626', fontSize: 13 }}>{erro}</div>}
