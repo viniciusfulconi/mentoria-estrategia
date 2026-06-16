@@ -6,7 +6,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import Nav from '@/components/Nav'
 import Link from 'next/link'
 import type { AtendimentoMentoria } from '@/lib/supabase'
-import { List, DollarSign, Brain, CheckCircle2, Pin, FileText, Link2, Play, Sparkles, X, Copy, Check, Pencil } from 'lucide-react'
+import { List, DollarSign, Brain, CheckCircle2, Pin, FileText, Link2, Play, Sparkles, X, Copy, Check, Pencil, Download } from 'lucide-react'
 import { dbUpdate } from '@/lib/supabase'
 
 export default function Atendimentos() {
@@ -38,6 +38,13 @@ export default function Atendimentos() {
   const [copiado, setCopiado] = useState(false)
   const [tipoResumo, setTipoResumo] = useState<'geral' | 'ultimo' | 'ultimos_dois'>('geral')
   const abortRef = useRef<AbortController | null>(null)
+
+  // Export XLSX (mentor)
+  const [showExport, setShowExport] = useState(false)
+  const [exportInicio, setExportInicio] = useState('')
+  const [exportFim, setExportFim] = useState('')
+  const [exportErro, setExportErro] = useState<string | null>(null)
+  const [exportLoading, setExportLoading] = useState(false)
 
   useEffect(() => { carregar() }, [perfil, verticalAtiva])
 
@@ -201,6 +208,71 @@ export default function Atendimentos() {
     setTimeout(() => setCopiado(false), 2000)
   }
 
+  function abrirExport() {
+    const hoje = new Date()
+    const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1)
+    const fmt = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+    setExportInicio(fmt(inicioMes))
+    setExportFim(fmt(hoje))
+    setExportErro(null)
+    setShowExport(true)
+  }
+
+  async function exportarXLSX() {
+    setExportErro(null)
+    if (!exportInicio || !exportFim) {
+      setExportErro('Selecione a data de início e fim.')
+      return
+    }
+    if (exportInicio > exportFim) {
+      setExportErro('A data de início deve ser anterior ou igual à data de fim.')
+      return
+    }
+    setExportLoading(true)
+    try {
+      const ats = dados.filter(d => {
+        if (!d.data_atendimento) return false
+        const dia = d.data_atendimento.slice(0, 10)
+        return dia >= exportInicio && dia <= exportFim
+      }).sort((a, b) => a.data_atendimento.localeCompare(b.data_atendimento))
+
+      if (ats.length === 0) {
+        setExportErro('Nenhum atendimento encontrado no período.')
+        setExportLoading(false)
+        return
+      }
+
+      const rows = ats.map(d => {
+        const [y, m, dia] = d.data_atendimento.slice(0, 10).split('-')
+        const dataBR = `${dia}/${m}/${y}`
+        const tipoLabel = (d.tipo || '').toLowerCase() === 'coletiva' ? 'Coletiva' : (d.aluno || 'Coletiva')
+        const min = d.duracao_minutos || 0
+        return [
+          'EM',
+          'Presencial ITA/IME',
+          dataBR,
+          'Mentoria - Presencial ITA/IME',
+          `Mentoria – ${tipoLabel} (${min} min)`,
+        ]
+      })
+
+      const XLSX = await import('xlsx')
+      const ws = XLSX.utils.aoa_to_sheet(rows)
+      ws['!cols'] = [{ wch: 6 }, { wch: 22 }, { wch: 12 }, { wch: 32 }, { wch: 40 }]
+      const wb = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(wb, ws, 'Atendimentos')
+
+      const mentorSlug = (perfil?.mentor_nome || 'mentor').replace(/\s+/g, '_')
+      const nome = `atendimentos_${mentorSlug}_${exportInicio}_a_${exportFim}.xlsx`
+      XLSX.writeFile(wb, nome)
+      setShowExport(false)
+    } catch (e: any) {
+      setExportErro(e?.message || 'Falha ao gerar planilha.')
+    } finally {
+      setExportLoading(false)
+    }
+  }
+
   return (
     <div style={{ paddingBottom: 80 }}>
       <div style={{ background: 'white', borderBottom: '0.5px solid rgba(0,0,0,0.08)', padding: '16px', position: 'sticky', top: 0, zIndex: 10 }}>
@@ -217,6 +289,12 @@ export default function Atendimentos() {
                 )}
                 <Link href="/atendimentos/upload" style={{ textDecoration: 'none', background: '#F1F5F9', color: '#666', borderRadius: 10, padding: '6px 12px', fontSize: 12 }}>↑ Import</Link>
               </>
+            )}
+            {perfil?.papel === 'mentor' && (
+              <button onClick={abrirExport}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#F1F5F9', color: '#444', border: 'none', borderRadius: 10, padding: '6px 12px', fontSize: 12, fontWeight: 500, cursor: 'pointer', fontFamily: 'DM Sans,sans-serif' }}>
+                <Download size={13} strokeWidth={2} />XLSX
+              </button>
             )}
             {perfil?.papel !== 'direcao' && (
               <Link href="/atendimentos/novo" style={{ textDecoration: 'none', background: '#f97316', color: 'white', borderRadius: 10, padding: '6px 12px', fontSize: 12, fontWeight: 500 }}>+ Novo</Link>
@@ -481,6 +559,49 @@ export default function Atendimentos() {
                 cursor: 'pointer', fontFamily: 'DM Sans,sans-serif', marginTop: 4,
               }}>
                 {editSaving ? 'Salvando...' : 'Salvar alterações'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Exportar XLSX (mentor) */}
+      {showExport && (
+        <div onClick={() => !exportLoading && setShowExport(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 60, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: 'white', borderRadius: '20px 20px 0 0', width: '100%', maxWidth: 480, maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '18px 20px 14px', borderBottom: '0.5px solid rgba(0,0,0,0.08)' }}>
+              <Download size={16} strokeWidth={2} color="#f97316" />
+              <div style={{ flex: 1, fontSize: 16, fontWeight: 600 }}>Exportar atendimentos</div>
+              <button onClick={() => !exportLoading && setShowExport(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#999', display: 'flex' }}>
+                <X size={20} strokeWidth={2} />
+              </button>
+            </div>
+
+            <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div style={{ fontSize: 12, color: '#666', lineHeight: 1.5 }}>
+                Selecione o período. A planilha conterá apenas os seus atendimentos no intervalo escolhido.
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: '#555', display: 'block', marginBottom: 6 }}>Início</label>
+                  <input type="date" value={exportInicio} onChange={e => setExportInicio(e.target.value)} style={{ margin: 0, fontSize: 13 }} />
+                </div>
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: '#555', display: 'block', marginBottom: 6 }}>Fim</label>
+                  <input type="date" value={exportFim} onChange={e => setExportFim(e.target.value)} style={{ margin: 0, fontSize: 13 }} />
+                </div>
+              </div>
+
+              {exportErro && <div style={{ color: '#DC2626', fontSize: 12, background: '#FEF2F2', padding: '8px 12px', borderRadius: 8 }}>{exportErro}</div>}
+
+              <button onClick={exportarXLSX} disabled={exportLoading} style={{
+                padding: '12px', borderRadius: 12, border: 'none',
+                background: '#f97316', color: 'white', fontSize: 14, fontWeight: 600,
+                cursor: exportLoading ? 'default' : 'pointer', fontFamily: 'DM Sans,sans-serif', marginTop: 4,
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              }}>
+                <Download size={16} strokeWidth={2} />
+                {exportLoading ? 'Gerando...' : 'Baixar planilha'}
               </button>
             </div>
           </div>
