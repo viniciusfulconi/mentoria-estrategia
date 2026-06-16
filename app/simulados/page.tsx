@@ -14,6 +14,7 @@ export default function Simulados() {
   const [alunos, setAlunos] = useState<any[]>([])
   const [ciclos, setCiclos] = useState<string[]>([])
   const [busca, setBusca] = useState('')
+  const [filtroIngresso, setFiltroIngresso] = useState<'todos' | 'presencial' | 'pec'>('todos')
   const [loading, setLoading] = useState(true)
   const [erro, setErro] = useState<string | null>(null)
 
@@ -28,21 +29,32 @@ export default function Simulados() {
 
   async function load() {
     setErro(null)
-    const { data, error } = await dbQuery(
-      'resultados',
-      { 'fase': 'eq.ranking', 'order': 'ciclo_nome' },
-      'id_aluno,nome_aluno,mentor,ciclo_nome,fase,resultado_ciclo,media_1fase,media_2fase'
-    )
+    const [{ data, error }, { data: alunosDados }] = await Promise.all([
+      dbQuery(
+        'resultados',
+        { 'fase': 'eq.ranking', 'order': 'ciclo_nome' },
+        'id_aluno,nome_aluno,mentor,ciclo_nome,fase,resultado_ciclo,media_1fase,media_2fase'
+      ),
+      dbQuery('alunos_dados', {}, 'id_aluno,ingresso'),
+    ])
 
     if (error) { setErro('Falha ao carregar alunos.'); setLoading(false); return }
     if (!data) { setLoading(false); return }
+
+    // Mapa id_aluno → ingresso (NULL = presencial; 'PEC' = online)
+    const ingressoMap: Record<string, string | null> = {}
+    ;(alunosDados || []).forEach((a: any) => { ingressoMap[a.id_aluno] = a.ingresso })
 
     const alunoMap: Record<string, any> = {}
     const cicloSet = new Set<string>()
     data.forEach(r => {
       cicloSet.add(r.ciclo_nome)
       if (!alunoMap[r.id_aluno]) {
-        alunoMap[r.id_aluno] = { id_aluno: r.id_aluno, nome: r.nome_aluno, mentor: r.mentor, ciclos: {} }
+        alunoMap[r.id_aluno] = {
+          id_aluno: r.id_aluno, nome: r.nome_aluno, mentor: r.mentor,
+          ingresso: ingressoMap[r.id_aluno] ?? null,
+          ciclos: {},
+        }
       }
       alunoMap[r.id_aluno].ciclos[r.ciclo_nome] = r
     })
@@ -54,7 +66,17 @@ export default function Simulados() {
     setLoading(false)
   }
 
-  const filtrados = alunos.filter(a => a.nome.toLowerCase().includes(busca.toLowerCase()) || a.mentor?.toLowerCase().includes(busca.toLowerCase()))
+  const filtrados = alunos.filter(a => {
+    if (filtroIngresso === 'pec' && a.ingresso !== 'PEC') return false
+    if (filtroIngresso === 'presencial' && a.ingresso === 'PEC') return false
+    return a.nome.toLowerCase().includes(busca.toLowerCase()) || a.mentor?.toLowerCase().includes(busca.toLowerCase())
+  })
+
+  const contadores = {
+    todos: alunos.length,
+    presencial: alunos.filter(a => a.ingresso !== 'PEC').length,
+    pec: alunos.filter(a => a.ingresso === 'PEC').length,
+  }
 
   function mediaGeral(aluno: any) {
     // media_2fase é a média final do ciclo. Zero é nota válida (aluno zerou).
@@ -84,8 +106,30 @@ export default function Simulados() {
         )}
       </div>
 
-      <div style={{ padding: '10px 16px', background: 'white', borderBottom: '0.5px solid rgba(0,0,0,0.06)' }}>
+      <div style={{ padding: '10px 16px', background: 'white', borderBottom: '0.5px solid rgba(0,0,0,0.06)', display: 'flex', flexDirection: 'column', gap: 8 }}>
         <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar aluno ou mentor..." style={{ margin: 0 }} />
+        <div style={{ display: 'flex', gap: 6 }}>
+          {([
+            ['todos',      'Todos',      contadores.todos],
+            ['presencial', 'Presencial', contadores.presencial],
+            ['pec',        'PEC',        contadores.pec],
+          ] as const).map(([v, l, n]) => (
+            <button key={v} onClick={() => setFiltroIngresso(v)} style={{
+              padding: '5px 12px', borderRadius: 16, fontSize: 11, border: 'none',
+              background: filtroIngresso === v ? '#1a1a1a' : '#F1F5F9',
+              color: filtroIngresso === v ? 'white' : '#666',
+              cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6,
+            }}>
+              {l}
+              <span style={{
+                fontSize: 10, padding: '1px 7px', borderRadius: 10,
+                background: filtroIngresso === v ? 'rgba(255,255,255,0.2)' : '#E2E8F0',
+                color: filtroIngresso === v ? 'white' : '#64748B',
+                fontWeight: 600,
+              }}>{n}</span>
+            </button>
+          ))}
+        </div>
       </div>
 
       <div style={{ padding: 16 }}>
@@ -117,7 +161,14 @@ export default function Simulados() {
                     {a.nome.split(' ').map((w: string) => w[0]).slice(0, 2).join('')}
                   </div>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 600, fontSize: 13, color: '#1a1a1a' }}>{a.nome}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <div style={{ fontWeight: 600, fontSize: 13, color: '#1a1a1a' }}>{a.nome}</div>
+                      {a.ingresso === 'PEC' && (
+                        <span style={{ fontSize: 9, fontWeight: 600, padding: '1px 6px', borderRadius: 6, background: '#F3F0FF', color: '#5B21B6' }}>
+                          PEC
+                        </span>
+                      )}
+                    </div>
                     <div style={{ fontSize: 11, color: '#999' }}>{a.mentor}</div>
                   </div>
                   {media !== null && (
