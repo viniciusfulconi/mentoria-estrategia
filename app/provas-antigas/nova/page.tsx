@@ -87,9 +87,16 @@ export default function NovaProvaAntiga() {
     let pdf_url = ''
     let pdf_resolucao_url = ''
 
+    // Supabase Storage não aceita acentos, ª/º, ç ou espaços na key
+    const safeName = (name: string) => name
+      .normalize('NFD').replace(/[̀-ͯ]/g, '')
+      .replace(/[^a-zA-Z0-9._-]+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '')
+
     if (pdfFile) {
       setUploadProgress('Enviando PDF da prova...')
-      const path = `${tipo}-fase${fase}/${Date.now()}-${pdfFile.name}`
+      const path = `${tipo}-fase${fase}/${Date.now()}-${safeName(pdfFile.name)}`
       const { error: upErr } = await supabase.storage.from('provas-antigas').upload(path, pdfFile, { upsert: true })
       if (upErr) { setErro('Erro ao enviar PDF: ' + upErr.message); setSaving(false); return }
       const { data: urlData } = supabase.storage.from('provas-antigas').getPublicUrl(path)
@@ -98,7 +105,7 @@ export default function NovaProvaAntiga() {
 
     if (pdfResolucaoFile) {
       setUploadProgress('Enviando PDF da resolução...')
-      const path = `${tipo}-fase${fase}/resolucao-${Date.now()}-${pdfResolucaoFile.name}`
+      const path = `${tipo}-fase${fase}/resolucao-${Date.now()}-${safeName(pdfResolucaoFile.name)}`
       const { error: upErr } = await supabase.storage.from('provas-antigas').upload(path, pdfResolucaoFile, { upsert: true })
       if (upErr) { setErro('Erro ao enviar resolução: ' + upErr.message); setSaving(false); return }
       const { data: urlData } = supabase.storage.from('provas-antigas').getPublicUrl(path)

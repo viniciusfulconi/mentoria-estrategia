@@ -321,7 +321,13 @@ export default function RankingProvaAntigaPage() {
     if (!prova) return
     setResErro('')
     setUploadingRes(true)
-    const path = `${prova.tipo}-fase${prova.fase}/resolucao-${Date.now()}-${file.name}`
+    // Supabase Storage não aceita acentos, ª/º, ç ou espaços na key
+    const safeName = file.name
+      .normalize('NFD').replace(/[̀-ͯ]/g, '')
+      .replace(/[^a-zA-Z0-9._-]+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '')
+    const path = `${prova.tipo}-fase${prova.fase}/resolucao-${Date.now()}-${safeName}`
     const { error: upErr } = await supabase.storage.from('provas-antigas').upload(path, file, { upsert: true })
     if (upErr) { setResErro('Erro ao enviar: ' + upErr.message); setUploadingRes(false); return }
     const { data: urlData } = supabase.storage.from('provas-antigas').getPublicUrl(path)
