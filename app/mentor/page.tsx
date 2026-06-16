@@ -68,7 +68,10 @@ export default function MentorDashboard() {
   const reprovados = cicloData.filter(r => r.resultado_ciclo === 'Reprovado')
   const mediaGrupo = cicloData.length
     ? cicloData.reduce((acc, r) => {
-        const m = r.media_2fase !== null ? Number(r.media_2fase) : Number(r.media_1fase || 0)
+        // media_2fase é a média final; cai pra 1f só se 2f ainda não fechou. Zero conta.
+        const m = r.media_2fase != null ? Number(r.media_2fase)
+                : r.media_1fase != null ? Number(r.media_1fase)
+                : 0
         return acc + m
       }, 0) / cicloData.length
     : 0

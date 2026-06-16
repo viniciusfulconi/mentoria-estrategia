@@ -127,11 +127,13 @@ export default function Home() {
     if (cicloAtual.length) {
       const aprovados = cicloAtual.filter((r: any) => r.resultado_ciclo === 'Aprovado').length
       const reprovados = cicloAtual.filter((r: any) => r.resultado_ciclo === 'Reprovado').length
-      const medias = cicloAtual.map((r: any) => {
-        const m1 = Number(r.media_1fase || 0)
-        const m2 = r.media_2fase != null ? Number(r.media_2fase) : null
-        return m2 !== null ? (m1 + m2) / 2 : m1
-      }).filter((v: number) => v > 0) as number[]
+      // media_2fase já é a média final do ciclo (para ITA inclui media_1fase no cálculo).
+      // Quando media_2fase=null (ciclo em andamento), cai para media_1fase como aproximação.
+      const medias = cicloAtual.map((r: any) =>
+        r.media_2fase != null ? Number(r.media_2fase)
+        : r.media_1fase != null ? Number(r.media_1fase)
+        : null
+      ).filter((v: number | null) => v != null) as number[]
       const media = medias.length ? medias.reduce((a, b) => a + b, 0) / medias.length : 0
       setCicloStats({ nome: latestCiclo, aprovados, reprovados, total: cicloAtual.length, media })
 
@@ -148,8 +150,10 @@ export default function Home() {
     rankings.forEach((r: any) => { if (!latestMap[r.id_aluno]) latestMap[r.id_aluno] = r })
     const risco = Object.values(latestMap).filter((r: any) => {
       if (r.resultado_ciclo === 'Reprovado') return true
-      const notas = [r.nota_matematica, r.nota_fisica, r.nota_quimica, r.media_linguagens].map(Number).filter(v => v > 0)
-      return notas.some(v => v < 4.5) || (r.media_2fase && Number(r.media_2fase) < 5.5 && Number(r.media_2fase) >= 5.0)
+      // Zero é nota válida — só ignora null/undefined (matéria ainda não corrigida).
+      const notas = [r.nota_matematica, r.nota_fisica, r.nota_quimica, r.media_linguagens]
+        .filter(v => v != null).map(Number)
+      return notas.some(v => v < 4.5) || (r.media_2fase != null && Number(r.media_2fase) < 5.5 && Number(r.media_2fase) >= 5.0)
     }).sort((a: any, b: any) => {
       if (a.resultado_ciclo === 'Reprovado' && b.resultado_ciclo !== 'Reprovado') return -1
       if (b.resultado_ciclo === 'Reprovado' && a.resultado_ciclo !== 'Reprovado') return 1
@@ -180,7 +184,11 @@ export default function Home() {
   }
 
   function calcMedia(r: any) {
-    return r.media_2fase != null ? Number(r.media_2fase) : Number(r.media_1fase || 0)
+    // media_2fase é a média final do ciclo (inclui 1ª fase no cálculo ITA).
+    // Cai para media_1fase só se a 2ª fase ainda não fechou.
+    if (r.media_2fase != null) return Number(r.media_2fase)
+    if (r.media_1fase != null) return Number(r.media_1fase)
+    return 0
   }
 
   function corMedia(m: number) {

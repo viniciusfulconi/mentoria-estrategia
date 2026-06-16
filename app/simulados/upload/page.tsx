@@ -154,8 +154,9 @@ export default function UploadSimulados() {
       const fport = g.fases['2fase_port']
       const fing = g.fases['2fase_ing']
 
-      const nota1f = f1?.media_1fase ?? null
-      // Fase uploadada mas aluno sem nota = ausente = 0 (não exclui do denominador)
+      // Fase uploadada mas aluno sem nota = ausente = 0 (não exclui do denominador).
+      // Mesma regra para 1ª fase: faltou e a fase foi uploadada → 0.
+      const nota1f  = f1?.media_1fase   ?? (existentes.has('1fase')     ? 0 : null)
       const notaMat = fmat?.nota_matematica ?? (existentes.has('2fase_mat') ? 0 : null)
       const notaFis = ffis?.nota_fisica ?? (existentes.has('2fase_fis') ? 0 : null)
       const notaQui = fqui?.nota_quimica ?? (existentes.has('2fase_qui') ? 0 : null)

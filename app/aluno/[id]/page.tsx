@@ -223,10 +223,15 @@ export default function AlunoPage() {
     const rs = todos.filter(r => r.id_aluno === alunoId)
     if (!rs.length) return 0
     const seen = new Set<string>()
+    // media_2fase é a média final do ciclo. Zero conta. Cai pra media_1fase só se 2f null.
     const vals = rs
       .filter(r => { if (seen.has(r.ciclo_nome)) return false; seen.add(r.ciclo_nome); return true })
-      .map(r => Number(r.media_2fase) || Number(r.media_1fase) || 0)
-      .filter(Boolean)
+      .map(r => {
+        if (r.media_2fase != null) return Number(r.media_2fase)
+        if (r.media_1fase != null) return Number(r.media_1fase)
+        return null
+      })
+      .filter((v): v is number => v != null)
     if (!vals.length) return 0
     return vals.reduce((a, b) => a + b, 0) / vals.length
   }
@@ -250,6 +255,7 @@ export default function AlunoPage() {
   ]
 
   // Busca o registro 2fase_port do ciclo ativo (onde nota_portugues/nota_redacao vivem)
+  // Match exato do número (não usa includes — Ciclo 1 colidiria com Ciclo 10).
   const cicloNum = String(cicloAtivo || '').match(/\d+/)?.[0] || ''
   const reg2fPort = dados.find(r =>
     String(r.ciclo_nome || '').match(/\d+/)?.[0] === cicloNum && r.fase === '2fase_port'
@@ -281,8 +287,12 @@ export default function AlunoPage() {
     const seen = new Set<string>()
     const vals = rankings
       .filter(r => { if (seen.has(r.ciclo_nome)) return false; seen.add(r.ciclo_nome); return true })
-      .map(r => Number(r.media_2fase) || Number(r.media_1fase) || 0)
-      .filter(Boolean)
+      .map(r => {
+        if (r.media_2fase != null) return Number(r.media_2fase)
+        if (r.media_1fase != null) return Number(r.media_1fase)
+        return null
+      })
+      .filter((v): v is number => v != null)
     return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0
   })()
 
@@ -365,12 +375,11 @@ export default function AlunoPage() {
   }
 
   function pizzaData(fase: string) {
-    // Extrai o número do ciclo do cicloAtivo (ex: "Ranking C1" -> "1", "Ciclo 1 - ITA" -> "1")
+    // Match exato do número do ciclo (Ciclo 1 colidiria com Ciclo 10 se usasse includes).
     const numCiclo = cicloAtivo?.match(/\d+/)?.[0] || ''
-    // Busca a aba correspondente que contenha o número do ciclo e a fase
     const reg = dados.find(r => {
-      const temNumero = r.ciclo_nome?.includes(numCiclo)
-      return temNumero && r.fase === fase
+      const num = String(r.ciclo_nome || '').match(/\d+/)?.[0]
+      return num === numCiclo && r.fase === fase
     })
     if (!reg?.notas_questoes) return { gabarito: 0, parcial: 0, zero: 0 }
     const vals = Object.values(reg.notas_questoes) as number[]
@@ -714,7 +723,12 @@ export default function AlunoPage() {
                 const temPort = dados2fPort.some(r => r.nota_portugues != null)
                 const temRed = dados2fPort.some(r => r.nota_redacao != null)
                 const media = (arr: any[], campo: string) => {
-                  const vals = arr.map(r => Number(r[campo])).filter(v => v > 0)
+                  // Zero é nota válida (aluno zerou) — só ignora null/undefined.
+                  const vals = arr
+                    .map(r => r[campo])
+                    .filter(v => v !== null && v !== undefined && v !== '')
+                    .map(Number)
+                    .filter(v => !isNaN(v))
                   return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null
                 }
                 const campos: { label: string; valor: number | null }[] = [

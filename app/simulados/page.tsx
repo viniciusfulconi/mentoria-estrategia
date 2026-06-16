@@ -57,9 +57,13 @@ export default function Simulados() {
   const filtrados = alunos.filter(a => a.nome.toLowerCase().includes(busca.toLowerCase()) || a.mentor?.toLowerCase().includes(busca.toLowerCase()))
 
   function mediaGeral(aluno: any) {
-    const vals = Object.values(aluno.ciclos).map((c: any) =>
-      Number(c.media_2fase) || Number(c.media_1fase) || 0
-    ).filter(Boolean) as number[]
+    // media_2fase é a média final do ciclo. Zero é nota válida (aluno zerou).
+    // Cai para media_1fase só quando a 2ª fase ainda não fechou (media_2fase=null).
+    const vals = Object.values(aluno.ciclos).map((c: any) => {
+      if (c.media_2fase != null) return Number(c.media_2fase)
+      if (c.media_1fase != null) return Number(c.media_1fase)
+      return null
+    }).filter((v): v is number => v != null)
     if (!vals.length) return null
     return vals.reduce((a, b) => a + b, 0) / vals.length
   }
