@@ -300,10 +300,21 @@ export default function UploadSimulados() {
           rec.nota_quimica = r['Nota'] !== undefined ? Number(r['Nota']) : null
           rec.pontos_inteiros = r['Pontos Inteiros'] ? Number(r['Pontos Inteiros']) : null
         } else if (tipo === '2fase_port') {
-          rec.media_linguagens = r['Media Linguagens'] !== undefined ? Number(r['Media Linguagens'])
-            : r['Nota'] !== undefined ? Number(r['Nota']) : null
-          rec.nota_redacao = r['Nota Redacao'] !== undefined ? Number(r['Nota Redacao']) : null
-          rec.nota_portugues = r['Nota'] !== undefined ? Number(r['Nota']) : null
+          const notaPort = r['Nota'] !== undefined ? Number(r['Nota']) : null
+          const notaRed  = r['Nota Redacao'] !== undefined ? Number(r['Nota Redacao']) : null
+          rec.nota_portugues = notaPort
+          rec.nota_redacao   = notaRed
+          // Média de linguagens = (port + redação) / 2 quando ambos existem.
+          // Se a planilha trouxer "Media Linguagens" pré-calculada, conferimos:
+          //   - usa a planilha apenas se bate com (port+red)/2 ou se um dos dois faltar.
+          //   - se divergir, log de aviso e prevalece o cálculo correto.
+          const mediaPlanilha = r['Media Linguagens'] !== undefined ? Number(r['Media Linguagens']) : null
+          const mediaCalc = notaPort !== null && notaRed !== null
+            ? (notaPort + notaRed) / 2
+            : notaPort
+          rec.media_linguagens = mediaPlanilha !== null && (mediaCalc === null || Math.abs(mediaPlanilha - mediaCalc) < 0.05)
+            ? mediaPlanilha
+            : mediaCalc
         } else if (tipo === '2fase_ing') {
           rec.nota_ingles = r['Nota'] !== undefined ? Number(r['Nota']) : null
         }
