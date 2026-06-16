@@ -149,16 +149,44 @@ Alguns IDs vêm como `null` string ou vazios; cruzar com `Ids Alunos` por nome.
 
 **Crítico**: alunos que fazem PEC (online) podem já existir no banco como presencial. Inserir como novo cria duplicata e dados conflitantes.
 
+**Cruzar com DUAS fontes** (não só `alunos_dados`):
+
 ```sql
--- Lista todos os alunos do banco para comparar
+-- a) alunos_dados (cadastro oficial)
 SELECT id_aluno, nome FROM alunos_dados;
+
+-- b) resultados (rankings históricos podem ter alunos que NUNCA entraram em alunos_dados)
+SELECT DISTINCT id_aluno, nome_aluno FROM resultados WHERE fase='ranking';
 ```
 
+**Bug histórico (2026-06-16)**: Gabriel Canellas e Guilherme Inácio existiam só em `resultados` (presencial antigo), nunca foram para `alunos_dados`. O cruzamento que olhou só `alunos_dados` não detectou e gerou duplicatas com novos id_alunos.
+
 Para cada aluno da planilha:
-1. Normalizar nome (remover acentos, lowercase, trim) e comparar com banco normalizado.
+1. Normalizar nome (remover acentos via TRANSLATE, lowercase, regex `\s+` → ` `, trim) e comparar com ambas as fontes normalizadas.
 2. **Match exato** → mesmo aluno, não inserir; oferecer atualizar/complementar dados existentes.
-3. **Match parcial** (primeiro + último nome iguais) → AMBÍGUO, pedir confirmação manual ao usuário antes de qualquer ação. Bug em 2026-06-16: "Guilherme Inácio de Carvalho Silva" (PEC) foi machado falsamente com "Guilherme Almeida Gomes da Silva" (DB) — pessoas diferentes.
+3. **Match parcial** (primeiro + último nome iguais) → AMBÍGUO, pedir confirmação manual ao usuário antes de qualquer ação. Bug: "Guilherme Inácio de Carvalho Silva" (PEC) foi machado falsamente com "Guilherme Almeida Gomes da Silva" (DB) — pessoas diferentes.
 4. **Sem match** → novo aluno, gerar `id_aluno` (8 chars hex) e inserir.
+
+### 2.5.1. Mudança de modalidade (presencial ↔ PEC)
+
+Aluno que era presencial pode migrar para PEC ou vice-versa. Quando isso acontece, ele aparece DUAS vezes no `/cadastro` porque a página lê de `resultados WHERE fase='ranking'` e existem rankings em 2 id_alunos.
+
+Detectar globalmente:
+```sql
+WITH norm AS (SELECT id_aluno,
+  LOWER(REGEXP_REPLACE(TRANSLATE(nome_aluno, 'áàâãäéèêëíìîïóòôõöúùûüçÁÀÂÃÄÉÈÊËÍÌÎÏÓÒÔÕÖÚÙÛÜÇ',
+    'aaaaaeeeeiiiiooooouuuucAAAAAEEEEIIIIOOOOOUUUUC'), '\s+', ' ', 'g')) AS nome_norm
+  FROM resultados WHERE fase='ranking')
+SELECT nome_norm, COUNT(DISTINCT id_aluno) AS n, STRING_AGG(DISTINCT id_aluno, ', ')
+FROM norm GROUP BY nome_norm HAVING COUNT(DISTINCT id_aluno) > 1;
+```
+
+Merge:
+- **Mantém o id antigo** (preserva histórico, índices, references).
+- Migra linhas do id novo para o id antigo: `UPDATE resultados SET id_aluno=<antigo> WHERE id_aluno=<novo>`.
+- Para `(ciclo, fase)` onde AMBOS têm linha: mescla manualmente — geralmente o antigo é mais completo (mat/fis/qui presencial) e o novo adiciona uma fase (port PEC). Atualiza o antigo e DELETA o novo.
+- `alunos_dados`: `UPDATE id_aluno=<antigo> WHERE id_aluno=<novo>`. Atualiza `mentor` e `ingresso` para refletir o estado ATUAL do aluno.
+- Recalcular rankings de ciclos afetados após o merge.
 
 ### 2.6. Validação da fórmula com aluno cruzado (só formato B)
 
