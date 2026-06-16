@@ -230,8 +230,15 @@ export default function Atendimentos() {
     }
     setExportLoading(true)
     try {
+      const meuNome = perfil?.mentor_nome || ''
+      if (!meuNome) {
+        setExportErro('Seu perfil não tem nome de mentor configurado.')
+        setExportLoading(false)
+        return
+      }
       const ats = dados.filter(d => {
         if (!d.data_atendimento) return false
+        if (d.mentor !== meuNome) return false
         const dia = d.data_atendimento.slice(0, 10)
         return dia >= exportInicio && dia <= exportFim
       }).sort((a, b) => a.data_atendimento.localeCompare(b.data_atendimento))
