@@ -206,7 +206,11 @@ export default function RankingProvaAntigaPage() {
       }
     })
     lista.sort((a, b) => {
-      if (a.pontosExatas !== null && b.pontosExatas !== null) return b.pontosExatas - a.pontosExatas
+      if (a.pontosExatas !== null && b.pontosExatas !== null) {
+        const diff = b.pontosExatas - a.pontosExatas
+        if (diff !== 0) return diff
+        return (a.nome || '').localeCompare(b.nome || '')
+      }
       if (a.pontosExatas !== null) return -1
       if (b.pontosExatas !== null) return 1
       return (a.nome || '').localeCompare(b.nome || '')

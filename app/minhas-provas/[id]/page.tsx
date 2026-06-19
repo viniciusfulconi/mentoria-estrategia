@@ -5,8 +5,6 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useRouter, useParams } from 'next/navigation'
 import Nav from '@/components/Nav'
 
-const EXATAS = ['Matemática', 'Física', 'Química']
-
 const OPCOES_FASE1 = [
   { value: 'acertou',   label: 'Acertei',                  cor: '#16A34A', bg: '#DCFCE7' },
   { value: 'chute',     label: 'Acertei no chute',          cor: '#D97706', bg: '#FEF3C7' },
@@ -40,7 +38,7 @@ export default function MinhaProva() {
   const [erro, setErro] = useState('')
 
   // Resultados
-  const [ranking, setRanking] = useState<any[]>([])
+  const [rankingInfo, setRankingInfo] = useState<{ pos: number; total: number } | null>(null)
   const [rankingLoaded, setRankingLoaded] = useState(false)
   const [topicosDB, setTopicosDB] = useState<any[]>([])
 
@@ -68,40 +66,40 @@ export default function MinhaProva() {
 
     const corrData = corr?.[0] || null
     setCorrecao(corrData)
-    if (corrData?.confirmed_at) loadRanking(paData.prova_id, corrData)
+    if (corrData?.confirmed_at && targetId) loadPosicao(paData.prova_id)
     setLoading(false)
   }
 
-  async function loadRanking(provaId: string, corrData: any) {
-    const { data } = await dbQuery('correcoes_prova', {
-      prova_id: `eq.${provaId}`,
-      confirmed_at: 'not.is.null',
-    }, 'aluno_id,respostas,notas,confirmed_at')
-    setRanking(data || [])
-    setRankingLoaded(true)
-  }
-
-  function calcularPontosExatas(corr: any, modelo: string): number {
-    const exatasNums = new Set(questoes.filter(q => EXATAS.includes(q.materia)).map(q => q.numero))
-    if (modelo === 'multipla_escolha') {
-      const resps: Record<string, string> = corr.respostas || {}
-      return Object.entries(resps).filter(([num, v]) => exatasNums.has(parseInt(num)) && v === 'acertou').length
-    } else {
-      const notas: Record<string, number> = corr.notas || {}
-      return Object.entries(notas)
-        .filter(([num]) => exatasNums.has(parseInt(num)))
-        .reduce((acc, [, v]) => acc + Number(v || 0), 0)
+  async function loadPosicao(provaId: string) {
+    // RPC SECURITY DEFINER — devolve só (posicao, total). RLS de correcoes_prova
+    // impede o aluno de ler correções dos outros, então não dá pra calcular no client.
+    const url = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/rpc/posicao_ranking_prova_antiga`
+    const token = (() => {
+      try {
+        const ref = (process.env.NEXT_PUBLIC_SUPABASE_URL || '').replace('https://', '').replace('.supabase.co', '')
+        const raw = localStorage.getItem(`sb-${ref}-auth-token`)
+        return raw ? JSON.parse(raw).access_token : null
+      } catch { return null }
+    })()
+    try {
+      const resp = await fetch(url, {
+        method: 'POST',
+        headers: {
+          apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ p_prova_id: provaId, p_aluno_id: targetId }),
+      })
+      if (resp.ok) {
+        const data = await resp.json()
+        const row = Array.isArray(data) ? data[0] : data
+        if (row?.posicao && row?.total) setRankingInfo({ pos: row.posicao, total: row.total })
+      }
+    } catch {
+      // silencioso — ranking é informativo
     }
-  }
-
-  function posicaoNoRanking() {
-    if (!ranking.length || !prova) return null
-    const pontuacoes = ranking.map(c => ({
-      aluno_id: c.aluno_id,
-      pts: calcularPontosExatas(c, prova.modelo),
-    })).sort((a, b) => b.pts - a.pts)
-    const pos = pontuacoes.findIndex(p => p.aluno_id === targetId) + 1
-    return { pos, total: pontuacoes.length }
+    setRankingLoaded(true)
   }
 
   function resolverTopicos(ids: string[]): string[] {
@@ -183,7 +181,6 @@ export default function MinhaProva() {
 
   const jaCorrigida = !!correcao?.confirmed_at
   const errados = jaCorrigida ? assuntosErrados() : []
-  const rankingInfo = jaCorrigida && rankingLoaded ? posicaoNoRanking() : null
 
   // Agrupar erros por matéria
   const errosPorMateria: Record<string, number> = {}
