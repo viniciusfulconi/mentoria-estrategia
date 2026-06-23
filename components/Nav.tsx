@@ -45,6 +45,7 @@ const tabsCoordenadorSecundarioMed = [
 ]
 const tabsMentor = [
   { href: '/mentor',        label: 'Alunos',  icon: Users },
+  { href: '/turma',         label: 'Turma',   icon: GraduationCap },
   { href: '/atendimentos',  label: 'Atend.',  icon: Handshake },
   { href: '/horario',       label: 'Horário', icon: Calendar },
   { href: '/aulas',         label: 'Aulas',   icon: PlayCircle },
@@ -179,7 +180,9 @@ export default function Nav() {
     : tabsCoordenadorPrimario
 
   const tabsMentorFinal = papel === 'mentor' && perfil?.vertical === 'Medicina'
-    ? tabsMentor.map(t => t.href === '/mentor' ? { ...t, href: '/med/mentor' } : t)
+    ? tabsMentor
+        .filter(t => t.href !== '/turma') // não há visão de turma na vertical Medicina
+        .map(t => t.href === '/mentor' ? { ...t, href: '/med/mentor' } : t)
     : tabsMentor
 
   const tabs = isGestor ? tabsPrimarioFinal
