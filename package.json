@@ -9,7 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@excalidraw/excalidraw": "^0.18.1",
+    "@excalidraw/excalidraw": "^0.17.6",
     "@supabase/ssr": "^0.10.2",
     "@supabase/supabase-js": "^2.105.3",
     "@types/katex": "^0.16.8",
@@ -18,11 +18,11 @@
     "katex": "^0.17.0",
     "lucide-react": "^1.16.0",
     "mammoth": "^1.12.0",
-    "next": "16.2.5",
+    "next": "^16.2.9",
     "pg": "^8.21.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
-    "react-simple-maps": "^3.0.0",
+    "react-simple-maps": "^1.0.0",
     "topojson-client": "^3.1.0",
     "xlsx": "^0.18.5"
   },
