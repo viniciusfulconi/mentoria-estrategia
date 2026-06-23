@@ -170,7 +170,9 @@ export default function RankingProvaAntigaPage() {
         let acertouTotal = 0, chute = 0, besteira = 0, nao_sabia = 0
         Object.entries(resps).forEach(([numStr, val]) => {
           const mat = questaoMateria[parseInt(numStr)]
-          if (val === 'acertou') { acertouTotal++; if (mat) porMateria[mat] = (porMateria[mat] || 0) + 1 }
+          // Acertou no chute conta como acerto (mais realista com o ITA); a categoria
+          // 'chute' segue contabilizada à parte só para diagnóstico (abas Matérias/Questões).
+          if (val === 'acertou' || val === 'chute') { acertouTotal++; if (mat) porMateria[mat] = (porMateria[mat] || 0) + 1 }
           if (val === 'chute')    chute++
           if (val === 'besteira') besteira++
           if (val === 'nao_sabia') nao_sabia++

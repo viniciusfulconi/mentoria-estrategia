@@ -5,6 +5,9 @@
 -- mesmo critério do ranking do coordenador (acertos/nota em exatas:
 -- Matemática + Física + Química), com desempate por nome.
 --
+-- "Acertou no chute" conta como acerto (mais realista com o ITA): no modelo
+-- de múltipla escolha somamos valor IN ('acertou','chute').
+--
 -- Roda como SECURITY DEFINER: o aluno consegue saber a própria posição
 -- sem que a RLS de correcoes_prova (que restringe a leitura à própria
 -- correção) seja afrouxada. Nenhuma resposta de outro aluno é exposta —
@@ -44,7 +47,7 @@ BEGIN
         WHEN v_modelo = 'multipla_escolha' THEN (
           SELECT COUNT(*)::numeric
           FROM jsonb_each_text(c.respostas) AS r(numero, valor)
-          WHERE r.valor = 'acertou'
+          WHERE r.valor IN ('acertou', 'chute')
             AND (r.numero)::int IN (SELECT numero FROM exatas_nums)
         )
         ELSE (

@@ -243,19 +243,34 @@ export default function MinhaProva() {
               {prova.modelo === 'multipla_escolha' ? (
                 <>
                   {(() => {
-                    const resps = correcao.respostas || {}
+                    const resps: Record<string, string> = correcao.respostas || {}
                     const acertou = Object.values(resps).filter(v => v === 'acertou').length
                     const chute = Object.values(resps).filter(v => v === 'chute').length
                     const besteira = Object.values(resps).filter(v => v === 'besteira').length
                     const naoSabia = Object.values(resps).filter(v => v === 'nao_sabia').length
                     const tempo = Object.values(resps).filter(v => v === 'tempo').length
                     const total = prova.num_questoes
+                    // Chute conta como acerto (igual ao ITA). Exatas (Mat/Fís/Quí) é o
+                    // critério da posição no ranking — mostramos os dois.
+                    const acertosTotal = acertou + chute
+                    const EXATAS = ['Matemática', 'Física', 'Química']
+                    const totalExatas = questoes.filter(q => EXATAS.includes(q.materia)).length
+                    const acertosExatas = questoes.filter(q => {
+                      const v = resps[String(q.numero)]
+                      return (v === 'acertou' || v === 'chute') && EXATAS.includes(q.materia)
+                    }).length
                     return (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 4 }}>
-                          <div style={{ fontSize: 32, fontWeight: 700, color: '#16A34A' }}>{acertou}</div>
+                          <div style={{ fontSize: 32, fontWeight: 700, color: '#16A34A' }}>{acertosTotal}</div>
                           <div style={{ fontSize: 13, color: '#666' }}>acertos de {total} questões</div>
                         </div>
+                        {totalExatas > 0 && totalExatas < total && (
+                          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, padding: '8px 10px', background: '#F3F0FF', borderRadius: 8, marginBottom: 4 }}>
+                            <span style={{ fontSize: 18, fontWeight: 700, color: '#7c3aed' }}>{acertosExatas}</span>
+                            <span style={{ fontSize: 12, color: '#6B7280' }}>de {totalExatas} em exatas (Mat/Fís/Quí) · é o que conta pro ranking</span>
+                          </div>
+                        )}
                         {[
                           { label: 'Acertei', v: acertou, cor: '#16A34A' },
                           { label: 'Acertei no chute', v: chute, cor: '#D97706' },
