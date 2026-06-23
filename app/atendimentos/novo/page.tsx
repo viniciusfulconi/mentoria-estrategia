@@ -68,8 +68,10 @@ export default function NovoAtendimento() {
       }
     }
 
-    const mes = new Date(form.data_atendimento).toLocaleDateString('pt-BR', { month: '2-digit', year: 'numeric' })
-    const ano = new Date(form.data_atendimento).getFullYear()
+    // data_atendimento é "YYYY-MM-DD"; evita new Date() (parsing UTC volta um dia em UTC-3).
+    const [yStr, mStr] = form.data_atendimento.slice(0, 10).split('-')
+    const mes = `${mStr}/${yStr}`
+    const ano = Number(yStr)
 
     const { error } = await dbInsert('atendimentos_mentoria', [{
       ...form,

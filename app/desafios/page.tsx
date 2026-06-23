@@ -12,6 +12,14 @@ import { Plus, Feather, CheckCircle, Clock, XCircle, ChevronDown, ChevronUp, Sen
 
 type DesafioComResposta = Desafio & { resposta?: DesafioResposta }
 
+// Coluna DATE ("YYYY-MM-DD"): new Date() interpreta como UTC e .toLocaleDateString
+// ('pt-BR', UTC-3) volta um dia. Parse manual da string.
+function formatDataBR(s: string | null | undefined): string {
+  if (!s) return ''
+  const [y, m, d] = s.slice(0, 10).split('-')
+  return y && m && d ? `${d}/${m}/${y}` : ''
+}
+
 function statusInfo(r: DesafioResposta | undefined) {
   if (!r)               return { label: 'Pendente',   color: '#d97706', bg: '#fef9c3', icon: Clock }
   if (r.validado === null) return { label: 'Aguardando', color: '#64748b', bg: '#f1f5f9', icon: Clock }
@@ -178,7 +186,7 @@ export default function DesafiosPage() {
           const st       = statusInfo(d.resposta)
           const Icon     = st.icon
           const aberto   = expanded === d.id
-          const prazo    = new Date(d.fim) < new Date(hoje) ? 'Encerrado' : `Até ${new Date(d.fim).toLocaleDateString('pt-BR')}`
+          const prazo    = new Date(d.fim) < new Date(hoje) ? 'Encerrado' : `Até ${formatDataBR(d.fim)}`
           const resps    = todasRespostas[d.id] || []
 
           return (

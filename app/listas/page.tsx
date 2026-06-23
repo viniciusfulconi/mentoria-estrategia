@@ -7,6 +7,14 @@ import Link from 'next/link'
 
 import { CORES_MATERIA as CORES_MAT } from '@/lib/cores'
 
+// Coluna DATE ("YYYY-MM-DD"): new Date() interpreta como UTC e .toLocaleDateString
+// ('pt-BR', UTC-3) volta um dia. Parse manual da string.
+function formatDataBR(s: string | null | undefined): string {
+  if (!s) return ''
+  const [y, m, d] = s.slice(0, 10).split('-')
+  return y && m && d ? `${d}/${m}/${y}` : ''
+}
+
 export default function ListasPage({ alunoId: propAlunoId }: { alunoId?: string }) {
   const { perfil } = useAuth()
   const [listas, setListas] = useState<any[]>([])
@@ -182,7 +190,7 @@ function ListaCard({ lista, pct, cor, corPct, isOwn, onDelete }: any) {
           <div style={{ fontSize: 13, fontWeight: 500, color: '#1a1a1a', marginBottom: 2 }}>{lista.nome}</div>
           <div style={{ fontSize: 11, color: '#999', marginBottom: 6 }}>
             {lista.topico_nome !== lista.materia && <span>{lista.topico_nome} · </span>}
-            {new Date(lista.data).toLocaleDateString('pt-BR')}
+            {formatDataBR(lista.data)}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div style={{ height: 5, background: '#F1F5F9', borderRadius: 3, overflow: 'hidden', flex: 1 }}>

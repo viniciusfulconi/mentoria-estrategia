@@ -67,6 +67,12 @@ async function extrairTextoDocx(url: string): Promise<string> {
   }
 }
 
+function formatDataBR(s: string | null | undefined): string {
+  if (!s) return '?'
+  const [y, m, d] = s.slice(0, 10).split('-')
+  return y && m && d ? `${d}/${m}/${y}` : '?'
+}
+
 function promptPara(tipo: Tipo, alunoNome: string, partes: string[]): string {
   const contexto = partes.join('\n\n---\n\n')
 
@@ -180,7 +186,7 @@ export async function POST(req: NextRequest) {
         atendimentos.slice(0, 20).map(async at => {
           const texto = await extrairTextoDocx(at.arquivo_gemini_url)
           if (!texto) return null
-          const data = at.data_atendimento ? new Date(at.data_atendimento).toLocaleDateString('pt-BR') : '?'
+          const data = formatDataBR(at.data_atendimento)
           return `--- Sessão com ${at.mentor} em ${data} ---\n${texto}`
         })
       )
@@ -202,7 +208,7 @@ export async function POST(req: NextRequest) {
         atendimentos.map(async at => {
           const texto = await extrairTextoDocx(at.arquivo_gemini_url)
           if (!texto) return null
-          const data = at.data_atendimento ? new Date(at.data_atendimento).toLocaleDateString('pt-BR') : '?'
+          const data = formatDataBR(at.data_atendimento)
           return `--- Sessão com ${at.mentor} em ${data} ---\n${texto}`
         })
       )

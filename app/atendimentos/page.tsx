@@ -48,6 +48,21 @@ export default function Atendimentos() {
 
   useEffect(() => { carregar() }, [perfil, verticalAtiva])
 
+  // Datas vêm do Postgres como "YYYY-MM-DD"; new Date(...) interpreta como UTC e
+  // .toLocaleDateString('pt-BR') (UTC-3) joga para o dia anterior. Parse manual.
+  function ymd(s: string) {
+    const [y, m, d] = (s || '').slice(0, 10).split('-')
+    return { y, m, d }
+  }
+  function formatDataBR(s: string) {
+    const { y, m, d } = ymd(s)
+    return y && m && d ? `${d}/${m}/${y}` : ''
+  }
+  function mesAno(s: string) {
+    const { y, m } = ymd(s)
+    return y && m ? `${m}/${y}` : ''
+  }
+
   async function carregar() {
     setErro(null)
     const vertical = verticalAtiva || 'ITA'
@@ -74,8 +89,7 @@ export default function Atendimentos() {
   // Gera meses únicos a partir da data do atendimento (formato: MM/YYYY)
   const mesesUnicos = [...new Set(dados.map(d => {
     if (!d.data_atendimento) return null
-    const dt = new Date(d.data_atendimento)
-    return `${String(dt.getMonth() + 1).padStart(2, '0')}/${dt.getFullYear()}`
+    return mesAno(d.data_atendimento)
   }).filter(Boolean))].sort() as string[]
   const meses = mesesUnicos
 
@@ -86,9 +100,7 @@ export default function Atendimentos() {
   }
 
   function mesDaData(data: string) {
-    if (!data) return ''
-    const dt = new Date(data)
-    return `${String(dt.getMonth() + 1).padStart(2, '0')}/${dt.getFullYear()}`
+    return mesAno(data)
   }
 
   const filtrados = dados.filter(d => {
@@ -146,8 +158,8 @@ export default function Atendimentos() {
     setEditSaving(true); setEditErro('')
     const durMin = calcDuracaoEdit()
     const valor = durMin > 0 ? Math.round((durMin / 60) * 200 * 100) / 100 : editando.valor_pago
-    const mes = new Date(editForm.data_atendimento).toLocaleDateString('pt-BR', { month: '2-digit', year: 'numeric' })
-    const ano = new Date(editForm.data_atendimento).getFullYear()
+    const mes = mesAno(editForm.data_atendimento)
+    const ano = Number(ymd(editForm.data_atendimento).y)
     const { error } = await dbUpdate('atendimentos_mentoria', { id: `eq.${editando.id}` }, {
       ...editForm,
       duracao_minutos: durMin > 0 ? durMin : editando.duracao_minutos,
@@ -380,7 +392,7 @@ export default function Atendimentos() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 13, fontWeight: 600, color: '#1a1a1a' }}>{d.aluno || 'Atendimento coletivo'}</div>
-                    <div style={{ fontSize: 11, color: '#999', marginTop: 2 }}>{d.mentor} · {new Date(d.data_atendimento).toLocaleDateString('pt-BR')}</div>
+                    <div style={{ fontSize: 11, color: '#999', marginTop: 2 }}>{d.mentor} · {formatDataBR(d.data_atendimento)}</div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, flexShrink: 0 }}>
                     <div style={{ textAlign: 'right' }}>
@@ -454,7 +466,7 @@ export default function Atendimentos() {
                 <div key={d.id} className="card" style={{ marginBottom: 10, borderLeft: '3px solid #DC2626' }}>
                   <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}>{d.aluno}</div>
                   <div style={{ fontSize: 11, color: '#999', marginBottom: 6 }}>
-                    {d.mentor} · {new Date(d.data_atendimento).toLocaleDateString('pt-BR')}
+                    {d.mentor} · {formatDataBR(d.data_atendimento)}
                   </div>
                   {d.solicitacao_aluno && <div style={{ fontSize: 12, color: '#DC2626', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 4 }}><Pin size={11} strokeWidth={2} />{d.solicitacao_aluno}</div>}
                   {d.descricao && <div style={{ fontSize: 12, color: '#666', lineHeight: 1.5 }}>{d.descricao}</div>}
