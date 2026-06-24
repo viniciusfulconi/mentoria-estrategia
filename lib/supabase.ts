@@ -55,6 +55,38 @@ export async function dbQuery<T = any>(
   }
 }
 
+// SELECT paginado — contorna o teto fixo de 1000 linhas do PostgREST (db-max-rows).
+// O servidor NUNCA devolve mais de 1000 linhas por request (nem com limit/Range maiores),
+// então buscamos em páginas via offset até a última página vir incompleta.
+// Usa 'id' como desempate de ordenação p/ paginação consistente (sem duplicar/pular linhas).
+export async function dbQueryAll<T = any>(
+  table: string,
+  params: Record<string, string> = {},
+  select = '*',
+  pageSize = 1000
+): Promise<QueryResult<T[]>> {
+  const { limit: _limit, offset: _offset, ...rest } = params
+  const orderCols = (rest.order || '').split(',').map(s => s.trim().split('.')[0]).filter(Boolean)
+  if (!orderCols.includes('id')) rest.order = rest.order ? `${rest.order},id` : 'id'
+
+  const all: T[] = []
+  let offset = 0
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    const { data, error } = await dbQuery<T>(
+      table,
+      { ...rest, limit: String(pageSize), offset: String(offset) },
+      select
+    )
+    if (error) return { data: null, error }
+    const rows = data || []
+    all.push(...rows)
+    if (rows.length < pageSize) break
+    offset += pageSize
+  }
+  return { data: all, error: null }
+}
+
 // INSERT — returning=true devolve os registros criados
 export async function dbInsert<T = any>(
   table: string,

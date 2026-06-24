@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { dbQuery, getToken } from '@/lib/supabase'
+import { dbQuery, dbQueryAll, getToken } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import Nav from '@/components/Nav'
 import Link from 'next/link'
@@ -69,13 +69,13 @@ export default function Atendimentos() {
     const params: Record<string, string> = { order: 'data_atendimento.desc', vertical: `eq.${vertical}` }
     if (perfil?.papel === 'mentor') params['mentor'] = `eq.${perfil.mentor_nome || ''}`
 
-    let { data, error } = await dbQuery('atendimentos_mentoria', params)
+    let { data, error } = await dbQueryAll('atendimentos_mentoria', params)
 
     // Coluna vertical ainda não existe (migration pendente) — carrega sem filtro
     if (error && error.includes('vertical')) {
       const fallback = { order: 'data_atendimento.desc' } as Record<string, string>
       if (perfil?.papel === 'mentor') fallback['mentor'] = `eq.${perfil.mentor_nome || ''}`
-      const res = await dbQuery('atendimentos_mentoria', fallback)
+      const res = await dbQueryAll('atendimentos_mentoria', fallback)
       data = res.data
       error = res.error
     }

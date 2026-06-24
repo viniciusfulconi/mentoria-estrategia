@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { dbQuery } from '@/lib/supabase'
+import { dbQuery, dbQueryAll } from '@/lib/supabase'
 import Nav from '@/components/Nav'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
@@ -87,7 +87,7 @@ export default function Home() {
       dbQuery('alunos_dados', {}, 'id_aluno,mentor'),
       dbQuery('aulas', {}, 'id'),
       dbQuery('turmas'),
-      dbQuery('resultados',
+      dbQueryAll('resultados',
         { fase: 'eq.ranking', order: 'ciclo_nome.desc' },
         'id_aluno,nome_aluno,mentor,ciclo_nome,resultado_ciclo,media_1fase,media_2fase,nota_matematica,nota_fisica,nota_quimica,media_linguagens'
       ),

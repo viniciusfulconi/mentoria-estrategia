@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { dbQuery } from '@/lib/supabase'
+import { dbQuery, dbQueryAll } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import Nav from '@/components/Nav'
 import Link from 'next/link'
@@ -24,7 +24,7 @@ export default function Cronograma() {
 
     const [{ data: cs }, { data: ts }, { data: ps }] = await Promise.all([
       dbQuery('concursos',            { vertical: `eq.${vertical}`, order: 'created_at.desc' }),
-      dbQuery('arvore_subtopicos',    { vertical: `eq.${vertical}` }, 'id'),
+      dbQueryAll('arvore_subtopicos', { vertical: `eq.${vertical}` }, 'id'),
       dbQuery('progresso_subtopicos', {}, 'aluno_id,subtopico_id,status'),
     ])
     setConcursos(cs || [])

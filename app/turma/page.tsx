@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState, useMemo } from 'react'
-import { dbQuery } from '@/lib/supabase'
+import { dbQuery, dbQueryAll } from '@/lib/supabase'
 import Nav from '@/components/Nav'
 import PageLoader from '@/components/PageLoader'
 import Link from 'next/link'
@@ -33,7 +33,7 @@ export default function Turma() {
 
   useEffect(() => {
     if (verticalAtiva === 'Medicina') { router.replace('/med/alunos'); return }
-    dbQuery('resultados', { fase: 'eq.ranking', order: 'ciclo_nome' })
+    dbQueryAll('resultados', { fase: 'eq.ranking', order: 'ciclo_nome' })
       .then(({ data }) => {
         const d = data || []
         setDados(d)

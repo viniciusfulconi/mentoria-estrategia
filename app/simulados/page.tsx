@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { dbQuery } from '@/lib/supabase'
+import { dbQuery, dbQueryAll } from '@/lib/supabase'
 import Nav from '@/components/Nav'
 import PageLoader from '@/components/PageLoader'
 import Link from 'next/link'
@@ -30,7 +30,7 @@ export default function Simulados() {
   async function load() {
     setErro(null)
     const [{ data, error }, { data: alunosDados }] = await Promise.all([
-      dbQuery(
+      dbQueryAll(
         'resultados',
         { 'fase': 'eq.ranking', 'order': 'ciclo_nome' },
         'id_aluno,nome_aluno,mentor,ciclo_nome,fase,resultado_ciclo,media_1fase,media_2fase'

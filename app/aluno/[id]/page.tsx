@@ -1,7 +1,7 @@
 'use client'
 import ListasPage from '@/app/listas/page'
 import { useEffect, useState } from 'react'
-import { dbQuery } from '@/lib/supabase'
+import { dbQuery, dbQueryAll } from '@/lib/supabase'
 import Nav from '@/components/Nav'
 import { useRouter, useParams } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
@@ -102,7 +102,7 @@ export default function AlunoPage() {
       dbQuery('resultados', { id_aluno: `eq.${targetId}`, order: 'ciclo_nome', limit: '500' }),
       dbQuery('perfis', { aluno_id: `eq.${targetId}` }),
       dbQuery('alunos_dados', { id_aluno: `eq.${targetId}` }),
-      dbQuery('arvore_subtopicos', {}, 'id,nome,topico_id'),
+      dbQueryAll('arvore_subtopicos', {}, 'id,nome,topico_id'),
       dbQuery('progresso_subtopicos', { aluno_id: `eq.${targetId}` }, 'subtopico_id,status'),
     ])
     const perfilData = perfilArr?.[0] ?? null
@@ -116,7 +116,7 @@ export default function AlunoPage() {
     // Rodada 2: todos os rankings de todos os alunos (sem filtrar por ciclo) para que
     // a posição geral e o ranking por matéria sejam calculados igual à página de turma
     const [{ data: todosRanking }] = await Promise.all([
-      dbQuery('resultados', { fase: 'eq.ranking', limit: '5000' },
+      dbQueryAll('resultados', { fase: 'eq.ranking' },
         'id_aluno,nome_aluno,ciclo_nome,nota_matematica,nota_fisica,nota_quimica,nota_portugues,nota_redacao,media_linguagens,media_1fase,media_2fase'),
     ])
 
@@ -202,7 +202,7 @@ export default function AlunoPage() {
   }
 
   async function loadTurmaQuestoes() {
-    const { data } = await dbQuery('resultados', {
+    const { data } = await dbQueryAll('resultados', {
       fase: 'neq.ranking',
       ciclo_nome: `in.(${ciclosDoAluno.join(',')})`,
       notas_questoes: 'not.is.null',

@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { dbQuery, dbUpdate, dbInsert } from '@/lib/supabase'
+import { dbQuery, dbQueryAll, dbUpdate, dbInsert } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { useParams, useRouter } from 'next/navigation'
 import Nav from '@/components/Nav'
@@ -59,7 +59,7 @@ export default function CronogramaAluno() {
       dbQuery('arvore_areas',      { vertical: `eq.${vertical}`, order: 'ordem.asc' }),
       dbQuery('arvore_materias',   { vertical: `eq.${vertical}`, order: 'ordem.asc' }),
       dbQuery('arvore_topicos',    { vertical: `eq.${vertical}`, order: 'ordem.asc' }, 'id,materia_id,nome,ordem'),
-      dbQuery('arvore_subtopicos', { vertical: `eq.${vertical}`, order: 'ordem.asc' }, 'id,topico_id,nome,ordem'),
+      dbQueryAll('arvore_subtopicos', { vertical: `eq.${vertical}`, order: 'ordem.asc' }, 'id,topico_id,nome,ordem'),
       dbQuery('progresso_subtopicos', { aluno_id: `eq.${targetId}` }, 'subtopico_id,status'),
       dbQuery('concursos', { vertical: `eq.${vertical}`, order: 'created_at.desc', limit: '1' }),
     ])
