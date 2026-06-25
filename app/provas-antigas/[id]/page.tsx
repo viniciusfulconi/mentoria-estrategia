@@ -100,13 +100,19 @@ export default function RankingProvaAntigaPage() {
   const [uploadingRes,   setUploadingRes]   = useState(false)
   const [resErro,        setResErro]        = useState('')
 
+  // Só coordenador/direção edita (envia resolução). Mentor ITA vê tudo em modo leitura.
+  const podeEditar = perfil?.papel === 'coordenador' || perfil?.papel === 'direcao'
+
   useEffect(() => {
     if (!loading && !perfil) router.replace('/login')
   }, [loading, perfil, router])
 
   useEffect(() => {
     if (!perfil || !id) return
-    if (perfil.papel !== 'coordenador' && perfil.papel !== 'direcao') {
+    // Coordenador/direção: acesso total. Mentor ITA: leitura (sem editar). Demais: bloqueado.
+    const isGestor = perfil.papel === 'coordenador' || perfil.papel === 'direcao'
+    const isMentorITA = perfil.papel === 'mentor' && perfil.vertical !== 'Medicina'
+    if (!isGestor && !isMentorITA) {
       router.replace('/provas-antigas')
       return
     }
@@ -442,22 +448,26 @@ export default function RankingProvaAntigaPage() {
                 </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                {prova.pdf_resolucao_url && (
+                {prova.pdf_resolucao_url ? (
                   <a href={prova.pdf_resolucao_url} target="_blank" rel="noreferrer" style={{ fontSize: 12, color: '#f97316', textDecoration: 'none', padding: '5px 12px', border: '1.5px solid #f97316', borderRadius: 8, fontWeight: 600 }}>
                     Abrir
                   </a>
+                ) : !podeEditar ? (
+                  <span style={{ fontSize: 11, color: '#94a3b8' }}>não enviado</span>
+                ) : null}
+                {podeEditar && (
+                  <label style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#475569', padding: '5px 12px', border: '1.5px dashed #cbd5e1', borderRadius: 8, cursor: uploadingRes ? 'wait' : 'pointer', fontWeight: 600 }}>
+                    <Upload size={12} strokeWidth={2} />
+                    {uploadingRes ? 'Enviando…' : prova.pdf_resolucao_url ? 'Trocar' : 'Enviar'}
+                    <input
+                      type="file"
+                      accept="application/pdf"
+                      disabled={uploadingRes}
+                      onChange={e => { const f = e.target.files?.[0]; if (f) uploadResolucao(f); e.target.value = '' }}
+                      style={{ display: 'none' }}
+                    />
+                  </label>
                 )}
-                <label style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#475569', padding: '5px 12px', border: '1.5px dashed #cbd5e1', borderRadius: 8, cursor: uploadingRes ? 'wait' : 'pointer', fontWeight: 600 }}>
-                  <Upload size={12} strokeWidth={2} />
-                  {uploadingRes ? 'Enviando…' : prova.pdf_resolucao_url ? 'Trocar' : 'Enviar'}
-                  <input
-                    type="file"
-                    accept="application/pdf"
-                    disabled={uploadingRes}
-                    onChange={e => { const f = e.target.files?.[0]; if (f) uploadResolucao(f); e.target.value = '' }}
-                    style={{ display: 'none' }}
-                  />
-                </label>
               </div>
             </div>
             {resErro && <div style={{ fontSize: 12, color: '#DC2626' }}>{resErro}</div>}

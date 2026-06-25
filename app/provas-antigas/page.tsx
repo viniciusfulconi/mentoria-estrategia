@@ -27,6 +27,9 @@ export default function ProvasAntigas() {
   }
 
   const isCoordenador = perfil?.papel === 'coordenador' || perfil?.papel === 'direcao'
+  // Mentor ITA tem acesso de leitura ao ranking e PDFs (não pode criar/editar)
+  const isMentorITA = perfil?.papel === 'mentor' && perfil?.vertical !== 'Medicina'
+  const podeVerRanking = isCoordenador || isMentorITA
 
   return (
     <div style={{ paddingBottom: 80 }}>
@@ -81,7 +84,7 @@ export default function ProvasAntigas() {
                 </div>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flexShrink: 0, alignItems: 'flex-end' }}>
-                {isCoordenador && (
+                {podeVerRanking && (
                   <Link href={`/provas-antigas/${p.id}`} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#0f2554', textDecoration: 'none', padding: '4px 9px', border: '0.5px solid #0f2554', borderRadius: 8, fontWeight: 600 }}>
                     <BarChart2 size={12} strokeWidth={2} /> Ranking
                   </Link>
@@ -91,7 +94,7 @@ export default function ProvasAntigas() {
                     Prova
                   </a>
                 )}
-                {isCoordenador && p.pdf_resolucao_url && (
+                {podeVerRanking && p.pdf_resolucao_url && (
                   <a href={p.pdf_resolucao_url} target="_blank" rel="noreferrer" style={{ flexShrink: 0, fontSize: 11, color: '#f97316', textDecoration: 'none', padding: '4px 8px', border: '0.5px solid #f97316', borderRadius: 8 }}>
                     Resolução
                   </a>

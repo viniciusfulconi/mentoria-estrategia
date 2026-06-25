@@ -44,12 +44,13 @@ const tabsCoordenadorSecundarioMed = [
   { href: '/coruja',        label: 'Coruja',    icon: Bot },
 ]
 const tabsMentor = [
-  { href: '/mentor',        label: 'Alunos',  icon: Users },
-  { href: '/turma',         label: 'Turma',   icon: GraduationCap },
-  { href: '/atendimentos',  label: 'Atend.',  icon: Handshake },
-  { href: '/horario',       label: 'Horário', icon: Calendar },
-  { href: '/aulas',         label: 'Aulas',   icon: PlayCircle },
-  { href: '/mentor/perfil', label: 'Perfil',  icon: UserCircle },
+  { href: '/mentor',         label: 'Alunos',  icon: Users },
+  { href: '/turma',          label: 'Turma',   icon: GraduationCap },
+  { href: '/atendimentos',   label: 'Atend.',  icon: Handshake },
+  { href: '/horario',        label: 'Horário', icon: Calendar },
+  { href: '/provas-antigas', label: 'Provas',  icon: FileText },
+  { href: '/aulas',          label: 'Aulas',   icon: PlayCircle },
+  { href: '/mentor/perfil',  label: 'Perfil',  icon: UserCircle },
 ]
 const tabsAluno = [
   { href: '/meu-perfil',     label: 'Início',     icon: LayoutDashboard },
@@ -181,7 +182,8 @@ export default function Nav() {
 
   const tabsMentorFinal = papel === 'mentor' && perfil?.vertical === 'Medicina'
     ? tabsMentor
-        .filter(t => t.href !== '/turma') // não há visão de turma na vertical Medicina
+        // Medicina não tem visão de turma nem provas antigas (feature ITA)
+        .filter(t => t.href !== '/turma' && t.href !== '/provas-antigas')
         .map(t => t.href === '/mentor' ? { ...t, href: '/med/mentor' } : t)
     : tabsMentor
 
