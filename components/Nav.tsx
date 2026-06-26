@@ -58,6 +58,7 @@ const tabsAluno = [
   { href: '/horario',        label: 'Horário',    icon: Calendar },
   { href: '/questoes',       label: 'Questões',   icon: BookOpen },
   { href: '/desafios',       label: 'Desafios',   icon: Feather },
+  { href: '/quadro',         label: 'Quadro',     icon: NotebookPen },
 ]
 const tabsProfessor = [
   { href: '/simulados', label: 'Alunos',  icon: Users },
