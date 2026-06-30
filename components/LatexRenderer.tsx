@@ -8,8 +8,10 @@ interface Props {
   className?: string
 }
 
-// Tokens reconhecidos: imagem ![](...), molécula [smiles:...], LaTeX $$...$$ e $...$
-const SPLIT_RE = /(!\[[^\]]*\]\([^)]+\)|\[smiles:[^\]]*\]|\$\$[\s\S]*?\$\$|\$(?!\$)[^$\n]*?\$)/g
+// Tokens reconhecidos: imagem ![](...), molécula {smiles:...} ou [smiles:...],
+// LaTeX $$...$$ e $...$. A forma {smiles:...} aceita colchetes no SMILES
+// (ex.: cargas [CH2+], [O-]); a forma [smiles:...] é mantida por compatibilidade.
+const SPLIT_RE = /(!\[[^\]]*\]\([^)]+\)|\{smiles:[^}]*\}|\[smiles:[^\]]*\]|\$\$[\s\S]*?\$\$|\$(?!\$)[^$\n]*?\$)/g
 
 export default function LatexRenderer({ text, className }: Props) {
   const ref = useRef<HTMLDivElement>(null)
@@ -36,7 +38,7 @@ export default function LatexRenderer({ text, className }: Props) {
         continue
       }
 
-      const smiMatch = part.match(/^\[smiles:([^\]]*)\]$/)
+      const smiMatch = part.match(/^\{smiles:([^}]*)\}$/) || part.match(/^\[smiles:([^\]]*)\]$/)
       if (smiMatch) {
         hasSmiles = true
         html.push(
