@@ -8,7 +8,8 @@ interface Props {
   className?: string
 }
 
-const SPLIT_RE = /(!\[[^\]]*\]\([^)]+\)|\$\$[\s\S]*?\$\$|\$(?!\$)[^$\n]*?\$)/g
+// Tokens reconhecidos: imagem ![](...), molécula [smiles:...], LaTeX $$...$$ e $...$
+const SPLIT_RE = /(!\[[^\]]*\]\([^)]+\)|\[smiles:[^\]]*\]|\$\$[\s\S]*?\$\$|\$(?!\$)[^$\n]*?\$)/g
 
 export default function LatexRenderer({ text, className }: Props) {
   const ref = useRef<HTMLDivElement>(null)
@@ -18,8 +19,11 @@ export default function LatexRenderer({ text, className }: Props) {
 
     const parts = text.split(SPLIT_RE)
     const html: string[] = []
+    let hasSmiles = false
 
     for (const part of parts) {
+      if (!part) continue
+
       const imgMatch = part.match(/^!\[([^\]]*)\]\(([^)]+)\)$/)
       if (imgMatch) {
         const alt = escapeHtml(imgMatch[1])
@@ -28,6 +32,16 @@ export default function LatexRenderer({ text, className }: Props) {
           `<div style="text-align:center;margin:12px 0;">` +
           `<img src="${src}" alt="${alt}" style="max-width:100%;max-height:400px;border-radius:8px;" />` +
           `</div>`
+        )
+        continue
+      }
+
+      const smiMatch = part.match(/^\[smiles:([^\]]*)\]$/)
+      if (smiMatch) {
+        hasSmiles = true
+        html.push(
+          `<svg class="smiles-mol" data-smiles="${escapeAttr(smiMatch[1])}" ` +
+          `style="display:inline-block;vertical-align:middle;height:auto;max-height:150px;max-width:100%;margin:2px 6px;"></svg>`
         )
         continue
       }
@@ -54,6 +68,25 @@ export default function LatexRenderer({ text, className }: Props) {
     }
 
     ref.current.innerHTML = html.join('')
+
+    // Desenha as moléculas a partir do SMILES (carregamento sob demanda)
+    if (hasSmiles) {
+      const host = ref.current
+      import('smiles-drawer')
+        .then((mod) => {
+          const SD: any = (mod as any).default ?? mod
+          const drawer = new SD.SvgDrawer({ padding: 8.0, compactDrawing: false, terminalCarbons: true })
+          host.querySelectorAll('svg.smiles-mol').forEach((el) => {
+            const smi = el.getAttribute('data-smiles') || ''
+            SD.parse(
+              smi,
+              (tree: any) => { try { drawer.draw(tree, el, 'light') } catch { /* ignore */ } },
+              () => { el.replaceWith(document.createTextNode('[' + smi + ']')) },
+            )
+          })
+        })
+        .catch(() => { /* lib indisponível: mantém o placeholder */ })
+    }
   }, [text])
 
   return (
@@ -65,4 +98,8 @@ export default function LatexRenderer({ text, className }: Props) {
 
 function escapeHtml(s: string) {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+}
+
+function escapeAttr(s: string) {
+  return s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 }
