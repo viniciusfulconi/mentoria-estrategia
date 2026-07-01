@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { dbQuery, dbQueryAll } from '@/lib/supabase'
+import { mediaFinalCiclo } from '@/lib/rankings'
 import Nav from '@/components/Nav'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
@@ -127,13 +128,8 @@ export default function Home() {
     if (cicloAtual.length) {
       const aprovados = cicloAtual.filter((r: any) => r.resultado_ciclo === 'Aprovado').length
       const reprovados = cicloAtual.filter((r: any) => r.resultado_ciclo === 'Reprovado').length
-      // media_2fase já é a média final do ciclo (para ITA inclui media_1fase no cálculo).
-      // Quando media_2fase=null (ciclo em andamento), cai para media_1fase como aproximação.
-      const medias = cicloAtual.map((r: any) =>
-        r.media_2fase != null ? Number(r.media_2fase)
-        : r.media_1fase != null ? Number(r.media_1fase)
-        : null
-      ).filter((v: number | null) => v != null) as number[]
+      const medias = cicloAtual.map((r: any) => mediaFinalCiclo(r))
+        .filter((v: number | null) => v != null) as number[]
       const media = medias.length ? medias.reduce((a, b) => a + b, 0) / medias.length : 0
       setCicloStats({ nome: latestCiclo, aprovados, reprovados, total: cicloAtual.length, media })
 
@@ -184,11 +180,7 @@ export default function Home() {
   }
 
   function calcMedia(r: any) {
-    // media_2fase é a média final do ciclo (inclui 1ª fase no cálculo ITA).
-    // Cai para media_1fase só se a 2ª fase ainda não fechou.
-    if (r.media_2fase != null) return Number(r.media_2fase)
-    if (r.media_1fase != null) return Number(r.media_1fase)
-    return 0
+    return mediaFinalCiclo(r) ?? 0
   }
 
   function corMedia(m: number) {

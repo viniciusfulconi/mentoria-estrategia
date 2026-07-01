@@ -32,22 +32,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Parâmetros inválidos' }, { status: 400 })
   }
 
-  // Upsert no saldo (cria linha ou incrementa)
+  // Incremento atômico via RPC (ON CONFLICT DO UPDATE saldo = saldo + valor).
+  // Substitui o antigo POST+PATCH que SOBRESCREVIA o saldo.
   const saldoRes = await restFetch(
-    `moedas_saldo?aluno_id=eq.${aluno_id}`,
+    'rpc/creditar_saldo',
     'POST',
-    { aluno_id, saldo: valor, updated_at: new Date().toISOString() },
+    { p_aluno_id: aluno_id, p_valor: valor },
     user.token,
   )
-
-  // Se já existe, faz PATCH para incrementar
   if (!saldoRes.ok) {
-    await restFetch(
-      `moedas_saldo?aluno_id=eq.${aluno_id}`,
-      'PATCH',
-      { saldo: valor, updated_at: new Date().toISOString() },
-      user.token,
-    )
+    return NextResponse.json({ error: 'Erro ao creditar saldo' }, { status: 500 })
   }
 
   await restFetch('moedas_transacoes', 'POST', {

@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { dbQuery, dbQueryAll } from '@/lib/supabase'
+import { mediaFinalCiclo } from '@/lib/rankings'
 import Nav from '@/components/Nav'
 import PageLoader from '@/components/PageLoader'
 import Link from 'next/link'
@@ -79,13 +80,8 @@ export default function Simulados() {
   }
 
   function mediaGeral(aluno: any) {
-    // media_2fase é a média final do ciclo. Zero é nota válida (aluno zerou).
-    // Cai para media_1fase só quando a 2ª fase ainda não fechou (media_2fase=null).
-    const vals = Object.values(aluno.ciclos).map((c: any) => {
-      if (c.media_2fase != null) return Number(c.media_2fase)
-      if (c.media_1fase != null) return Number(c.media_1fase)
-      return null
-    }).filter((v): v is number => v != null)
+    const vals = Object.values(aluno.ciclos).map((c: any) => mediaFinalCiclo(c))
+      .filter((v): v is number => v != null)
     if (!vals.length) return null
     return vals.reduce((a, b) => a + b, 0) / vals.length
   }

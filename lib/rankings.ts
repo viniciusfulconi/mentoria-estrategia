@@ -11,6 +11,16 @@
 // (médias, aprovação, ordenação) deve ser feita aqui — e vale para os dois fluxos.
 // ─────────────────────────────────────────────────────────────────────────────
 
+// Média final do ciclo para exibição/ordenação. `media_2fase` já é a média final
+// (para ITA inclui a 1ª fase no cálculo); cai para `media_1fase` só quando a 2ª
+// fase ainda não fechou (`media_2fase` = null). Zero é nota válida (aluno zerou).
+// Fonte única — antes esta regra estava copiada em 7+ páginas.
+export function mediaFinalCiclo(r: { media_2fase?: number | null; media_1fase?: number | null }): number | null {
+  if (r?.media_2fase != null) return Number(r.media_2fase)
+  if (r?.media_1fase != null) return Number(r.media_1fase)
+  return null
+}
+
 // Recebe as linhas de fase (1fase, 2fase_mat, 2fase_fis, ...) de um ou mais
 // ciclos/concursos e devolve uma linha consolidada fase='ranking' por aluno.
 export function calcularRankings(todosDados: any[]): any[] {

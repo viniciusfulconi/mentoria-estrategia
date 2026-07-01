@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import Nav from '@/components/Nav'
 import { Upload, UserPlus, X, ChevronDown, ChevronUp } from 'lucide-react'
-import * as XLSX from 'xlsx'
 
 const VESTIBULARES = [
   'ENEM','UERJ','UNITAU','USCS','UNIFAE','UEA','UVA','URCA','UEMA','UEMASUL','UERR',
@@ -110,8 +109,9 @@ export default function NovoAlunoMed() {
 
   function processarPlanilha(file: File) {
     const reader = new FileReader()
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       try {
+        const XLSX = await import('xlsx')
         const wb = XLSX.read(e.target?.result, { type: 'binary' })
         const ws = wb.Sheets[wb.SheetNames[0]]
         const rows: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1 })
