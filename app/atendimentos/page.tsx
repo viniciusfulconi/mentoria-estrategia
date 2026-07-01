@@ -242,48 +242,76 @@ export default function Atendimentos() {
     }
     setExportLoading(true)
     try {
-      const meuNome = perfil?.mentor_nome || ''
-      if (!meuNome) {
-        setExportErro('Seu perfil não tem nome de mentor configurado.')
-        setExportLoading(false)
-        return
-      }
-      const ats = dados.filter(d => {
+      const noPeriodo = (d: any) => {
         if (!d.data_atendimento) return false
-        if (d.mentor !== meuNome) return false
         const dia = d.data_atendimento.slice(0, 10)
         return dia >= exportInicio && dia <= exportFim
-      }).sort((a, b) => a.data_atendimento.localeCompare(b.data_atendimento))
-
-      if (ats.length === 0) {
-        setExportErro('Nenhum atendimento encontrado no período.')
-        setExportLoading(false)
-        return
       }
-
-      const rows = ats.map(d => {
+      // Layout de cobrança (mesmo do mentor): 5 colunas, sem cabeçalho.
+      const linhaBilling = (d: any) => {
         const [y, m, dia] = d.data_atendimento.slice(0, 10).split('-')
         const dataBR = `${dia}/${m}/${y}`
         const tipoLabel = (d.tipo || '').toLowerCase() === 'coletiva' ? 'Coletiva' : (d.aluno || 'Coletiva')
         const min = d.duracao_minutos || 0
-        return [
-          'EM',
-          'Presencial ITA/IME',
-          dataBR,
-          'Mentoria - Presencial ITA/IME',
-          `Mentoria – ${tipoLabel} (${min} min)`,
-        ]
-      })
+        return ['EM', 'Presencial ITA/IME', dataBR, 'Mentoria - Presencial ITA/IME', `Mentoria – ${tipoLabel} (${min} min)`]
+      }
+      const COLS = [{ wch: 6 }, { wch: 22 }, { wch: 12 }, { wch: 32 }, { wch: 40 }]
 
       const XLSX = await import('xlsx')
-      const ws = XLSX.utils.aoa_to_sheet(rows)
-      ws['!cols'] = [{ wch: 6 }, { wch: 22 }, { wch: 12 }, { wch: 32 }, { wch: 40 }]
       const wb = XLSX.utils.book_new()
-      XLSX.utils.book_append_sheet(wb, ws, 'Atendimentos')
 
-      const mentorSlug = (perfil?.mentor_nome || 'mentor').replace(/\s+/g, '_')
-      const nome = `atendimentos_${mentorSlug}_${exportInicio}_a_${exportFim}.xlsx`
-      XLSX.writeFile(wb, nome)
+      if (perfil?.papel === 'coordenador') {
+        // Coordenador: todos os mentores no período, uma aba por mentor.
+        const ats = dados.filter(noPeriodo)
+        if (ats.length === 0) {
+          setExportErro('Nenhum atendimento encontrado no período.')
+          setExportLoading(false)
+          return
+        }
+        const porMentor: Record<string, any[]> = {}
+        ats.forEach(d => { const m = d.mentor || 'Sem mentor'; (porMentor[m] = porMentor[m] || []).push(d) })
+
+        // Nome de aba: Excel limita a 31 chars, proíbe : \ / ? * [ ] e exige unicidade.
+        const usados = new Set<string>()
+        const nomeAba = (nome: string) => {
+          const base = (nome || 'Sem mentor').replace(/[:\\/?*[\]]/g, ' ').trim().slice(0, 31) || 'Mentor'
+          let n = base, i = 2
+          while (usados.has(n)) { const suf = ` (${i})`; n = base.slice(0, 31 - suf.length) + suf; i++ }
+          usados.add(n)
+          return n
+        }
+
+        Object.keys(porMentor).sort((a, b) => a.localeCompare(b)).forEach(mentor => {
+          const linhas = porMentor[mentor]
+            .slice()
+            .sort((a, b) => a.data_atendimento.localeCompare(b.data_atendimento))
+            .map(linhaBilling)
+          const ws = XLSX.utils.aoa_to_sheet(linhas)
+          ws['!cols'] = COLS
+          XLSX.utils.book_append_sheet(wb, ws, nomeAba(mentor))
+        })
+        XLSX.writeFile(wb, `atendimentos_todos_${exportInicio}_a_${exportFim}.xlsx`)
+      } else {
+        // Mentor: apenas os próprios atendimentos, uma aba.
+        const meuNome = perfil?.mentor_nome || ''
+        if (!meuNome) {
+          setExportErro('Seu perfil não tem nome de mentor configurado.')
+          setExportLoading(false)
+          return
+        }
+        const ats = dados
+          .filter(d => noPeriodo(d) && d.mentor === meuNome)
+          .sort((a, b) => a.data_atendimento.localeCompare(b.data_atendimento))
+        if (ats.length === 0) {
+          setExportErro('Nenhum atendimento encontrado no período.')
+          setExportLoading(false)
+          return
+        }
+        const ws = XLSX.utils.aoa_to_sheet(ats.map(linhaBilling))
+        ws['!cols'] = COLS
+        XLSX.utils.book_append_sheet(wb, ws, 'Atendimentos')
+        XLSX.writeFile(wb, `atendimentos_${meuNome.replace(/\s+/g, '_')}_${exportInicio}_a_${exportFim}.xlsx`)
+      }
       setShowExport(false)
     } catch (e: any) {
       setExportErro(e?.message || 'Falha ao gerar planilha.')
@@ -307,6 +335,10 @@ export default function Atendimentos() {
                   </button>
                 )}
                 <Link href="/atendimentos/upload" style={{ textDecoration: 'none', background: '#F1F5F9', color: '#666', borderRadius: 10, padding: '6px 12px', fontSize: 12 }}>↑ Import</Link>
+                <button onClick={abrirExport}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#F1F5F9', color: '#444', border: 'none', borderRadius: 10, padding: '6px 12px', fontSize: 12, fontWeight: 500, cursor: 'pointer', fontFamily: 'DM Sans,sans-serif' }}>
+                  <Download size={13} strokeWidth={2} />XLSX
+                </button>
               </>
             )}
             {perfil?.papel === 'mentor' && (
@@ -598,7 +630,9 @@ export default function Atendimentos() {
 
             <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div style={{ fontSize: 12, color: '#666', lineHeight: 1.5 }}>
-                Selecione o período. A planilha conterá apenas os seus atendimentos no intervalo escolhido.
+                {perfil?.papel === 'coordenador'
+                  ? 'Selecione o período. A planilha terá uma aba por mentor, com os atendimentos de todos no intervalo escolhido.'
+                  : 'Selecione o período. A planilha conterá apenas os seus atendimentos no intervalo escolhido.'}
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                 <div>
