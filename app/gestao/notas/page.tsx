@@ -119,7 +119,7 @@ export default function GestaoNotas() {
     const m = questoes[fase]; if (!m) return null
     const nums: Record<string, number> = {}
     for (const k of Object.keys(m)) nums[k] = parseQ(m[k])
-    return notaDeQuestoes(nums)
+    return notaDeQuestoes(nums, FASES.find(f => f.fase === fase)?.nQuestoes)
   }
   const linguagens = useMemo(() => {
     const port = modoFase['2fase_port'] === 'questoes' ? notaFase('2fase_port') : parseVal(valores['nota_portugues'])

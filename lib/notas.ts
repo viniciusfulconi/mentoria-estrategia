@@ -14,17 +14,21 @@ import { calcularRankings } from '@/lib/rankings'
 export type FaseConfig = {
   fase: string
   label: string
-  campoAgg: string   // coluna da nota agregada
-  questoes: boolean  // tem detalhamento por questão (radar)?
+  campoAgg: string        // coluna da nota agregada
+  questoes: boolean       // tem detalhamento por questão (radar)?
+  nQuestoes?: number      // tamanho padrão do exame (nº de questões) — usado como divisor
 }
 
 // Fases na ordem de exibição. Redação é tratada à parte (mesma linha 2fase_port).
+// nQuestoes: 2ª fase Mat/Fís/Quí têm 10 questões; Português tem 15. Esse é o
+// divisor "oficial" do exame — usado no lugar da contagem de chaves do JSON, que
+// pode estar incompleta (ex.: alguma questão não registrada) e inflaria a nota.
 export const FASES: FaseConfig[] = [
   { fase: '1fase',      label: '1ª Fase',    campoAgg: 'media_1fase',     questoes: false },
-  { fase: '2fase_mat',  label: 'Matemática', campoAgg: 'nota_matematica', questoes: true },
-  { fase: '2fase_fis',  label: 'Física',     campoAgg: 'nota_fisica',     questoes: true },
-  { fase: '2fase_qui',  label: 'Química',    campoAgg: 'nota_quimica',    questoes: true },
-  { fase: '2fase_port', label: 'Português',  campoAgg: 'nota_portugues',  questoes: true },
+  { fase: '2fase_mat',  label: 'Matemática', campoAgg: 'nota_matematica', questoes: true, nQuestoes: 10 },
+  { fase: '2fase_fis',  label: 'Física',     campoAgg: 'nota_fisica',     questoes: true, nQuestoes: 10 },
+  { fase: '2fase_qui',  label: 'Química',    campoAgg: 'nota_quimica',    questoes: true, nQuestoes: 10 },
+  { fase: '2fase_port', label: 'Português',  campoAgg: 'nota_portugues',  questoes: true, nQuestoes: 15 },
   { fase: '2fase_ing',  label: 'Inglês',     campoAgg: 'nota_ingles',     questoes: false },
 ]
 
@@ -46,11 +50,17 @@ function arred(n: number, casas = 4): number {
 
 // Nota agregada a partir do detalhamento: (soma das questões / nº de questões) * 10.
 // Ex.: Física 10 questões → soma; Português 15 questões → soma*10/15.
-export function notaDeQuestoes(q: Record<string, any>): number | null {
+//
+// O divisor é o tamanho do exame: usamos max(chaves no JSON, tamanho padrão da
+// fase). Se o JSON estiver incompleto (menos questões que o exame), o padrão
+// evita inflar a nota; se um dia houver prova maior que o padrão, as chaves
+// mandam. Questões ausentes contam como 0 (não pontuadas).
+export function notaDeQuestoes(q: Record<string, any>, nQuestoes?: number): number | null {
   const keys = Object.keys(q || {})
   if (keys.length === 0) return null
   const soma = keys.reduce((a, k) => a + (Number(q[k]) || 0), 0)
-  return arred((soma / keys.length) * 10)
+  const divisor = Math.max(keys.length, nQuestoes || 0)
+  return arred((soma / divisor) * 10)
 }
 
 // Salva as notas editadas de um aluno num ciclo e recalcula o ranking.
@@ -74,7 +84,7 @@ export async function salvarNotasAluno(opts: {
   for (const [fase, q] of Object.entries(questoesPorFase)) {
     const cfg = FASES.find(f => f.fase === fase)
     if (!cfg) continue
-    merge(fase, { notas_questoes: q, [cfg.campoAgg]: notaDeQuestoes(q) })
+    merge(fase, { notas_questoes: q, [cfg.campoAgg]: notaDeQuestoes(q, cfg.nQuestoes) })
   }
   for (const [coluna, valor] of Object.entries(valores)) {
     const fase = COLUNA_FASE[coluna]
