@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
 import { dbQuery, dbUpdate } from '@/lib/supabase'
 import Nav from '@/components/Nav'
+import ErroLoad from '@/components/ErroLoad'
 import Link from 'next/link'
 import {
   Clock, Users, BarChart2, Pencil, Check, X,
@@ -49,6 +50,7 @@ export default function MentorPerfil() {
   const [atendStats, setAtendStats] = useState({ sessoes: 0, horas: 0 })
   const [csatRespostas, setCsatRespostas] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [erro, setErro] = useState<string | null>(null)
 
   const [editando, setEditando] = useState(false)
   const [nomeEdit, setNomeEdit] = useState('')
@@ -60,9 +62,10 @@ export default function MentorPerfil() {
   }, [meuPerfil])
 
   async function carregar() {
+    setErro(null)
     const [
-      { data: alDados },
-      { data: rankingsD },
+      { data: alDados, error: errAl },
+      { data: rankingsD, error: errRank },
       { data: atendD },
       { data: respostasD },
     ] = await Promise.all([
@@ -74,6 +77,8 @@ export default function MentorPerfil() {
       dbQuery('atendimentos_mentoria', { mentor: `eq.${meuPerfil!.mentor_nome!}` }, 'duracao_minutos'),
       dbQuery('respostas_csat', { mentor: `eq.${meuPerfil!.mentor_nome!}` }),
     ])
+
+    if (errAl || errRank) { setErro('Falha ao carregar seus alunos.'); setLoading(false); return }
 
     const atList = atendD || []
     setAtendStats({
@@ -106,6 +111,7 @@ export default function MentorPerfil() {
   const csatMedia = csatRespostas.length ? mediaGeral(csatRespostas) : null
 
   if (loading) return <div style={{ padding: 40, textAlign: 'center', color: '#999' }}>Carregando...</div>
+  if (erro) return <><Nav /><div style={{ padding: 16 }}><ErroLoad msg={erro} onRetry={() => { setLoading(true); carregar() }} /></div></>
 
   return (
     <div style={{ paddingBottom: 80 }}>

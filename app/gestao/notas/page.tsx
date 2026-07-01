@@ -5,6 +5,7 @@ import { dbQueryAll } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import Nav from '@/components/Nav'
 import PageLoader from '@/components/PageLoader'
+import ErroLoad from '@/components/ErroLoad'
 import { FASES, notaDeQuestoes, salvarNotasAluno } from '@/lib/notas'
 
 type Concurso = 'ITA' | 'IME'
@@ -40,6 +41,7 @@ export default function GestaoNotas() {
   const [ciclo, setCiclo] = useState<string>('')
   const [rankingRows, setRankingRows] = useState<any[]>([])
   const [carregandoLista, setCarregandoLista] = useState(false)
+  const [erroLista, setErroLista] = useState<string | null>(null)
   const [busca, setBusca] = useState('')
 
   const [alunoSel, setAlunoSel] = useState<any | null>(null)
@@ -57,17 +59,21 @@ export default function GestaoNotas() {
 
   useEffect(() => { if (!loading && perfil && !isGestor) router.replace('/') }, [loading, perfil, isGestor, router])
 
+  async function carregarLista() {
+    setCarregandoLista(true); setAlunoSel(null); setErroLista(null)
+    const { data, error } = await dbQueryAll('resultados', { fase: 'eq.ranking', concurso: `eq.${concurso}`, order: 'ciclo_nome,classificacao' })
+    if (error) { setErroLista('Falha ao carregar a lista de alunos.'); setCarregandoLista(false); return }
+    const rows = data || []
+    setRankingRows(rows)
+    const cs = [...new Set(rows.map((r: any) => r.ciclo_nome))]
+    setCiclo(prev => (prev && cs.includes(prev)) ? prev : (cs[0] || ''))
+    setCarregandoLista(false)
+  }
+
   useEffect(() => {
     if (!isGestor) return
-    setCarregandoLista(true); setAlunoSel(null)
-    dbQueryAll('resultados', { fase: 'eq.ranking', concurso: `eq.${concurso}`, order: 'ciclo_nome,classificacao' })
-      .then(({ data }) => {
-        const rows = data || []
-        setRankingRows(rows)
-        const cs = [...new Set(rows.map((r: any) => r.ciclo_nome))]
-        setCiclo(prev => (prev && cs.includes(prev)) ? prev : (cs[0] || ''))
-      })
-      .finally(() => setCarregandoLista(false))
+    carregarLista()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [concurso, isGestor])
 
   const ciclos = useMemo(() => [...new Set(rankingRows.map(r => r.ciclo_nome))], [rankingRows])
@@ -201,7 +207,9 @@ export default function GestaoNotas() {
           <div className="card" style={{ padding: 12 }}>
             <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar aluno…"
               style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '0.5px solid rgba(0,0,0,0.15)', fontSize: 14, marginBottom: 10 }} />
-            {carregandoLista ? <div style={{ textAlign: 'center', color: '#999', padding: 24 }}>Carregando…</div> : (
+            {carregandoLista ? <div style={{ textAlign: 'center', color: '#999', padding: 24 }}>Carregando…</div> : erroLista ? (
+              <ErroLoad msg={erroLista} onRetry={carregarLista} />
+            ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 2, maxHeight: 520, overflowY: 'auto' }}>
                 {lista.map(r => (
                   <button key={r.id} onClick={() => selecionarAluno(r)} style={{

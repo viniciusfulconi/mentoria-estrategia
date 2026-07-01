@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { dbQuery, dbQueryAll } from '@/lib/supabase'
 import { mediaFinalCiclo } from '@/lib/rankings'
 import Nav from '@/components/Nav'
+import ErroLoad from '@/components/ErroLoad'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
@@ -30,6 +31,7 @@ export default function Home() {
   const [financeiro, setFinanceiro] = useState<Financeiro | null>(null)
   const [provasSemana, setProvasSemana] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [erro, setErro] = useState<string | null>(null)
   const [medStats, setMedStats] = useState<{ total: number; semMentor: number; pendentes: number; comMentor: number; simulados: number } | null>(null)
 
   useEffect(() => {
@@ -52,11 +54,12 @@ export default function Home() {
   }, [authLoading, perfil, verticalAtiva])
 
   async function loadMed() {
-    setLoading(true)
-    const [{ data: alunos }, { data: sims }] = await Promise.all([
+    setLoading(true); setErro(null)
+    const [{ data: alunos, error }, { data: sims }] = await Promise.all([
       dbQuery('alunos', { vertical: 'eq.Medicina' }, 'id,mentor_id,mentor_aceite'),
       dbQuery('simulados_med', { vertical: 'eq.Medicina' }, 'id'),
     ])
+    if (error) { setErro('Falha ao carregar o painel.'); setLoading(false); return }
     const lista = alunos || []
     setMedStats({
       total: lista.length,
@@ -69,6 +72,7 @@ export default function Home() {
   }
 
   async function load() {
+    setErro(null)
     const hoje = new Date()
     const hojeStr = hoje.toISOString().split('T')[0]
     const inicioMes = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-01`
@@ -79,7 +83,7 @@ export default function Home() {
       { data: alDados },
       { data: aulasD },
       { data: turmasD },
-      { data: rankingsD },
+      { data: rankingsD, error: errRank },
       { data: atendRecentesD },
       { data: atendMesD },
       { data: provasD },
@@ -106,6 +110,10 @@ export default function Home() {
       ),
       dbQuery('provas_antigas', {}, 'id,nome,tipo'),
     ])
+
+    // Ranking é a fonte crítica do painel (ciclo, top/bottom, em risco) — se falhar,
+    // mostra erro em vez de painel zerado.
+    if (errRank) { setErro('Falha ao carregar o painel.'); setLoading(false); return }
 
     // Stats: derive mentor count from distinct mentors in alunos_dados
     const alList = alDados || []
@@ -212,6 +220,8 @@ export default function Home() {
 
           {loading ? (
             <div style={{ textAlign: 'center', padding: 40, color: '#aaa', fontSize: 13 }}>Carregando...</div>
+          ) : erro ? (
+            <ErroLoad msg={erro} onRetry={loadMed} />
           ) : medStats ? (
             <>
               {/* Cards */}
@@ -291,8 +301,10 @@ export default function Home() {
 
       <div style={{ padding: 16 }}>
 
+        {erro && <ErroLoad msg={erro} onRetry={load} />}
+
         {/* Stats */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 20 }}>
+        {!erro && <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 20 }}>
           {statCards.map(s => {
             const Icon = s.icon
             return (
@@ -308,7 +320,7 @@ export default function Home() {
               </div>
             )
           })}
-        </div>
+        </div>}
 
         {/* Ciclo atual */}
         {!loading && cicloStats && (

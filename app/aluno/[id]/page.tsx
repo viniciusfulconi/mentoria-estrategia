@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from 'react'
 import { dbQuery, dbQueryAll } from '@/lib/supabase'
 import { mediaFinalCiclo } from '@/lib/rankings'
 import Nav from '@/components/Nav'
+import ErroLoad from '@/components/ErroLoad'
 import { useRouter, useParams } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import Link from 'next/link'
@@ -47,6 +48,7 @@ export default function AlunoPage() {
   const [cicloAtivo, setCicloAtivo] = useState<string | null>(null)
   const [aba, setAba] = useState<'geral' | 'simulados' | 'listas' | 'provas' | 'termometro' | 'penas'>('geral')
   const [loading, setLoading] = useState(true)
+  const [erro, setErro] = useState<string | null>(null)
   const [provasAluno, setProvasAluno] = useState<any[]>([])
   const [correcoesProva, setCorrecoesProva] = useState<any[]>([])
   const [questoesProvas, setQuestoesProvas] = useState<any[]>([])
@@ -94,9 +96,10 @@ export default function AlunoPage() {
       return
     }
 
+    setErro(null)
     // Rodada 1: dados do próprio aluno (5 queries pequenas em paralelo)
     const [
-      { data: resultados },
+      { data: resultados, error: errRes },
       { data: perfilArr },
       { data: alunoArr },
       { data: ts },
@@ -118,10 +121,14 @@ export default function AlunoPage() {
 
     // Rodada 2: todos os rankings de todos os alunos (sem filtrar por ciclo) para que
     // a posição geral e o ranking por matéria sejam calculados igual à página de turma
-    const [{ data: todosRanking }] = await Promise.all([
+    const [{ data: todosRanking, error: errTodos }] = await Promise.all([
       dbQueryAll('resultados', { fase: 'eq.ranking' },
         'id_aluno,nome_aluno,ciclo_nome,nota_matematica,nota_fisica,nota_quimica,nota_portugues,nota_redacao,media_linguagens,media_1fase,media_2fase'),
     ])
+
+    // Se a leitura crítica falhar, mostra erro e NÃO cacheia (senão o vazio ficaria
+    // preso por CACHE_TTL_MS).
+    if (errRes || errTodos) { setErro('Falha ao carregar o aluno.'); setLoading(false); return }
 
     const rankings = (resultados || []).filter(r => r.fase === 'ranking')
       .sort((a, b) => parseInt((a.ciclo_nome || '').match(/\d+/)?.[0] || '0') - parseInt((b.ciclo_nome || '').match(/\d+/)?.[0] || '0'))
@@ -466,6 +473,7 @@ export default function AlunoPage() {
   }
 
   if (loading) return <div style={{ padding: 40, textAlign: 'center', color: '#999' }}>Carregando...</div>
+  if (erro) return <><Nav /><div style={{ padding: 16 }}><ErroLoad msg={erro} onRetry={() => { setLoading(true); load() }} /></div></>
 
   const isOwn = meuPerfil?.papel === 'aluno'
 
