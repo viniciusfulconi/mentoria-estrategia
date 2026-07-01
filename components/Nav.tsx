@@ -21,6 +21,7 @@ const tabsCoordenadorPrimario = [
 ]
 const tabsCoordenadorSecundarioITA = [
   { href: '/turma',          label: 'Turma',      icon: GraduationCap },
+  { href: '/gestao/notas',   label: 'Notas',      icon: NotebookPen },
   { href: '/csat',           label: 'CSAT',       icon: Star },
   { href: '/cronograma',     label: 'Cronograma', icon: ClipboardList },
   { href: '/provas-antigas', label: 'Provas',     icon: FileText },
@@ -35,6 +36,7 @@ const tabsCoordenadorSecundarioITA = [
 const tabsCoordenadorSecundarioMed = [
   { href: '/med/simulados', label: 'Simulados', icon: BookOpen },
   { href: '/turmas',        label: 'Turmas',    icon: GraduationCap },
+  { href: '/gestao/notas',  label: 'Notas',     icon: NotebookPen },
   { href: '/mentores',      label: 'Mentores',  icon: Users },
   { href: '/cronograma',    label: 'Cronograma', icon: ClipboardList },
   { href: '/questoes',      label: 'Questões',  icon: BookOpen },
