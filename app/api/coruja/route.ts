@@ -1,107 +1,106 @@
 import { NextRequest, NextResponse } from 'next/server'
+import Anthropic from '@anthropic-ai/sdk'
 import { verifyAuth, requirePapel } from '@/lib/auth-server'
+
+// A Coruja pode encadear várias consultas (loop agêntico) + raciocínio do Opus.
+export const maxDuration = 60
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!
-const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY!
 
-// Defesa em profundidade: o system prompt pede SELECT, mas prompt-injection pode burlar.
-// Como rodamos com SERVICE_ROLE_KEY (bypass de RLS), validamos o SQL antes de executar.
-const SQL_FORBIDDEN = /\b(insert|update|delete|drop|truncate|alter|create|grant|revoke|comment|copy|vacuum|reindex|cluster|do\b|call\b|merge\b|listen|notify|set\s)\b/i
+const anthropic = new Anthropic() // lê ANTHROPIC_API_KEY do ambiente
+
+// Defesa em profundidade: a RPC coruja_query também valida, mas conferimos aqui
+// antes de executar (denylist + só SELECT/WITH, statement único).
+const SQL_FORBIDDEN = /\b(insert|update|delete|drop|truncate|alter|create|grant|revoke|comment|copy|vacuum|reindex|cluster|do|call|merge|listen|notify)\b|\bset\s/i
 function sqlIsSafeSelect(sql: string): boolean {
   const trimmed = sql.trim().replace(/;+\s*$/, '')
   if (!trimmed) return false
-  // Sem múltiplos statements
   if (trimmed.includes(';')) return false
-  // Tem que começar com SELECT (ou WITH … SELECT)
   if (!/^(select|with)\b/i.test(trimmed)) return false
-  // Nada de palavras-chave de mutação
   if (SQL_FORBIDDEN.test(trimmed)) return false
   return true
 }
 
 const SCHEMA = `
-Tabelas disponíveis no banco de dados (PostgreSQL):
+Tabelas disponíveis (PostgreSQL):
 
-1. resultados (notas dos simulados — cada linha é um aluno + ciclo + fase)
-   - id_aluno text
-   - nome_aluno text
-   - mentor text
-   - ciclo_nome text  (ex: 'Ciclo 1', 'Ciclo 4')
+1. resultados — notas dos simulados; cada linha é um aluno + ciclo + fase.
+   - id_aluno text, nome_aluno text, mentor text
+   - ciclo_nome text  (ex: 'Ciclo 1' … 'Ciclo 6' — o número indica a ordem cronológica)
    - concurso text    ('ITA' ou 'IME')
-   - fase text        — valores possíveis e quais colunas são preenchidas por fase:
-       * '1fase'      → só media_1fase é preenchida (não há nota por disciplina na 1ª fase)
-       * '2fase_mat'  → só nota_matematica é preenchida
-       * '2fase_fis'  → só nota_fisica é preenchida
-       * '2fase_qui'  → só nota_quimica é preenchida
-       * '2fase_port' → só media_linguagens e nota_ingles são preenchidas
-       * 'ranking'    → linha consolidada do ciclo com media_1fase, media_2fase e resultado_ciclo
-   - media_1fase numeric       (preenchido em fase='1fase' e fase='ranking')
-   - nota_matematica numeric   (preenchido em fase='2fase_mat')
-   - nota_fisica numeric       (preenchido em fase='2fase_fis')
-   - nota_quimica numeric      (preenchido em fase='2fase_qui')
-   - media_linguagens numeric  (preenchido em fase='2fase_port')
-   - nota_ingles numeric       (preenchido em fase='2fase_port')
-   - media_2fase numeric       (preenchido em fase='ranking')
-   - resultado_ciclo text ('Aprovado', 'Reprovado', 'Em andamento') — só em fase='ranking'
+   - fase text — valores e colunas preenchidas por fase:
+       * '1fase'      → media_1fase (nota da 1ª fase)
+       * '2fase_mat'  → nota_matematica
+       * '2fase_fis'  → nota_fisica
+       * '2fase_qui'  → nota_quimica
+       * '2fase_port' → media_linguagens, nota_ingles
+       * 'ranking'    → linha CONSOLIDADA do ciclo: media_1fase, media_2fase, resultado_ciclo
+   - media_1fase, nota_matematica, nota_fisica, nota_quimica, media_linguagens, nota_ingles, media_2fase (numeric)
+   - resultado_ciclo text ('Aprovado' | 'Reprovado' | 'Em andamento') — só em fase='ranking'
 
-2. atendimentos_mentoria
-   - id uuid
-   - aluno text
-   - mentor text
-   - data_atendimento date
-   - duracao_minutos integer
-   - valor_pago numeric
-   - resumo text
-   - encaminhamento_psico boolean
-   - arquivo_gemini_url text
-
-3. alunos_dados
-   - id_aluno text
-   - nome text
-   - mentor text
-   - turma text
-   - email text
-
-4. respostas_csat (avaliações de satisfação dos mentores)
-   - id uuid
-   - pesquisa_id uuid
-   - pesquisa_nome text
-   - aluno text
-   - mentor text
-   - qualidade_atendimento smallint  (1-5)
-   - organizacao_planejamento smallint
-   - diferencial_mentoria smallint
-   - clareza_orientacoes smallint
-   - acompanhamento_cobranca smallint
-   - comunicacao_relacao smallint
-
-5. respostas_professor (avaliações dos professores)
-   - id uuid
-   - avaliacao_id uuid
-   - professor text
-   - materia text
-   - dominio_conteudo smallint (1-5)
-   - clareza_explicacao smallint
-   - ritmo_aula smallint
-   - teoria_exercicios smallint
-   - organizacao_quadro smallint
-   - respeito_alunos smallint
-   - acessibilidade_duvidas smallint
-   - cumprimento_horarios smallint
-   - contribuicao_aprendizado smallint
-   - adequacao_listas smallint
-   - comentario text
-
-6. perfis (mentores)
-   - id uuid
-   - nome text
-   - mentor_nome text
-   - papel text ('mentor', 'coordenador', 'aluno')
-   - email text
+2. atendimentos_mentoria — aluno text, mentor text, data_atendimento date, duracao_minutos int, valor_pago numeric, resumo text, encaminhamento_psico bool
+3. alunos_dados — id_aluno text, nome text, mentor text, turma text, email text, ingresso text ('PEC' = online)
+4. respostas_csat — avaliações dos mentores (qualidade_atendimento, organizacao_planejamento, diferencial_mentoria, clareza_orientacoes, acompanhamento_cobranca, comunicacao_relacao — cada 1-5), mentor text
+5. perfis — mentores/usuários: nome, mentor_nome, papel, email
 `
 
-async function executarQuery(sql: string): Promise<any[]> {
+// ── Semântica de trajetória e critério de aprovação (para as previsões) ─────────
+const REGRAS = `
+Trajetória e previsões:
+- Para EVOLUÇÃO de um aluno ao longo do tempo, use fase='ranking' (uma linha por ciclo)
+  e ordene pelos ciclos (extraia o número de ciclo_nome). media_2fase é a média final
+  consolidada do ciclo (para ITA já inclui a 1ª fase); quando media_2fase é NULL (ciclo
+  em andamento), use media_1fase como aproximação.
+- "Melhorando" = média final subindo entre ciclos consecutivos (tendência positiva).
+- Critério oficial de aprovação no ciclo (já refletido em resultado_ciclo):
+    ITA: todas as 5 fases presentes (1ª fase, mat, fís, quí, português) E nenhuma das 4
+         (mat/fís/quí/port) < 4,0 E media_2fase ≥ 5,0.
+    IME: todas as 4 (mat, fís, quí, port) presentes E nenhuma < 4,0.
+- "Forte candidato à aprovação" = tendência de média subindo, médias recentes altas
+  (≥ 5,0, idealmente ≥ 6,0), poucas/nenhuma nota < 4,0, e resultado_ciclo recente
+  'Aprovado' ou perto do corte.
+
+Como responder previsões:
+- Busque os dados de trajetória com a ferramenta (pode consultar quantas vezes precisar:
+  primeiro descubra os candidatos, depois detalhe a trajetória de cada um).
+- Baseie-se SEMPRE nos números retornados; não invente. Explique o racional (quais ciclos,
+  quais médias, qual tendência) de forma curta.
+- Deixe claro que é uma ESTIMATIVA baseada na tendência dos dados, não uma garantia.
+- Responda em português, direto e organizado (listas quando fizer sentido).
+`
+
+const SYSTEM = `Você é a Coruja, analista de dados da plataforma de mentoria para os vestibulares ITA e IME. Você responde perguntas e faz análises preditivas sobre alunos, notas, atendimentos e avaliações, sempre a partir dos dados reais do banco — que você consulta com a ferramenta consultar_banco.
+
+${SCHEMA}
+${REGRAS}
+
+Regras de SQL:
+- Use SOMENTE SELECT (nunca INSERT/UPDATE/DELETE/DDL). A ferramenta rejeita o resto.
+- Sempre LIMIT 100 no máximo.
+- Médias: ROUND(AVG(campo)::numeric, 2). Nomes: ILIKE '%...%' (case-insensitive).
+- Para dados de um aluno específico, use a tabela resultados com nome_aluno ILIKE '%nome%'
+  (sem JOINs — grafias divergentes entre tabelas podem zerar o resultado).
+- Se uma consulta voltar vazia por nome, tente de novo com menos partes do nome.
+- Só use a ferramenta quando precisar de dados. Para perguntas gerais (ex.: "o que é o ITA?")
+  responda direto, sem consultar.`
+
+const TOOLS: Anthropic.Tool[] = [
+  {
+    name: 'consultar_banco',
+    description: 'Executa uma consulta SQL SELECT (somente leitura) no banco de dados e retorna as linhas em JSON. Use quantas vezes precisar para reunir os dados necessários à resposta.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        sql: { type: 'string', description: 'A query SQL. Apenas SELECT/WITH, um único statement, com LIMIT 100 no máximo.' },
+      },
+      required: ['sql'],
+      additionalProperties: false,
+    },
+  },
+]
+
+async function executarQuery(sql: string): Promise<{ rows: any[]; erro?: string }> {
   const resp = await fetch(`${SUPABASE_URL}/rest/v1/rpc/coruja_query`, {
     method: 'POST',
     headers: {
@@ -111,17 +110,13 @@ async function executarQuery(sql: string): Promise<any[]> {
     },
     body: JSON.stringify({ sql_text: sql }),
   })
-  if (!resp.ok) {
-    const err = await resp.text()
-    throw new Error(err)
-  }
+  if (!resp.ok) return { rows: [], erro: await resp.text() }
   const data = await resp.json()
-  return Array.isArray(data) ? data : []
+  return { rows: Array.isArray(data) ? data : [] }
 }
 
-// Mantém apenas as últimas N mensagens do histórico para não explodir o contexto
-function truncarHistorico(historico: any[], maxMensagens = 6) {
-  return historico.slice(-maxMensagens)
+function truncarHistorico(historico: any[], max = 6) {
+  return historico.slice(-max)
 }
 
 export async function POST(req: NextRequest) {
@@ -131,146 +126,75 @@ export async function POST(req: NextRequest) {
     if ('error' in auth) return auth.error
     const { user } = auth
 
-    // Coruja roda com service_role (bypass de RLS) — só staff de gestão acessa
+    // Coruja roda com service_role (bypass de RLS) — só gestão acessa.
     const perm = requirePapel(user, ['coordenador', 'direcao'])
     if (perm) return perm
 
-    const { pergunta, historico = [] } = body
-
+    if (!process.env.ANTHROPIC_API_KEY) return NextResponse.json({ error: 'ANTHROPIC_API_KEY não configurada.' }, { status: 500 })
     if (!SERVICE_ROLE_KEY) return NextResponse.json({ error: 'SUPABASE_SERVICE_ROLE_KEY não configurada.' }, { status: 500 })
-    if (!ANTHROPIC_API_KEY) return NextResponse.json({ error: 'ANTHROPIC_API_KEY não configurada.' }, { status: 500 })
 
-    const historicoTruncado = truncarHistorico(historico)
+    const { pergunta } = body
+    const historico = truncarHistorico(body.historico || [])
 
-    // ── Passo 1: Claude gera o SQL (com histórico para entender perguntas de acompanhamento) ──
-    const systemSQL = `Você converte perguntas em SQL para um banco PostgreSQL de uma plataforma de mentoria para vestibulares ITA/IME.
-
-${SCHEMA}
-
-Regras:
-- Gere APENAS a query SQL, sem explicações, sem markdown, sem código fence
-- Use apenas SELECT — nunca INSERT, UPDATE, DELETE, DROP etc.
-- Limite sempre a no máximo 100 linhas com LIMIT 100
-- Para médias, use ROUND(AVG(campo)::numeric, 2)
-- Para nomes, use ilike para buscas case-insensitive
-- A fase 'ranking' em resultados contém a nota final consolidada de cada aluno por ciclo
-- Para ranking geral use a tabela resultados WHERE fase = 'ranking'
-- Em perguntas de acompanhamento (ex: "sim", "pode mostrar", "quais são"), gere o SQL adequado com base no contexto anterior
-- Para perguntas analíticas, de estimativa ou opinativas (ex: "quem tem chance de passar?", "estime os aprovados"), gere SQL para buscar os dados relevantes — o outro sistema fará a análise com os dados retornados
-- Retorne NAO_SQL APENAS quando a pergunta não precisar de NENHUM dado do banco (ex: "o que é o ITA?", "quanto é 2+2")
-- Para buscar dados completos de um aluno específico: use SEMPRE a tabela resultados com nome_aluno ILIKE '%nome%', sem JOINs — JOINs com atendimentos_mentoria podem retornar 0 linhas por diferença de grafia
-- Prefira queries simples e diretas; se precisar de dados de múltiplas tabelas, priorize a tabela resultados que tem todas as notas`
-
-    const sqlResp = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'x-api-key': ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 512,
-        system: systemSQL,
-        messages: [...historicoTruncado, { role: 'user', content: pergunta }],
-      }),
-      signal: AbortSignal.timeout(30000),
-    })
-
-    if (!sqlResp.ok) {
-      const errText = await sqlResp.text()
-      console.error('[coruja] erro Anthropic SQL:', errText)
-      return NextResponse.json({ error: 'Erro ao gerar SQL.' }, { status: 500 })
-    }
-    const sqlData = await sqlResp.json()
-    const sql = sqlData.content?.[0]?.text?.trim() ?? ''
-
-    let dados: any[] = []
-    let erroQuery: string | null = null
-    let fallbackUsado = false
-
-    if (sql && sql !== 'NAO_SQL') {
-      if (!sqlIsSafeSelect(sql)) {
-        console.error('[coruja] SQL recusada (não é SELECT seguro):', sql)
-        erroQuery = 'Query rejeitada por segurança (apenas SELECT é permitido).'
-      } else {
-        try {
-          dados = await executarQuery(sql)
-        } catch (e: any) {
-          erroQuery = e.message
-          console.error('[coruja] erro na query:', erroQuery)
-        }
-      }
-
-      // ── Fallback: se 0 resultados e havia ILIKE, tenta com o primeiro nome apenas ──
-      if (!erroQuery && dados.length === 0) {
-        const ilikeMatch = sql.match(/ilike\s+'%([^'%]+)%'/i)
-        if (ilikeMatch) {
-          const nomeOriginal = ilikeMatch[1].trim()
-          const primeiroNome = nomeOriginal.split(/\s+/)[0]
-          // sanitiza: só letras (incluindo acentuadas) e hífens — evita injeção via nome
-          const primeiroNomeSeguro = primeiroNome.replace(/[^a-zA-ZÀ-ÿ\-]/g, '').trim()
-          if (primeiroNomeSeguro && primeiroNomeSeguro.toLowerCase() !== nomeOriginal.toLowerCase()) {
-            const sqlFallback = sql.replace(
-              new RegExp(`ilike\\s+'%${nomeOriginal.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}%'`, 'i'),
-              `ILIKE '%${primeiroNomeSeguro}%'`
-            )
-            if (sqlIsSafeSelect(sqlFallback)) {
-              try {
-                dados = await executarQuery(sqlFallback)
-                if (dados.length > 0) fallbackUsado = true
-              } catch { /* mantém dados vazio */ }
-            }
-          }
-        }
-      }
-    }
-
-    // ── Passo 2: Claude interpreta e responde ─────────────────────────────────
-    const contextoResultado = erroQuery
-      ? `Tentei executar a query mas ocorreu um erro: ${erroQuery}`
-      : sql === 'NAO_SQL'
-      ? 'Esta pergunta não requer consulta ao banco de dados.'
-      : dados.length === 0
-      ? 'A query retornou zero resultados. O nome pode estar cadastrado de forma diferente no banco.'
-      : fallbackUsado
-      ? `Nome exato não encontrado. Busca ampliada pelo primeiro nome retornou ${dados.length} resultado(s) — pode haver mais de um aluno com esse nome ou a grafia está diferente:\n${JSON.stringify(dados, null, 2)}`
-      : `Resultado da query (${dados.length} linhas):\n${JSON.stringify(dados, null, 2)}`
-
-    const mensagens = [
-      ...historicoTruncado,
-      {
-        role: 'user',
-        content: `Pergunta: ${pergunta}\n\n${contextoResultado}\n\nResponda de forma direta e objetiva em português. Se houver dados, organize-os de forma clara. Se não houver dados suficientes, diga.`,
-      },
+    const messages: Anthropic.MessageParam[] = [
+      ...historico.map((m: any) => ({ role: m.role, content: m.content })),
+      { role: 'user', content: pergunta },
     ]
 
-    const respostaResp = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'x-api-key': ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 2048,
-        system: 'Você é a Coruja, assistente inteligente de uma plataforma de mentoria para vestibulares ITA/IME. Responda sempre em português, de forma direta e objetiva. Você tem acesso aos dados reais da plataforma.',
-        messages: mensagens,
-      }),
-      signal: AbortSignal.timeout(60000),
-    })
+    const sqlsExecutadas: string[] = []
+    let totalLinhas = 0
+    let resposta = ''
 
-    if (!respostaResp.ok) {
-      const errText = await respostaResp.text()
-      console.error('[coruja] erro Anthropic resposta:', errText)
-      return NextResponse.json({ error: 'Erro ao gerar resposta.' }, { status: 500 })
+    // Loop agêntico: o Opus consulta o banco quantas vezes precisar e então responde.
+    for (let iter = 0; iter < 5; iter++) {
+      const resp = await anthropic.messages.create({
+        model: 'claude-opus-4-8',
+        max_tokens: 8000, // folga p/ thinking adaptativo + resposta (abaixo do limiar que exige streaming)
+        thinking: { type: 'adaptive' },
+        output_config: { effort: 'medium' },
+        system: [{ type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } }],
+        tools: TOOLS,
+        messages,
+      })
+
+      if (resp.stop_reason === 'tool_use') {
+        messages.push({ role: 'assistant', content: resp.content })
+        const toolResults: Anthropic.ToolResultBlockParam[] = []
+        for (const block of resp.content) {
+          if (block.type === 'tool_use' && block.name === 'consultar_banco') {
+            const sql = String((block.input as any)?.sql ?? '')
+            sqlsExecutadas.push(sql)
+            let content: string
+            let isError = false
+            if (!sqlIsSafeSelect(sql)) {
+              content = 'Query rejeitada por segurança (apenas SELECT é permitido).'
+              isError = true
+            } else {
+              const { rows, erro } = await executarQuery(sql)
+              if (erro) { content = `Erro ao executar: ${erro}`; isError = true }
+              else {
+                totalLinhas += rows.length
+                // Trunca payloads grandes para não estourar o contexto.
+                content = JSON.stringify(rows).slice(0, 24000)
+              }
+            }
+            toolResults.push({ type: 'tool_result', tool_use_id: block.id, content, is_error: isError })
+          }
+        }
+        messages.push({ role: 'user', content: toolResults })
+        continue
+      }
+
+      // stop_reason: end_turn (ou refusal / max_tokens) — extrai o texto final.
+      resposta = resp.content.filter((b): b is Anthropic.TextBlock => b.type === 'text').map(b => b.text).join('\n').trim()
+      break
     }
-    const respostaData = await respostaResp.json()
-    const resposta = respostaData.content?.[0]?.text ?? 'Sem resposta.'
 
-    return NextResponse.json({ resposta, sql: sql !== 'NAO_SQL' ? sql : null, linhas: dados.length })
-
+    return NextResponse.json({
+      resposta: resposta || 'Não consegui concluir a análise. Tente reformular a pergunta.',
+      sql: sqlsExecutadas.length ? sqlsExecutadas.join(';\n\n') : null,
+      linhas: totalLinhas,
+    })
   } catch (e: any) {
     console.error('[coruja] erro inesperado:', e)
     return NextResponse.json({ error: `Erro interno: ${e?.message ?? 'desconhecido'}` }, { status: 500 })
