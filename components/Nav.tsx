@@ -107,6 +107,7 @@ export default function Nav() {
   const [navVisible, setNavVisible] = useState(true)
   const [notificacoes, setNotificacoes] = useState<any[]>([])
   const [naoLidas, setNaoLidas] = useState(0)
+  const [chamadaAtiva, setChamadaAtiva] = useState(false)
   const [saldoPenas, setSaldoPenas] = useState<number | null>(null)
   const lastScrollY = useRef(0)
   const ticking = useRef(false)
@@ -127,7 +128,13 @@ export default function Nav() {
         setNotificacoes(items)
         setNaoLidas(items.filter((n: any) => !n.lida).length)
       }).catch(() => {})
+    // Há uma videochamada ativa esperando por este aluno? (salas_videochamada)
+    dbQuery('salas_videochamada', { aluno_id: `eq.${perfil.aluno_id}`, status: 'eq.ativa', limit: '1' }, 'id')
+      .then(({ data }) => setChamadaAtiva(!!(data && data.length)))
+      .catch(() => {})
   }, [perfil])
+
+  const linkChamada = `/videochamada/mentoria-estrategia-${perfil?.aluno_id}`
 
   async function marcarTodasLidas() {
     if (!perfil?.aluno_id) return
@@ -349,6 +356,11 @@ export default function Nav() {
                 }}>
                   <div style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.85)' }}>{n.titulo}</div>
                   <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginTop: 2 }}>{n.mensagem}</div>
+                  {n.tipo === 'chamada' && chamadaAtiva && (
+                    <Link href={linkChamada} onClick={() => setNotifAberto(false)} style={{ display: 'inline-block', marginTop: 6, padding: '5px 12px', borderRadius: 8, background: '#f97316', color: 'white', fontSize: 11, fontWeight: 700, textDecoration: 'none' }}>
+                      Entrar na chamada
+                    </Link>
+                  )}
                 </div>
               ))}
             </div>
@@ -485,6 +497,11 @@ export default function Nav() {
               }}>
                 <div style={{ fontSize: 13, fontWeight: 600 }}>{n.titulo}</div>
                 <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{n.mensagem}</div>
+                {n.tipo === 'chamada' && chamadaAtiva && (
+                  <Link href={linkChamada} onClick={() => setNotifAberto(false)} style={{ display: 'inline-block', marginTop: 8, padding: '7px 14px', borderRadius: 9, background: '#f97316', color: 'white', fontSize: 12, fontWeight: 700, textDecoration: 'none' }}>
+                    Entrar na chamada
+                  </Link>
+                )}
               </div>
             ))}
           </div>
