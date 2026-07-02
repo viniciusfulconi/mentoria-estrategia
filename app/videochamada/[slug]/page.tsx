@@ -62,6 +62,22 @@ export default function VideoChamadaPage() {
     }
   }
 
+  // Sai da chamada. Se for o mentor/coord (owner), encerra a sala em
+  // salas_videochamada — assim o aviso de "chamada ativa" some para o aluno.
+  async function sairDaChamada() {
+    if (isOwner) {
+      try {
+        await fetch('/api/videochamada', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+          body: JSON.stringify({ aluno_id: alunoId }),
+        })
+      } catch { /* best-effort */ }
+    }
+    setEntrou(false)
+    setRoomInfo(null)
+  }
+
   if (authLoading) return (
     <div style={{ height: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0f172a', color: 'rgba(255,255,255,0.4)', fontSize: 13 }}>
       Carregando...
@@ -161,7 +177,7 @@ export default function VideoChamadaPage() {
         zIndex: 10,
       }}>
         <button
-          onClick={() => { setEntrou(false); setRoomInfo(null) }}
+          onClick={sairDaChamada}
           style={{
             display: 'flex', alignItems: 'center', gap: 6,
             background: 'none', border: 'none', cursor: 'pointer',
@@ -181,7 +197,14 @@ export default function VideoChamadaPage() {
       </div>
 
       <div style={{ flex: 1, overflow: 'hidden' }}>
-        {roomInfo && <DailyCall roomUrl={roomInfo.room_url} token={roomInfo.token} />}
+        {roomInfo && (
+          <DailyCall
+            roomUrl={roomInfo.room_url}
+            token={roomInfo.token}
+            onLeft={sairDaChamada}
+            onError={(msg) => { setErro(msg); sairDaChamada() }}
+          />
+        )}
       </div>
     </div>
   )
