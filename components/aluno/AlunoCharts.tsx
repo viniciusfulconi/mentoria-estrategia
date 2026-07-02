@@ -30,7 +30,24 @@ export function BarChart({ dados }: { dados: { materia: string, pct: number }[] 
   )
 }
 
-export function GraficoQuestoes({ dados, turmaQuestoes, cicloAtivo, fase, titulo, corAluno }: any) {
+// Blocos de matéria da 1ª fase por concurso (a ordem das questões é fixa).
+// ITA: 48 questões em 4 blocos de 12 (inglês não conta na nota).
+// IME: 40 questões (Mat 15 / Fís 15 / Quí 10), sem inglês.
+const BLOCOS_1FASE: Record<string, { label: string; cor: string; ini: number; fim: number; naoConta?: boolean }[]> = {
+  ITA: [
+    { label: 'Matemática', cor: '#f97316', ini: 1, fim: 12 },
+    { label: 'Física', cor: '#1E88E5', ini: 13, fim: 24 },
+    { label: 'Química', cor: '#E53935', ini: 25, fim: 36 },
+    { label: 'Inglês', cor: '#94A3B8', ini: 37, fim: 48, naoConta: true },
+  ],
+  IME: [
+    { label: 'Matemática', cor: '#f97316', ini: 1, fim: 15 },
+    { label: 'Física', cor: '#1E88E5', ini: 16, fim: 30 },
+    { label: 'Química', cor: '#E53935', ini: 31, fim: 40 },
+  ],
+}
+
+export function GraficoQuestoes({ dados, turmaQuestoes, cicloAtivo, fase }: any) {
   const cicloNum = String(cicloAtivo || '').match(/\d+/)?.[0] || ''
   if (!cicloNum) return null
 
@@ -42,12 +59,9 @@ export function GraficoQuestoes({ dados, turmaQuestoes, cicloAtivo, fase, titulo
   if (!regAluno?.notas_questoes) return null
 
   const questoesAluno = regAluno.notas_questoes as Record<string, number>
-  const questoes = Object.keys(questoesAluno).sort((a, b) => {
-    const na = parseInt(a.replace('Q', ''))
-    const nb = parseInt(b.replace('Q', ''))
-    return na - nb
-  })
-
+  const questoes = Object.keys(questoesAluno).sort((a, b) =>
+    parseInt(a.replace('Q', '')) - parseInt(b.replace('Q', ''))
+  )
   if (!questoes.length) return null
 
   const registrosTurma = turmaQuestoes.filter((r: any) => {
@@ -55,6 +69,7 @@ export function GraficoQuestoes({ dados, turmaQuestoes, cicloAtivo, fase, titulo
     const num = cn.match(/\d+/)?.[0] || ''
     return num === cicloNum && r.fase === fase && r.notas_questoes
   })
+  const temTurma = registrosTurma.length > 0
 
   const mediaTurma: Record<string, number> = {}
   questoes.forEach(q => {
@@ -64,54 +79,89 @@ export function GraficoQuestoes({ dados, turmaQuestoes, cicloAtivo, fase, titulo
     mediaTurma[q] = vals.length ? vals.reduce((a: number, b: number) => a + b, 0) / vals.length : 0
   })
 
-  const barW = Math.max(8, Math.min(20, Math.floor(320 / questoes.length)))
-  const gap = 2
-  const totalW = questoes.length * (barW * 2 + gap + 4)
-  const h = 100
-  const padT = 16
-  const padB = 20
+  // Agrupa as questões nos blocos de matéria do concurso; questões fora dos
+  // ranges conhecidos caem num bloco neutro "Outras" (robustez p/ estruturas diferentes).
+  const concurso = String(regAluno.concurso || 'ITA').toUpperCase()
+  const blocosDef = BLOCOS_1FASE[concurso] || BLOCOS_1FASE.ITA
+  const numDe = (q: string) => parseInt(q.replace('Q', ''))
+  const blocos = blocosDef
+    .map(b => ({ ...b, qs: questoes.filter(q => numDe(q) >= b.ini && numDe(q) <= b.fim) }))
+    .filter(b => b.qs.length)
+  const emBloco = new Set(blocos.flatMap(b => b.qs))
+  const soltas = questoes.filter(q => !emBloco.has(q))
+  if (soltas.length) blocos.push({ label: 'Outras', cor: '#94A3B8', ini: 0, fim: 0, qs: soltas })
+
+  // Geometria
+  const colW = 15, blockGap = 16, h = 84, padTop = 34, padBottom = 22
+  const baseline = padTop + h
+  let cursor = 6
+  const layout = blocos.map(b => {
+    const startX = cursor
+    const cols = b.qs.map((q, i) => ({ q, cx: cursor + i * colW + colW / 2 }))
+    const width = b.qs.length * colW
+    cursor += width + blockGap
+    return { ...b, startX, width, cols }
+  })
+  const totalW = Math.max(cursor, 300)
+  const totalH = padTop + h + padBottom
+  const ACERTO = '#16A34A', ERRO = '#DC2626'
+
+  // Questão onde 100% da turma acertou (assinatura de questão anulada / trivial).
+  const todosAcertaram = (q: string) => temTurma && mediaTurma[q] >= 0.999
+  const algumTodos = questoes.some(todosAcertaram)
 
   return (
     <div style={{ marginBottom: 16 }}>
-      <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 8 }}>{titulo}</div>
-      <div style={{ display: 'flex', gap: 12, fontSize: 10, color: '#666', marginBottom: 6 }}>
-        <span style={{ color: corAluno, fontWeight: 600 }}><span style={{ display: 'inline-block', width: 10, height: 10, background: corAluno, borderRadius: 2, marginRight: 4 }} />Aluno</span>
-        <span><span style={{ display: 'inline-block', width: 10, height: 10, background: '#D0D0D0', borderRadius: 2, marginRight: 4 }} />Turma</span>
+      {/* Legenda */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, fontSize: 10, color: '#666', marginBottom: 8 }}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><span style={{ width: 9, height: 9, borderRadius: '50%', background: ACERTO, display: 'inline-block' }} />Acertou</span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><span style={{ width: 9, height: 9, borderRadius: '50%', border: `1.5px solid ${ERRO}`, display: 'inline-block' }} />Errou</span>
+        {temTurma && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><span style={{ width: 10, height: 10, background: '#D0D0D0', borderRadius: 2, display: 'inline-block' }} />% da turma</span>}
+        {algumTodos && <span style={{ color: '#999' }}>* todos acertaram</span>}
       </div>
       <div style={{ overflowX: 'auto', paddingBottom: 4 }}>
-        <svg viewBox={`0 0 ${Math.max(totalW, 300)} ${padT + h + padB}`} width={Math.max(totalW, 300)} height={padT + h + padB} style={{ display: 'block' }}>
+        <svg viewBox={`0 0 ${totalW} ${totalH}`} width={totalW} height={totalH} style={{ display: 'block' }}>
+          {/* Gridlines de % da turma */}
           {[0.25, 0.5, 0.75, 1.0].map(v => (
             <g key={v}>
-              <line x1="0" y1={padT + h - v * h} x2={Math.max(totalW, 300)} y2={padT + h - v * h} stroke="rgba(0,0,0,0.06)" strokeWidth="1" />
-              <text x="2" y={padT + h - v * h - 2} fontSize="7" fill="#bbb">{(v * 100).toFixed(0)}%</text>
+              <line x1="0" y1={baseline - v * h} x2={totalW} y2={baseline - v * h} stroke="rgba(0,0,0,0.06)" strokeWidth="1" />
+              <text x="1" y={baseline - v * h - 2} fontSize="6.5" fill="#ccc">{(v * 100).toFixed(0)}%</text>
             </g>
           ))}
 
-          {questoes.map((q, i) => {
-            const vAluno = questoesAluno[q] ?? 0
-            const vTurma = mediaTurma[q] ?? 0
-            const x = i * (barW * 2 + gap + 4) + 2
-            const hAluno = vAluno * h
-            const hTurma = vTurma * h
-            const corBarra = corAluno || '#f97316'
-            const pctTurma = Math.round(vTurma * 100)
+          {layout.map(b => (
+            <g key={b.label}>
+              {/* Banda + rótulo da matéria */}
+              <rect x={b.startX} y={20} width={b.width - 4} height={3} rx={1.5} fill={b.cor} opacity={b.naoConta ? 0.4 : 0.85} />
+              <text x={b.startX + (b.width - 4) / 2} y={13} textAnchor="middle" fontSize="9" fontWeight={600} fill={b.naoConta ? '#94A3B8' : b.cor}>
+                {b.label}{b.naoConta ? ' (não conta)' : ''}
+              </text>
 
-            return (
-              <g key={q}>
-                {registrosTurma.length > 0 && (
-                  <rect x={x} y={h - Math.max(hTurma, 1)} width={barW} height={Math.max(hTurma, 1)} fill="#D0D0D0" rx="2" />
-                )}
-                {registrosTurma.length > 0 && pctTurma > 0 ? (
-                  <text x={x + barW/2} y={h - hTurma - 2} textAnchor="middle" fontSize="7" fill="#999">{pctTurma}%</text>
-                ) : null}
-                <rect x={registrosTurma.length > 0 ? x + barW + gap : x + barW/2} y={h - Math.max(hAluno, 1)} width={barW} height={Math.max(hAluno, 1)} fill={corBarra} rx="2" />
-                <text x={registrosTurma.length > 0 ? x + barW + gap + barW/2 : x + barW} y={h - hAluno - 2} textAnchor="middle" fontSize="7" fill={corBarra}>{Math.round(vAluno * 100)}%</text>
-                <text x={x + barW} y={h + padB - 4} textAnchor="middle" fontSize="7" fill="#999">
-                  {q.replace('Q', '')}
-                </text>
-              </g>
-            )
-          })}
+              {b.cols.map(({ q, cx }) => {
+                const acertou = (questoesAluno[q] ?? 0) >= 0.999
+                const vTurma = mediaTurma[q] ?? 0
+                const hTurma = Math.max(vTurma * h, temTurma ? 1 : 0)
+                const muted = b.naoConta
+                return (
+                  <g key={q}>
+                    {/* Barra da turma */}
+                    {temTurma && (
+                      <rect x={cx - (colW - 6) / 2} y={baseline - hTurma} width={colW - 6} height={hTurma} rx={1.5} fill={muted ? '#E5E7EB' : '#D0D0D0'} />
+                    )}
+                    {/* Marcador do aluno: acertou = bolinha cheia verde; errou = anel vermelho */}
+                    <circle cx={cx} cy={30} r={4}
+                      fill={acertou ? ACERTO : 'white'}
+                      stroke={acertou ? ACERTO : ERRO} strokeWidth={1.5}
+                      opacity={muted ? 0.55 : 1} />
+                    {/* Número da questão */}
+                    <text x={cx} y={baseline + 12} textAnchor="middle" fontSize="7" fill={muted ? '#bbb' : '#888'}>
+                      {q.replace('Q', '')}{todosAcertaram(q) ? '*' : ''}
+                    </text>
+                  </g>
+                )
+              })}
+            </g>
+          ))}
         </svg>
       </div>
     </div>
