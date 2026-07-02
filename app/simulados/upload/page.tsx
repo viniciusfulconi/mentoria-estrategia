@@ -2,40 +2,27 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Nav from '@/components/Nav'
-import { getToken } from '@/lib/supabase'
-import { calcularRankings } from '@/lib/rankings'
+import { dbQueryAll, dbInsert as dbInsertLib, dbDelete as dbDeleteLib } from '@/lib/supabase'
+import { calcularRankings, ordenarEClassificar } from '@/lib/rankings'
+import { stripAcentos } from '@/lib/format'
 
-async function dbSelect(table: string, cols = '*'): Promise<any[]> {
-  const token = getToken()
-  const resp = await fetch(
-    `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/${table}?select=${cols}`,
-    { headers: { apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, Authorization: `Bearer ${token}` } }
-  )
-  if (!resp.ok) throw new Error(`Erro ao ler ${table}: ${await resp.text()}`)
-  return resp.json()
+// Wrappers finos sobre os helpers de lib/supabase (com paginação e checagem de erro),
+// preservando o contrato throw-on-error do fluxo de importação.
+async function dbSelectAll(table: string, cols = '*'): Promise<any[]> {
+  const { data, error } = await dbQueryAll(table, {}, cols)
+  if (error) throw new Error(`Erro ao ler ${table}: ${error}`)
+  return data || []
 }
 
-async function dbDelete(table: string, filter: string): Promise<void> {
-  const token = getToken()
-  const resp = await fetch(
-    `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/${table}?${filter}`,
-    { method: 'DELETE', headers: { apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, Authorization: `Bearer ${token}`, Prefer: 'return=minimal' } }
-  )
-  if (!resp.ok) throw new Error(`Erro ao apagar ${table}: ${await resp.text()}`)
+async function dbDelete(table: string, filter: Record<string, string>): Promise<void> {
+  const { error } = await dbDeleteLib(table, filter)
+  if (error) throw new Error(`Erro ao apagar ${table}: ${error}`)
 }
 
 async function dbInsert(table: string, rows: any[]): Promise<void> {
   if (!rows.length) return
-  const token = getToken()
-  const resp = await fetch(
-    `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/${table}`,
-    {
-      method: 'POST',
-      headers: { apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
-      body: JSON.stringify(rows),
-    }
-  )
-  if (!resp.ok) throw new Error(`Erro ao inserir em ${table}: ${await resp.text()}`)
+  const { error } = await dbInsertLib(table, rows)
+  if (error) throw new Error(`Erro ao inserir em ${table}: ${error}`)
 }
 
 type PreviewData = {
@@ -107,8 +94,8 @@ export default function UploadSimulados() {
   }
 
   function detectTipo(name: string): { ciclo: string, tipo: string, concurso: string } {
-    // NFD decompõe 'í' em 'i' + acento; strip remove acentos → 'Física' vira 'fisica'
-    const n = name.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+    // strip remove acentos → 'Física' vira 'fisica'
+    const n = stripAcentos(name).toLowerCase()
     const isIME = n.includes('ime')
     const concurso = isIME ? 'IME' : 'ITA'
     const numMatch = name.match(/Ciclo\s*(\d+)/i)
@@ -265,12 +252,12 @@ export default function UploadSimulados() {
       // 1. Atualiza alunos
       if (preview.alunosData.length) {
         addLog(`👥 Atualizando ${preview.alunosData.length} alunos...`)
-        const jasCadastrados = await dbSelect('alunos_dados', 'id_aluno,cadastrado')
+        const jasCadastrados = await dbSelectAll('alunos_dados', 'id_aluno,cadastrado')
         const cadastradoMap: Record<string, boolean> = {}
         jasCadastrados.forEach((a: any) => { cadastradoMap[a.id_aluno] = a.cadastrado })
         preview.alunosData.forEach(a => { a.cadastrado = cadastradoMap[a.id_aluno] || false })
 
-        await dbDelete('alunos_dados', 'id_aluno=neq.xxxx')
+        await dbDelete('alunos_dados', { id_aluno: 'neq.xxxx' })
         for (let i = 0; i < preview.alunosData.length; i += 100) {
           await dbInsert('alunos_dados', preview.alunosData.slice(i, i + 100))
         }
@@ -280,7 +267,7 @@ export default function UploadSimulados() {
       // 2. Limpa e reinsere resultados apenas para os ciclos importados
       const ciclosNovos = [...new Set(preview.todosDados.map(r => r.ciclo_nome))]
       addLog(`🗑 Limpando ${ciclosNovos.length} ciclo(s) importado(s)...`)
-      await dbDelete('resultados', `ciclo_nome=in.(${ciclosNovos.join(',')})`)
+      await dbDelete('resultados', { ciclo_nome: `in.(${ciclosNovos.join(',')})` })
 
       addLog(`📊 Importando ${preview.registros.length} registros...`)
       const registrosNorm = preview.registros.map(normResultado)
@@ -291,7 +278,9 @@ export default function UploadSimulados() {
 
       // 3. Rankings
       addLog(`🏆 Calculando rankings...`)
-      const rankings = calcularRankings(preview.todosDados)
+      // ordenarEClassificar aplica o desempate estável por id_aluno — mesma regra
+      // do recálculo em /gestao/notas, garantindo classificação idêntica nos 2 fluxos.
+      const rankings = ordenarEClassificar(calcularRankings(preview.todosDados))
       const porCiclo: Record<string, any[]> = {}
       rankings.forEach(r => {
         const k = `${r.ciclo_nome}__${r.concurso}`
@@ -300,8 +289,6 @@ export default function UploadSimulados() {
       })
       let totalRankings = 0
       for (const [key, grupo] of Object.entries(porCiclo)) {
-        grupo.sort((a, b) => (b.media_2fase ?? 0) - (a.media_2fase ?? 0))
-        grupo.forEach((r, i) => { r.classificacao = i + 1 })
         for (let i = 0; i < grupo.length; i += 100) {
           await dbInsert('resultados', grupo.slice(i, i + 100).map(normResultado))
         }

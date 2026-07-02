@@ -1,8 +1,9 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { dbQuery, dbUpdate } from '@/lib/supabase'
+import { dbQuery, dbQueryAll, dbUpdate } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import Nav from '@/components/Nav'
+import ErroLoad from '@/components/ErroLoad'
 import { useRouter } from 'next/navigation'
 
 export default function Admin() {
@@ -10,7 +11,9 @@ export default function Admin() {
   const router = useRouter()
   const [pendentes, setPendentes] = useState<any[]>([])
   const [aprovados, setAprovados] = useState<any[]>([])
+  const [nomesVinculo, setNomesVinculo] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
+  const [erro, setErro] = useState<string | null>(null)
 
   useEffect(() => {
     if (perfil && perfil.papel !== 'coordenador' && perfil.papel !== 'direcao') router.push('/')
@@ -27,9 +30,25 @@ export default function Admin() {
     } else {
       filtro['or'] = '(vertical.eq.ITA,vertical.is.null)'
     }
-    const { data } = await dbQuery('perfis', filtro)
-    setPendentes((data || []).filter((p: any) => p.status === 'pendente'))
-    setAprovados((data || []).filter((p: any) => p.status === 'aprovado'))
+    setErro(null)
+    const { data, error } = await dbQuery('perfis', filtro)
+    if (error) { setErro('Falha ao carregar os cadastros.'); setLoading(false); return }
+    const lista = data || []
+    setPendentes(lista.filter((p: any) => p.status === 'pendente'))
+    setAprovados(lista.filter((p: any) => p.status === 'aprovado'))
+
+    // #3: resolve o NOME do aluno vinculado (perfis.aluno_id) para o coordenador
+    // conferir o vínculo antes de aprovar — antes a tela não mostrava isso.
+    const idsVinc = [...new Set(lista.filter((p: any) => p.aluno_id).map((p: any) => p.aluno_id))]
+    if (idsVinc.length) {
+      const { data: rk } = await dbQueryAll('resultados',
+        { fase: 'eq.ranking', id_aluno: `in.(${idsVinc.join(',')})` }, 'id_aluno,nome_aluno')
+      const mapa: Record<string, string> = {}
+      ;(rk || []).forEach((r: any) => { if (!mapa[r.id_aluno]) mapa[r.id_aluno] = r.nome_aluno })
+      setNomesVinculo(mapa)
+    } else {
+      setNomesVinculo({})
+    }
     setLoading(false)
   }
 
@@ -59,7 +78,9 @@ export default function Admin() {
       </div>
 
       <div style={{ padding: 16 }}>
-        {loading ? <div style={{ textAlign: 'center', color: '#999', padding: 40 }}>Carregando...</div> : (
+        {loading ? <div style={{ textAlign: 'center', color: '#999', padding: 40 }}>Carregando...</div> : erro ? (
+          <ErroLoad msg={erro} onRetry={load} />
+        ) : (
           <>
             {pendentes.length > 0 && (
               <>
@@ -87,6 +108,11 @@ export default function Admin() {
                       </select>
                       {p.mentor_nome && <span style={{ fontSize: 11, color: '#999' }}>{p.mentor_nome}</span>}
                     </div>
+                    {p.papel === 'aluno' && p.aluno_id && (
+                      <div style={{ fontSize: 11, marginBottom: 10, padding: '6px 8px', borderRadius: 8, background: nomesVinculo[p.aluno_id] ? '#F0FDF4' : '#FEF2F2', color: nomesVinculo[p.aluno_id] ? '#166534' : '#991B1B' }}>
+                        Vinculado a: <strong>{nomesVinculo[p.aluno_id] || 'aluno não encontrado — conferir'}</strong>
+                      </div>
+                    )}
                     {!isDirecao && (
                       <div style={{ display: 'flex', gap: 8 }}>
                         <button onClick={() => aprovar(p.id)} style={{ flex: 1, padding: '8px', borderRadius: 10, border: 'none', background: '#16A34A', color: 'white', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>✓ Aprovar</button>

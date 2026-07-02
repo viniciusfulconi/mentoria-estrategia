@@ -3,6 +3,7 @@ import { useEffect, useState, useMemo } from 'react'
 import { dbQuery, dbQueryAll } from '@/lib/supabase'
 import Nav from '@/components/Nav'
 import PageLoader from '@/components/PageLoader'
+import ErroLoad from '@/components/ErroLoad'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
@@ -30,20 +31,25 @@ export default function Turma() {
   const [aba, setAba] = useState<'ranking' | 'atencao' | 'destaques' | 'mentor' | 'termometro'>('ranking')
   const [anoITA, setAnoITA] = useState<2024 | 2025>(2025)
   const [loading, setLoading] = useState(true)
+  const [erro, setErro] = useState<string | null>(null)
+
+  async function load() {
+    setErro(null)
+    const { data, error } = await dbQueryAll('resultados', { fase: 'eq.ranking', order: 'ciclo_nome' })
+    if (error) { setErro('Falha ao carregar a turma.'); setLoading(false); return }
+    const d = data || []
+    setDados(d)
+    const cs = [...new Set(d.map((r: any) => r.ciclo_nome))].sort((a: string, b: string) =>
+      (parseInt(a.match(/\d+/)?.[0] || '0') - parseInt(b.match(/\d+/)?.[0] || '0'))
+    ) as string[]
+    setCiclos(cs)
+    if (cs.length) setCicloAtivo(cs[cs.length - 1])
+    setLoading(false)
+  }
 
   useEffect(() => {
     if (verticalAtiva === 'Medicina') { router.replace('/med/alunos'); return }
-    dbQueryAll('resultados', { fase: 'eq.ranking', order: 'ciclo_nome' })
-      .then(({ data }) => {
-        const d = data || []
-        setDados(d)
-        const cs = [...new Set(d.map((r: any) => r.ciclo_nome))].sort((a: string, b: string) =>
-          (parseInt(a.match(/\d+/)?.[0] || '0') - parseInt(b.match(/\d+/)?.[0] || '0'))
-        ) as string[]
-        setCiclos(cs)
-        if (cs.length) setCicloAtivo(cs[cs.length - 1])
-        setLoading(false)
-      })
+    load()
   }, [])
 
   function mediaAluno(r: any): number {
@@ -182,7 +188,9 @@ export default function Turma() {
       </div>
 
       <div style={{ padding: 16 }}>
-        {loading ? <div style={{ textAlign: 'center', color: '#999', padding: 40 }}>Carregando...</div> : (
+        {loading ? <div style={{ textAlign: 'center', color: '#999', padding: 40 }}>Carregando...</div> : erro ? (
+          <ErroLoad msg={erro} onRetry={load} />
+        ) : (
           <>
             {/* RANKING */}
             {aba === 'ranking' && cicloData.map((r, i) => {

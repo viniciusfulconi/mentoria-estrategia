@@ -4,6 +4,7 @@ import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
 import { dbQuery, dbUpdate, supabase } from '@/lib/supabase'
+import { storageSafeName } from '@/lib/format'
 import { ArrowLeft, Trophy, Clock, Users, ArrowUpDown, FileText, Upload } from 'lucide-react'
 import { BarChart } from '@/components/aluno/AlunoCharts'
 import { corMateria } from '@/lib/cores'
@@ -333,13 +334,7 @@ export default function RankingProvaAntigaPage() {
     if (!prova) return
     setResErro('')
     setUploadingRes(true)
-    // Supabase Storage não aceita acentos, ª/º, ç ou espaços na key
-    const safeName = file.name
-      .normalize('NFD').replace(/[̀-ͯ]/g, '')
-      .replace(/[^a-zA-Z0-9._-]+/g, '-')
-      .replace(/-+/g, '-')
-      .replace(/^-|-$/g, '')
-    const path = `${prova.tipo}-fase${prova.fase}/resolucao-${Date.now()}-${safeName}`
+    const path = `${prova.tipo}-fase${prova.fase}/resolucao-${Date.now()}-${storageSafeName(file.name)}`
     const { error: upErr } = await supabase.storage.from('provas-antigas').upload(path, file, { upsert: true })
     if (upErr) { setResErro('Erro ao enviar: ' + upErr.message); setUploadingRes(false); return }
     const { data: urlData } = supabase.storage.from('provas-antigas').getPublicUrl(path)

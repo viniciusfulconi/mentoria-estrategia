@@ -5,11 +5,14 @@ const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
 export type Papel = 'coordenador' | 'direcao' | 'mentor' | 'professor' | 'aluno'
 
+export type Status = 'pendente' | 'aprovado' | 'bloqueado'
+
 export type AuthUser = {
   id: string
   email: string | null
   nome: string | null
   papel: Papel
+  status: Status
   aluno_id: string | null
   mentor_nome: string | null
   vertical: 'ITA' | 'Medicina' | null
@@ -25,7 +28,7 @@ function extractToken(req: NextRequest, fallbackBody?: any): string | null {
 
 async function fetchPerfil(userId: string, token: string): Promise<Omit<AuthUser, 'token'> | null> {
   const resp = await fetch(
-    `${SUPABASE_URL}/rest/v1/perfis?id=eq.${userId}&select=id,email,nome,papel,aluno_id,mentor_nome,vertical`,
+    `${SUPABASE_URL}/rest/v1/perfis?id=eq.${userId}&select=id,email,nome,papel,status,aluno_id,mentor_nome,vertical`,
     {
       headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${token}` },
       signal: AbortSignal.timeout(8000),
@@ -59,6 +62,12 @@ export async function verifyAuth(
 
   const perfil = await fetchPerfil(sessionUser.id, token)
   if (!perfil) return { error: NextResponse.json({ error: 'Perfil não encontrado' }, { status: 403 }) }
+
+  // Conta não aprovada (pendente/bloqueada) não acessa nenhuma rota de API,
+  // mesmo com JWT válido — antes o gate de status existia só no cliente.
+  if (perfil.status !== 'aprovado') {
+    return { error: NextResponse.json({ error: 'Conta não aprovada' }, { status: 403 }) }
+  }
 
   return { user: { ...perfil, email: perfil.email ?? sessionUser.email, token } }
 }

@@ -1,7 +1,9 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { dbQuery, dbQueryAll } from '@/lib/supabase'
+import { mediaFinalCiclo } from '@/lib/rankings'
 import Nav from '@/components/Nav'
+import ErroLoad from '@/components/ErroLoad'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
@@ -29,6 +31,7 @@ export default function Home() {
   const [financeiro, setFinanceiro] = useState<Financeiro | null>(null)
   const [provasSemana, setProvasSemana] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [erro, setErro] = useState<string | null>(null)
   const [medStats, setMedStats] = useState<{ total: number; semMentor: number; pendentes: number; comMentor: number; simulados: number } | null>(null)
 
   useEffect(() => {
@@ -51,11 +54,12 @@ export default function Home() {
   }, [authLoading, perfil, verticalAtiva])
 
   async function loadMed() {
-    setLoading(true)
-    const [{ data: alunos }, { data: sims }] = await Promise.all([
+    setLoading(true); setErro(null)
+    const [{ data: alunos, error }, { data: sims }] = await Promise.all([
       dbQuery('alunos', { vertical: 'eq.Medicina' }, 'id,mentor_id,mentor_aceite'),
       dbQuery('simulados_med', { vertical: 'eq.Medicina' }, 'id'),
     ])
+    if (error) { setErro('Falha ao carregar o painel.'); setLoading(false); return }
     const lista = alunos || []
     setMedStats({
       total: lista.length,
@@ -68,6 +72,7 @@ export default function Home() {
   }
 
   async function load() {
+    setErro(null)
     const hoje = new Date()
     const hojeStr = hoje.toISOString().split('T')[0]
     const inicioMes = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-01`
@@ -78,7 +83,7 @@ export default function Home() {
       { data: alDados },
       { data: aulasD },
       { data: turmasD },
-      { data: rankingsD },
+      { data: rankingsD, error: errRank },
       { data: atendRecentesD },
       { data: atendMesD },
       { data: provasD },
@@ -106,6 +111,10 @@ export default function Home() {
       dbQuery('provas_antigas', {}, 'id,nome,tipo'),
     ])
 
+    // Ranking é a fonte crítica do painel (ciclo, top/bottom, em risco) — se falhar,
+    // mostra erro em vez de painel zerado.
+    if (errRank) { setErro('Falha ao carregar o painel.'); setLoading(false); return }
+
     // Stats: derive mentor count from distinct mentors in alunos_dados
     const alList = alDados || []
     const mentoresSet = new Set(alList.map((a: any) => a.mentor).filter(Boolean))
@@ -127,13 +136,8 @@ export default function Home() {
     if (cicloAtual.length) {
       const aprovados = cicloAtual.filter((r: any) => r.resultado_ciclo === 'Aprovado').length
       const reprovados = cicloAtual.filter((r: any) => r.resultado_ciclo === 'Reprovado').length
-      // media_2fase já é a média final do ciclo (para ITA inclui media_1fase no cálculo).
-      // Quando media_2fase=null (ciclo em andamento), cai para media_1fase como aproximação.
-      const medias = cicloAtual.map((r: any) =>
-        r.media_2fase != null ? Number(r.media_2fase)
-        : r.media_1fase != null ? Number(r.media_1fase)
-        : null
-      ).filter((v: number | null) => v != null) as number[]
+      const medias = cicloAtual.map((r: any) => mediaFinalCiclo(r))
+        .filter((v: number | null) => v != null) as number[]
       const media = medias.length ? medias.reduce((a, b) => a + b, 0) / medias.length : 0
       setCicloStats({ nome: latestCiclo, aprovados, reprovados, total: cicloAtual.length, media })
 
@@ -184,11 +188,7 @@ export default function Home() {
   }
 
   function calcMedia(r: any) {
-    // media_2fase é a média final do ciclo (inclui 1ª fase no cálculo ITA).
-    // Cai para media_1fase só se a 2ª fase ainda não fechou.
-    if (r.media_2fase != null) return Number(r.media_2fase)
-    if (r.media_1fase != null) return Number(r.media_1fase)
-    return 0
+    return mediaFinalCiclo(r) ?? 0
   }
 
   function corMedia(m: number) {
@@ -220,6 +220,8 @@ export default function Home() {
 
           {loading ? (
             <div style={{ textAlign: 'center', padding: 40, color: '#aaa', fontSize: 13 }}>Carregando...</div>
+          ) : erro ? (
+            <ErroLoad msg={erro} onRetry={loadMed} />
           ) : medStats ? (
             <>
               {/* Cards */}
@@ -299,8 +301,10 @@ export default function Home() {
 
       <div style={{ padding: 16 }}>
 
+        {erro && <ErroLoad msg={erro} onRetry={load} />}
+
         {/* Stats */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 20 }}>
+        {!erro && <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 20 }}>
           {statCards.map(s => {
             const Icon = s.icon
             return (
@@ -316,7 +320,7 @@ export default function Home() {
               </div>
             )
           })}
-        </div>
+        </div>}
 
         {/* Ciclo atual */}
         {!loading && cicloStats && (

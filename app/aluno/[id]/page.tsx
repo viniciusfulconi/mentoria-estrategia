@@ -1,8 +1,10 @@
 'use client'
 import ListasPage from '@/app/listas/page'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { dbQuery, dbQueryAll } from '@/lib/supabase'
+import { mediaFinalCiclo } from '@/lib/rankings'
 import Nav from '@/components/Nav'
+import ErroLoad from '@/components/ErroLoad'
 import { useRouter, useParams } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import Link from 'next/link'
@@ -12,6 +14,8 @@ import { FileDown, Video } from 'lucide-react'
 import { BannerRisco, DiagnosticoCorte } from '@/components/aluno/AlunoRisco'
 import Termometro from './Termometro'
 import PenasConquistas from '@/components/aluno/PenasConquistas'
+
+const CAMPOS_MATERIA = ['nota_matematica', 'nota_fisica', 'nota_quimica', 'media_linguagens']
 
 type AlunoCache = {
   dados: any[]; perfil: any; alunoInfo: any
@@ -44,6 +48,7 @@ export default function AlunoPage() {
   const [cicloAtivo, setCicloAtivo] = useState<string | null>(null)
   const [aba, setAba] = useState<'geral' | 'simulados' | 'listas' | 'provas' | 'termometro' | 'penas'>('geral')
   const [loading, setLoading] = useState(true)
+  const [erro, setErro] = useState<string | null>(null)
   const [provasAluno, setProvasAluno] = useState<any[]>([])
   const [correcoesProva, setCorrecoesProva] = useState<any[]>([])
   const [questoesProvas, setQuestoesProvas] = useState<any[]>([])
@@ -91,9 +96,10 @@ export default function AlunoPage() {
       return
     }
 
+    setErro(null)
     // Rodada 1: dados do próprio aluno (5 queries pequenas em paralelo)
     const [
-      { data: resultados },
+      { data: resultados, error: errRes },
       { data: perfilArr },
       { data: alunoArr },
       { data: ts },
@@ -115,10 +121,14 @@ export default function AlunoPage() {
 
     // Rodada 2: todos os rankings de todos os alunos (sem filtrar por ciclo) para que
     // a posição geral e o ranking por matéria sejam calculados igual à página de turma
-    const [{ data: todosRanking }] = await Promise.all([
+    const [{ data: todosRanking, error: errTodos }] = await Promise.all([
       dbQueryAll('resultados', { fase: 'eq.ranking' },
         'id_aluno,nome_aluno,ciclo_nome,nota_matematica,nota_fisica,nota_quimica,nota_portugues,nota_redacao,media_linguagens,media_1fase,media_2fase'),
     ])
+
+    // Se a leitura crítica falhar, mostra erro e NÃO cacheia (senão o vazio ficaria
+    // preso por CACHE_TTL_MS).
+    if (errRes || errTodos) { setErro('Falha ao carregar o aluno.'); setLoading(false); return }
 
     const rankings = (resultados || []).filter(r => r.fase === 'ranking')
       .sort((a, b) => parseInt((a.ciclo_nome || '').match(/\d+/)?.[0] || '0') - parseInt((b.ciclo_nome || '').match(/\d+/)?.[0] || '0'))
@@ -218,34 +228,44 @@ export default function AlunoPage() {
   )
   const rankingAtivo = rankings.find(r => r.ciclo_nome === cicloAtivo)
 
-  // Ranking geral — deduplica por ciclo_nome (um aluno pode ter linhas ITA e IME com mesmo ciclo_nome)
-  function mediaAluno(alunoId: string) {
-    const rs = todos.filter(r => r.id_aluno === alunoId)
-    if (!rs.length) return 0
-    const seen = new Set<string>()
-    // media_2fase é a média final do ciclo. Zero conta. Cai pra media_1fase só se 2f null.
-    const vals = rs
-      .filter(r => { if (seen.has(r.ciclo_nome)) return false; seen.add(r.ciclo_nome); return true })
-      .map(r => {
-        if (r.media_2fase != null) return Number(r.media_2fase)
-        if (r.media_1fase != null) return Number(r.media_1fase)
-        return null
-      })
-      .filter((v): v is number => v != null)
-    if (!vals.length) return 0
-    return vals.reduce((a, b) => a + b, 0) / vals.length
-  }
+  // Ranking geral + por matéria — calculados em UMA passada sobre `todos` e
+  // memoizados. Antes recomputava a cada render com sort O(n²) (cada comparação
+  // do sort refiltrava `todos`); agora agrupa 1×, calcula as médias e ordena.
+  // Dedup por ciclo_nome (um aluno pode ter linhas ITA e IME com mesmo ciclo_nome).
+  const { posicaoGeral, posicaoPorMateria } = useMemo(() => {
+    const porAluno = new Map<string, any[]>()
+    for (const r of todos as any[]) {
+      const arr = porAluno.get(r.id_aluno)
+      if (arr) arr.push(r); else porAluno.set(r.id_aluno, [r])
+    }
+    const geral: { id: string; m: number }[] = []
+    const porMat: Record<string, { id: string; m: number }[]> =
+      Object.fromEntries(CAMPOS_MATERIA.map(c => [c, [] as { id: string; m: number }[]]))
 
-  const alunosUnicos = [...new Map(todos.map(r => [r.id_aluno, r])).values()]
-  const rankingGeral = [...alunosUnicos].sort((a, b) => mediaAluno(b.id_aluno) - mediaAluno(a.id_aluno))
-  const posicaoGeral = rankingGeral.findIndex(r => r.id_aluno === targetId) + 1
-
-  // Ranking por matéria
-  function mediaMateriaAluno(alunoId: string, campo: string) {
-    const rs = todos.filter(r => r.id_aluno === alunoId && r[campo] !== null)
-    if (!rs.length) return 0
-    return rs.reduce((a, r) => a + Number(r[campo] || 0), 0) / rs.length
-  }
+    for (const [id, rs] of porAluno) {
+      const seen = new Set<string>()
+      const vals: number[] = []
+      for (const r of rs) {
+        if (seen.has(r.ciclo_nome)) continue
+        seen.add(r.ciclo_nome)
+        const v = mediaFinalCiclo(r)
+        if (v != null) vals.push(v)
+      }
+      geral.push({ id, m: vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0 })
+      for (const campo of CAMPOS_MATERIA) {
+        const mv = rs.filter(r => r[campo] != null)
+        porMat[campo].push({ id, m: mv.length ? mv.reduce((a, r) => a + Number(r[campo] || 0), 0) / mv.length : 0 })
+      }
+    }
+    geral.sort((a, b) => b.m - a.m)
+    const posGeral = geral.findIndex(x => x.id === targetId) + 1
+    const posPorMat: Record<string, number> = {}
+    for (const campo of CAMPOS_MATERIA) {
+      porMat[campo].sort((a, b) => b.m - a.m)
+      posPorMat[campo] = porMat[campo].findIndex(x => x.id === targetId) + 1
+    }
+    return { posicaoGeral: posGeral, posicaoPorMateria: posPorMat }
+  }, [todos, targetId])
 
   const materiasCampos = [
     { label: 'Matemática', campo: 'nota_matematica' },
@@ -268,12 +288,6 @@ export default function AlunoPage() {
     return dados.some(r => String(r.ciclo_nome || '').match(/\d+/)?.[0] === num && r.fase === '2fase_port')
   }
 
-  function rankingMateria(campo: string) {
-    return [...alunosUnicos]
-      .sort((a, b) => mediaMateriaAluno(b.id_aluno, campo) - mediaMateriaAluno(a.id_aluno, campo))
-      .findIndex(r => r.id_aluno === targetId) + 1
-  }
-
   // Cronograma por matéria — usando arvore_subtopicos + progresso_subtopicos
   const progressoMap = new Map((progressos as any[]).map((p: any) => [p.subtopico_id, p.status]))
   const cronogramaBarras: { materia: string; pct: number }[] = []
@@ -287,11 +301,7 @@ export default function AlunoPage() {
     const seen = new Set<string>()
     const vals = rankings
       .filter(r => { if (seen.has(r.ciclo_nome)) return false; seen.add(r.ciclo_nome); return true })
-      .map(r => {
-        if (r.media_2fase != null) return Number(r.media_2fase)
-        if (r.media_1fase != null) return Number(r.media_1fase)
-        return null
-      })
+      .map(r => mediaFinalCiclo(r))
       .filter((v): v is number => v != null)
     return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0
   })()
@@ -463,6 +473,7 @@ export default function AlunoPage() {
   }
 
   if (loading) return <div style={{ padding: 40, textAlign: 'center', color: '#999' }}>Carregando...</div>
+  if (erro) return <><Nav /><div style={{ padding: 16 }}><ErroLoad msg={erro} onRetry={() => { setLoading(true); load() }} /></div></>
 
   const isOwn = meuPerfil?.papel === 'aluno'
 
@@ -589,7 +600,7 @@ export default function AlunoPage() {
               <div className="card" style={{ padding: '12px 10px' }}>
                 <div style={{ fontSize: 11, fontWeight: 600, marginBottom: 8 }}>Por matéria</div>
                 {materiasCampos.map(({ label, campo }) => {
-                  const pos = rankingMateria(campo)
+                  const pos = posicaoPorMateria[campo]
                   if (!pos) return null
                   return (
                     <div key={campo} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, marginBottom: 4 }}>

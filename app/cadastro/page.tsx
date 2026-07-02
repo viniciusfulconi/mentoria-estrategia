@@ -73,7 +73,13 @@ export default function Cadastro() {
       aluno_id: form.papel === 'aluno' && vertical === 'ITA' ? form.aluno_id : null,
     }])
 
-    if (perfilErr) { setErro(perfilErr); setLoading(false); return }
+    if (perfilErr) {
+      // Índice único uniq_perfis_aluno_id: este aluno já foi reivindicado por outro cadastro.
+      const msg = /uniq_perfis_aluno_id|duplicate key/i.test(perfilErr)
+        ? 'Este aluno já possui um cadastro vinculado. Fale com a coordenação.'
+        : perfilErr
+      setErro(msg); setLoading(false); return
+    }
     router.push('/aguardando')
   }
 
