@@ -91,10 +91,10 @@ function MensagemBubble({ msg }: { msg: Mensagem }) {
 }
 
 const SUGESTOES = [
-  'Qual aluno tem a maior média geral?',
+  'Quais alunos estão melhorando ao longo dos ciclos e são fortes candidatos à aprovação?',
+  'Quem teve a maior evolução de média entre o primeiro e o último ciclo?',
+  'Quais alunos estão perto do corte e podem virar aprovados com um empurrão?',
   'Quantos atendimentos foram feitos este mês?',
-  'Qual é a nota média de matemática no Ciclo 4?',
-  'Quais alunos estão reprovados no último ciclo?',
 ]
 
 export default function CorujaPage() {
@@ -203,7 +203,7 @@ export default function CorujaPage() {
           </div>
           <div>
             <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>Coruja Inteligente</div>
-            <div style={{ fontSize: 12, color: 'var(--text-hint)' }}>Faça perguntas sobre os dados da plataforma</div>
+            <div style={{ fontSize: 12, color: 'var(--text-hint)' }}>Perguntas, análises e previsões sobre os dados da plataforma</div>
           </div>
         </div>
 
@@ -227,7 +227,7 @@ export default function CorujaPage() {
                 Olá! Sou a Coruja.
               </div>
               <div style={{ fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: 28 }}>
-                Faça qualquer pergunta sobre alunos, simulados, atendimentos ou avaliações. Consulto os dados reais da plataforma e respondo em linguagem natural.
+                Pergunte sobre alunos, simulados, atendimentos ou avaliações — ou peça análises de evolução e previsões (quem está melhorando, fortes candidatos à aprovação). Consulto os dados reais e explico o racional.
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {SUGESTOES.map(s => (
