@@ -1,7 +1,11 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+// Fallback para placeholder quando as env vars não existem (ex.: build de
+// preview no Vercel sem NEXT_PUBLIC_* configuradas). Sem isso, createClient()
+// lança "supabaseUrl is required" no prerender e quebra o build inteiro.
+// Em produção as env vars reais estão presentes, então o placeholder nunca é usado.
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co'
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key'
 
 // ─── REST direto — evita lock do cliente JS ───────────────────────────────────
 
