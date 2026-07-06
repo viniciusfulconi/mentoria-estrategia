@@ -91,6 +91,27 @@ export async function dbQueryAll<T = any>(
   return { data: all, error: null }
 }
 
+// RPC — POST /rest/v1/rpc/<fn>. Devolve o retorno da função (escalar, linha ou
+// jsonb) sem paginação. Usar para funções SECURITY DEFINER que computam no banco
+// o que o RLS não deixa o client ler linha a linha (ex.: posicoes_aluno).
+export async function dbRpc<T = any>(
+  fn: string,
+  args: Record<string, any> = {}
+): Promise<QueryResult<T>> {
+  const token = getAccessToken()
+  try {
+    const resp = await fetch(`${supabaseUrl}/rest/v1/rpc/${fn}`, {
+      method: 'POST',
+      headers: restHeaders(token),
+      body: JSON.stringify(args),
+    })
+    if (!resp.ok) return { data: null, error: await resp.text() }
+    return { data: await resp.json(), error: null }
+  } catch (e: any) {
+    return { data: null, error: e.message }
+  }
+}
+
 // INSERT — returning=true devolve os registros criados
 export async function dbInsert<T = any>(
   table: string,

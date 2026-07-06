@@ -5,8 +5,9 @@ import { Feather, Trophy, Star, Swords } from 'lucide-react'
 
 interface Props {
   authUserId: string          // perfil.id — UUID do auth
-  todos: any[]                // todos os rankings (da tabela resultados, fase=ranking)
-  targetId: string            // id_aluno na tabela alunos_dados (para calcular posição)
+  // Posições por ciclo vindas da RPC posicoes_aluno — calculadas no banco porque
+  // o RLS não deixa o aluno ler os rankings dos colegas para computar aqui.
+  posicoesCiclo: { ciclo: string; pos: number; total: number }[]
 }
 
 type Conquista = {
@@ -21,7 +22,7 @@ function calcPenas(posicao: number) {
   return Math.max(1, Math.ceil(100 / posicao))
 }
 
-export default function PenasConquistas({ authUserId, todos, targetId }: Props) {
+export default function PenasConquistas({ authUserId, posicoesCiclo }: Props) {
   const [saldo, setSaldo]         = useState<number | null>(null)
   const [conquistas, setConquistas] = useState<Conquista[]>([])
   const [loading, setLoading]     = useState(true)
@@ -29,7 +30,8 @@ export default function PenasConquistas({ authUserId, todos, targetId }: Props) 
   useEffect(() => {
     if (!authUserId) return
     load()
-  }, [authUserId])
+    // .length (e não a referência) porque o pai cria novo array a cada render
+  }, [authUserId, posicoesCiclo.length])
 
   async function load() {
     const [{ data: saldoData }, { data: respostas }] = await Promise.all([
@@ -67,31 +69,15 @@ export default function PenasConquistas({ authUserId, todos, targetId }: Props) 
       }
     }
 
-    // ── Conquistas de ranking por ciclo ──────────────────────────
-    if (todos && todos.length > 0) {
-      const ciclos = [...new Set(todos.map((r: any) => r.ciclo_nome as string))].sort()
-      for (const ciclo of ciclos) {
-        const dosCiclo = todos.filter((r: any) => r.ciclo_nome === ciclo)
-        // Deduplicar por aluno (pega a última entrada de cada aluno)
-        const byAluno = new Map<string, any>()
-        for (const r of dosCiclo) byAluno.set(r.id_aluno, r)
-        const ranking = [...byAluno.values()]
-          .sort((a, b) => {
-            const ma = Number(b.media_2fase) || Number(b.media_1fase) || 0
-            const mb = Number(a.media_2fase) || Number(a.media_1fase) || 0
-            return ma - mb
-          })
-        const pos = ranking.findIndex(r => r.id_aluno === targetId) + 1
-        if (pos > 0) {
-          lista.push({
-            tipo:    'ranking',
-            titulo:  ciclo,
-            detalhe: `${pos}º lugar`,
-            penas:   calcPenas(pos),
-            data:    '',
-          })
-        }
-      }
+    // ── Conquistas de ranking por ciclo (posições já vêm da RPC) ──
+    for (const { ciclo, pos } of posicoesCiclo) {
+      lista.push({
+        tipo:    'ranking',
+        titulo:  ciclo,
+        detalhe: `${pos}º lugar`,
+        penas:   calcPenas(pos),
+        data:    '',
+      })
     }
 
     // Ordena: rankings mais recentes primeiro, desafios depois

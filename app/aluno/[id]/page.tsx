@@ -1,7 +1,7 @@
 'use client'
 import ListasPage from '@/app/listas/page'
-import { useEffect, useState, useMemo } from 'react'
-import { dbQuery, dbQueryAll } from '@/lib/supabase'
+import { useEffect, useState } from 'react'
+import { dbQuery, dbQueryAll, dbRpc } from '@/lib/supabase'
 import { mediaFinalCiclo } from '@/lib/rankings'
 import Nav from '@/components/Nav'
 import ErroLoad from '@/components/ErroLoad'
@@ -15,11 +15,19 @@ import { BannerRisco, DiagnosticoCorte } from '@/components/aluno/AlunoRisco'
 import Termometro from './Termometro'
 import PenasConquistas from '@/components/aluno/PenasConquistas'
 
-const CAMPOS_MATERIA = ['nota_matematica', 'nota_fisica', 'nota_quimica', 'media_linguagens']
+// Retorno da RPC posicoes_aluno (POSICOES_ALUNO_RPC_MIGRATION.sql). As posições
+// são calculadas no banco porque o RLS não deixa o aluno ler os rankings dos
+// colegas — computar no client fazia todo aluno aparecer em 1º lugar.
+type Posicoes = {
+  posicao_geral: number | null
+  total_alunos: number | null
+  por_materia: Record<string, number>
+  por_ciclo: { ciclo: string; pos: number; total: number }[]
+}
 
 type AlunoCache = {
   dados: any[]; perfil: any; alunoInfo: any
-  topicos: any[]; progressos: any[]; todos: any[]; ciclosDoAluno: string[]
+  topicos: any[]; progressos: any[]; posicoes: Posicoes | null; ciclosDoAluno: string[]
   cicloAtivo: string | null
   cachedAt: number
 }
@@ -41,7 +49,7 @@ export default function AlunoPage() {
   const [alunoInfo, setAlunoInfo] = useState<any>(null)
   const [topicos, setTopicos] = useState<any[]>([])
   const [progressos, setProgressos] = useState<any[]>([])
-  const [todos, setTodos] = useState<any[]>([])
+  const [posicoes, setPosicoes] = useState<Posicoes | null>(null)
   const [turmaQuestoes, setTurmaQuestoes] = useState<any[]>([])
   const [ciclosDoAluno, setCiclosDoAluno] = useState<string[]>([])
   const [turmaQuestoesLoaded, setTurmaQuestoesLoaded] = useState(false)
@@ -89,7 +97,7 @@ export default function AlunoPage() {
       setAlunoInfo(cached.alunoInfo)
       setTopicos(cached.topicos)
       setProgressos(cached.progressos)
-      setTodos(cached.todos)
+      setPosicoes(cached.posicoes)
       setCiclosDoAluno(cached.ciclosDoAluno)
       if (cached.cicloAtivo) setCicloAtivo(cached.cicloAtivo)
       setLoading(false)
@@ -119,12 +127,11 @@ export default function AlunoPage() {
       (resultados || []).filter(r => r.fase === 'ranking').map(r => r.ciclo_nome as string)
     )]
 
-    // Rodada 2: todos os rankings de todos os alunos (sem filtrar por ciclo) para que
-    // a posição geral e o ranking por matéria sejam calculados igual à página de turma
-    const [{ data: todosRanking, error: errTodos }] = await Promise.all([
-      dbQueryAll('resultados', { fase: 'eq.ranking' },
-        'id_aluno,nome_aluno,ciclo_nome,nota_matematica,nota_fisica,nota_quimica,nota_portugues,nota_redacao,media_linguagens,media_1fase,media_2fase'),
-    ])
+    // Rodada 2: posições (geral, por matéria e por ciclo) calculadas no banco via
+    // RPC SECURITY DEFINER — o RLS não deixa o aluno ler os rankings dos colegas,
+    // então computar aqui no client faria todo aluno aparecer em 1º lugar.
+    const { data: posicoesData, error: errTodos } =
+      await dbRpc<Posicoes>('posicoes_aluno', { target_id: targetId })
 
     // Se a leitura crítica falhar, mostra erro e NÃO cacheia (senão o vazio ficaria
     // preso por CACHE_TTL_MS).
@@ -139,7 +146,7 @@ export default function AlunoPage() {
     setAlunoInfo(alunoData)
     setTopicos(ts || [])
     setProgressos(ps || [])
-    setTodos(todosRanking || [])
+    setPosicoes(posicoesData)
     setCiclosDoAluno(ciclos)
     if (ultimoCiclo) setCicloAtivo(ultimoCiclo)
     setLoading(false)
@@ -150,7 +157,7 @@ export default function AlunoPage() {
       alunoInfo: alunoData,
       topicos: ts || [],
       progressos: ps || [],
-      todos: todosRanking || [],
+      posicoes: posicoesData,
       ciclosDoAluno: ciclos,
       cicloAtivo: ultimoCiclo,
       cachedAt: Date.now(),
@@ -228,44 +235,11 @@ export default function AlunoPage() {
   )
   const rankingAtivo = rankings.find(r => r.ciclo_nome === cicloAtivo)
 
-  // Ranking geral + por matéria — calculados em UMA passada sobre `todos` e
-  // memoizados. Antes recomputava a cada render com sort O(n²) (cada comparação
-  // do sort refiltrava `todos`); agora agrupa 1×, calcula as médias e ordena.
-  // Dedup por ciclo_nome (um aluno pode ter linhas ITA e IME com mesmo ciclo_nome).
-  const { posicaoGeral, posicaoPorMateria } = useMemo(() => {
-    const porAluno = new Map<string, any[]>()
-    for (const r of todos as any[]) {
-      const arr = porAluno.get(r.id_aluno)
-      if (arr) arr.push(r); else porAluno.set(r.id_aluno, [r])
-    }
-    const geral: { id: string; m: number }[] = []
-    const porMat: Record<string, { id: string; m: number }[]> =
-      Object.fromEntries(CAMPOS_MATERIA.map(c => [c, [] as { id: string; m: number }[]]))
-
-    for (const [id, rs] of porAluno) {
-      const seen = new Set<string>()
-      const vals: number[] = []
-      for (const r of rs) {
-        if (seen.has(r.ciclo_nome)) continue
-        seen.add(r.ciclo_nome)
-        const v = mediaFinalCiclo(r)
-        if (v != null) vals.push(v)
-      }
-      geral.push({ id, m: vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0 })
-      for (const campo of CAMPOS_MATERIA) {
-        const mv = rs.filter(r => r[campo] != null)
-        porMat[campo].push({ id, m: mv.length ? mv.reduce((a, r) => a + Number(r[campo] || 0), 0) / mv.length : 0 })
-      }
-    }
-    geral.sort((a, b) => b.m - a.m)
-    const posGeral = geral.findIndex(x => x.id === targetId) + 1
-    const posPorMat: Record<string, number> = {}
-    for (const campo of CAMPOS_MATERIA) {
-      porMat[campo].sort((a, b) => b.m - a.m)
-      posPorMat[campo] = porMat[campo].findIndex(x => x.id === targetId) + 1
-    }
-    return { posicaoGeral: posGeral, posicaoPorMateria: posPorMat }
-  }, [todos, targetId])
+  // Ranking geral + por matéria — vêm prontos da RPC posicoes_aluno (calculados
+  // no banco com a mesma regra que o client usava: mediaFinalCiclo com dedup por
+  // ciclo_nome para a geral, média dos campos não-nulos para cada matéria).
+  const posicaoGeral = posicoes?.posicao_geral ?? 0
+  const posicaoPorMateria: Record<string, number> = posicoes?.por_materia ?? {}
 
   const materiasCampos = [
     { label: 'Matemática', campo: 'nota_matematica' },
@@ -773,8 +747,7 @@ export default function AlunoPage() {
         {aba === 'penas' && (
           <PenasConquistas
             authUserId={perfil?.id || ''}
-            todos={todos}
-            targetId={targetId}
+            posicoesCiclo={posicoes?.por_ciclo || []}
           />
         )}
 
