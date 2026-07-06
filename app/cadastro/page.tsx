@@ -16,36 +16,17 @@ export default function Cadastro() {
   const [loading, setLoading] = useState(false)
   const [erro, setErro] = useState('')
 
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  const headers = { apikey: key, Authorization: `Bearer ${key}` }
-
   useEffect(() => {
-    // Mentores ITA — vêm da tabela resultados (legado)
-    fetch(`${url}/rest/v1/resultados?fase=eq.ranking&select=mentor`, { headers })
-      .then(r => r.json()).then(data => {
-        if (!Array.isArray(data)) return
-        const ms = [...new Set(data.map((r: any) => r.mentor).filter(Boolean))].sort() as string[]
-        setMentoresITA(ms)
+    // Opções dos dropdowns vêm da API (service role no servidor) — a página é
+    // pública e as tabelas resultados/mentores não têm mais leitura anônima.
+    fetch('/api/cadastro/opcoes')
+      .then(r => r.json())
+      .then(data => {
+        if (Array.isArray(data?.mentoresITA)) setMentoresITA(data.mentoresITA)
+        if (Array.isArray(data?.mentoresMed)) setMentoresMed(data.mentoresMed)
+        if (Array.isArray(data?.alunosITA)) setAlunos(data.alunosITA)
       })
-
-    // Mentores Medicina — vêm da tabela mentores
-    fetch(`${url}/rest/v1/mentores?vertical=eq.Medicina&select=id,nome&order=nome`, { headers })
-      .then(r => r.json()).then(data => {
-        if (Array.isArray(data)) setMentoresMed(data)
-      })
-
-    // Alunos ITA
-    fetch(`${url}/rest/v1/resultados?fase=eq.ranking&select=id_aluno,nome_aluno`, { headers })
-      .then(r => r.json()).then(data => {
-        if (!Array.isArray(data)) return
-        const seen = new Set()
-        const unique = data.filter((r: any) => {
-          if (seen.has(r.id_aluno)) return false
-          seen.add(r.id_aluno); return true
-        }).sort((a: any, b: any) => a.nome_aluno.localeCompare(b.nome_aluno))
-        setAlunos(unique)
-      })
+      .catch(() => {})
   }, [])
 
   // Reseta seleção ao mudar vertical ou papel

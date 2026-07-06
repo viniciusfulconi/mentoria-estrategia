@@ -1,7 +1,8 @@
 'use client'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { dbInsert } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
+import { useAuth } from '@/contexts/AuthContext'
 import Nav from '@/components/Nav'
 
 const MATERIAS = [
@@ -48,6 +49,7 @@ function converterNota(val: any, isRitmo: boolean): number | null {
 
 export default function UploadProfessores() {
   const router = useRouter()
+  const { perfil, loading: authLoading } = useAuth()
   const [nomeAvaliacao, setNomeAvaliacao] = useState('')
   const [data, setData] = useState(new Date().toISOString().split('T')[0])
   const [materia, setMateria] = useState(MATERIAS[0])
@@ -58,6 +60,13 @@ export default function UploadProfessores() {
   const [saving, setSaving] = useState(false)
   const [log, setLog] = useState<string[]>([])
   const [done, setDone] = useState(false)
+
+  // Upload é ação de gestão — o RLS agora bloqueia INSERT de outros papéis,
+  // mas sem o guard a página renderizava para qualquer logado.
+  useEffect(() => {
+    if (authLoading) return
+    if (!perfil || !['coordenador', 'direcao'].includes(perfil.papel)) router.replace('/')
+  }, [authLoading, perfil, router])
 
   function addLog(msg: string) { setLog(prev => [...prev, msg]) }
 

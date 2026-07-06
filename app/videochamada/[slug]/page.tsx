@@ -25,15 +25,17 @@ export default function VideoChamadaPage() {
   // Extrai aluno_id do slug (slug = "mentoria-estrategia-<id>")
   const alunoId = slug?.replace('mentoria-estrategia-', '') || ''
 
-  // Busca nome do aluno para exibir
+  // Busca nome do aluno para exibir. Espera a sessão carregar: sem o gate, as
+  // queries disparavam como anon (RLS devolve vazio) e não rodavam de novo
+  // após o login.
   useEffect(() => {
-    if (!alunoId) return
+    if (authLoading || !perfil || !alunoId) return
     dbQuery('resultados', { id_aluno: `eq.${alunoId}`, fase: 'eq.ranking', limit: '1' }, 'nome_aluno')
       .then(({ data }) => { if (data?.[0]?.nome_aluno) setNomeAluno(data[0].nome_aluno) })
     // Para alunos Medicina, busca na tabela alunos
     dbQuery('alunos', { id: `eq.${alunoId}` }, 'nome')
       .then(({ data }) => { if (data?.[0]?.nome && !nomeAluno) setNomeAluno(data[0].nome) })
-  }, [alunoId])
+  }, [alunoId, authLoading, perfil])
 
   async function entrarNaChamada() {
     if (!perfil) return
