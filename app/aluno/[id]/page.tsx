@@ -50,7 +50,7 @@ export default function AlunoPage() {
   const [topicos, setTopicos] = useState<any[]>([])
   const [progressos, setProgressos] = useState<any[]>([])
   const [posicoes, setPosicoes] = useState<Posicoes | null>(null)
-  const [turmaQuestoes, setTurmaQuestoes] = useState<any[]>([])
+  const [turmaAgg, setTurmaAgg] = useState<Record<string, any>>({})
   const [ciclosDoAluno, setCiclosDoAluno] = useState<string[]>([])
   const [turmaQuestoesLoaded, setTurmaQuestoesLoaded] = useState(false)
   const [cicloAtivo, setCicloAtivo] = useState<string | null>(null)
@@ -219,12 +219,13 @@ export default function AlunoPage() {
   }
 
   async function loadTurmaQuestoes() {
-    const { data } = await dbQueryAll('resultados', {
-      fase: 'neq.ranking',
-      ciclo_nome: `in.(${ciclosDoAluno.join(',')})`,
-      notas_questoes: 'not.is.null',
-    }, 'id_aluno,ciclo_nome,fase,notas_questoes')
-    setTurmaQuestoes(data || [])
+    // Agregados por questão (média da turma + top 25%) calculados no banco via RPC
+    // SECURITY DEFINER — o RLS (resultados_read) só deixa o aluno ler as próprias
+    // linhas, então ler a turma linha a linha aqui devolvia só o próprio aluno e
+    // os overlays de comparação sumiam. A RPC devolve apenas agregados (nenhuma
+    // nota individual de colega). Ver QUESTOES_TURMA_AGREGADO_RPC_MIGRATION.sql.
+    const { data } = await dbRpc<Record<string, any>>('questoes_turma_agregado', { target_id: targetId })
+    setTurmaAgg(data || {})
     setTurmaQuestoesLoaded(true)
   }
 
@@ -665,16 +666,16 @@ export default function AlunoPage() {
                 {/* Gráficos de acertos por questão */}
                 <div className="card" style={{ marginBottom: 14 }}>
                   <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 14 }}>Acertos por questão — 1ª Fase</div>
-                  <GraficoQuestoes dados={dados} turmaQuestoes={turmaQuestoes} cicloAtivo={cicloAtivo} fase="1fase" titulo="1ª Fase" corAluno="#f97316" />
+                  <GraficoQuestoes dados={dados} turmaAgg={turmaAgg} cicloAtivo={cicloAtivo} fase="1fase" titulo="1ª Fase" corAluno="#f97316" />
                 </div>
 
                 {/* Radar comparativo por questão — dissertativas */}
                 <div className="card" style={{ marginBottom: 14 }}>
                   <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 4 }}>Análise comparada — dissertativas</div>
                   <div style={{ fontSize: 11, color: '#999', marginBottom: 14 }}>Desempenho por questão: aluno, média e top 25% da turma</div>
-                  <RadarQuestoesChart dados={dados} turmaQuestoes={turmaQuestoes} cicloAtivo={cicloAtivo} fase="2fase_mat" titulo="Matemática" corAluno="#f97316" />
-                  <RadarQuestoesChart dados={dados} turmaQuestoes={turmaQuestoes} cicloAtivo={cicloAtivo} fase="2fase_fis" titulo="Física" corAluno="#1E88E5" />
-                  <RadarQuestoesChart dados={dados} turmaQuestoes={turmaQuestoes} cicloAtivo={cicloAtivo} fase="2fase_qui" titulo="Química" corAluno="#E53935" />
+                  <RadarQuestoesChart dados={dados} turmaAgg={turmaAgg} cicloAtivo={cicloAtivo} fase="2fase_mat" titulo="Matemática" corAluno="#f97316" />
+                  <RadarQuestoesChart dados={dados} turmaAgg={turmaAgg} cicloAtivo={cicloAtivo} fase="2fase_fis" titulo="Física" corAluno="#1E88E5" />
+                  <RadarQuestoesChart dados={dados} turmaAgg={turmaAgg} cicloAtivo={cicloAtivo} fase="2fase_qui" titulo="Química" corAluno="#E53935" />
                 </div>
 
                 <div className="card" style={{ marginBottom: 14 }}>

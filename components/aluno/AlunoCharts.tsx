@@ -47,7 +47,7 @@ const BLOCOS_1FASE: Record<string, { label: string; cor: string; ini: number; fi
   ],
 }
 
-export function GraficoQuestoes({ dados, turmaQuestoes, cicloAtivo, fase }: any) {
+export function GraficoQuestoes({ dados, turmaAgg, cicloAtivo, fase }: any) {
   const cicloNum = String(cicloAtivo || '').match(/\d+/)?.[0] || ''
   if (!cicloNum) return null
 
@@ -64,20 +64,11 @@ export function GraficoQuestoes({ dados, turmaQuestoes, cicloAtivo, fase }: any)
   )
   if (!questoes.length) return null
 
-  const registrosTurma = turmaQuestoes.filter((r: any) => {
-    const cn = String(r.ciclo_nome || '')
-    const num = cn.match(/\d+/)?.[0] || ''
-    return num === cicloNum && r.fase === fase && r.notas_questoes
-  })
-  const temTurma = registrosTurma.length > 0
-
-  const mediaTurma: Record<string, number> = {}
-  questoes.forEach(q => {
-    const vals = registrosTurma
-      .map((r: any) => r.notas_questoes?.[q])
-      .filter((v: any) => v !== null && v !== undefined)
-    mediaTurma[q] = vals.length ? vals.reduce((a: number, b: number) => a + b, 0) / vals.length : 0
-  })
+  // Média da turma por questão vem pronta da RPC questoes_turma_agregado — o RLS
+  // não deixa o aluno ler as linhas dos colegas. Ver page.tsx → loadTurmaQuestoes.
+  const agg = turmaAgg?.[cicloNum]?.[fase]
+  const mediaTurma: Record<string, number> = agg?.media || {}
+  const temTurma = (agg?.n || 0) > 0
 
   // Agrupa as questões nos blocos de matéria do concurso; questões fora dos
   // ranges conhecidos caem num bloco neutro "Outras" (robustez p/ estruturas diferentes).
@@ -168,7 +159,7 @@ export function GraficoQuestoes({ dados, turmaQuestoes, cicloAtivo, fase }: any)
   )
 }
 
-export function RadarQuestoesChart({ dados, turmaQuestoes, cicloAtivo, fase, titulo, corAluno }: any) {
+export function RadarQuestoesChart({ dados, turmaAgg, cicloAtivo, fase, titulo, corAluno }: any) {
   const [selecionada, setSelecionada] = useState<string | null>(null)
   const cicloNum = String(cicloAtivo || '').match(/\d+/)?.[0] || ''
   if (!cicloNum) return null
@@ -185,44 +176,17 @@ export function RadarQuestoesChart({ dados, turmaQuestoes, cicloAtivo, fase, tit
   })
   if (!questoes.length) return null
 
-  const registrosTurma = turmaQuestoes.filter((r: any) => {
-    const num = String(r.ciclo_nome || '').match(/\d+/)?.[0] || ''
-    return num === cicloNum && r.fase === fase && r.notas_questoes
-  })
-
-  const mediaTurma: Record<string, number> = {}
-  const top25Turma: Record<string, number> = {}
-
-  // Identifica top 25% de alunos pelo desempenho geral (média de todas as questões)
-  const alunosComMedia = registrosTurma.map((r: any) => {
-    const notas = questoes.map(q => r.notas_questoes?.[q]).filter((v: any) => v !== null && v !== undefined).map(Number)
-    const media = notas.length ? notas.reduce((a: number, b: number) => a + b, 0) / notas.length : 0
-    return { r, media }
-  }).sort((a: any, b: any) => b.media - a.media)
-
-  const top25Count = Math.max(1, Math.ceil(alunosComMedia.length * 0.25))
-  const top25Alunos = alunosComMedia.slice(0, top25Count).map((x: any) => x.r)
-
-  questoes.forEach(q => {
-    const valsTotal = registrosTurma
-      .map((r: any) => r.notas_questoes?.[q])
-      .filter((v: any) => v !== null && v !== undefined)
-      .map(Number)
-
-    mediaTurma[q] = valsTotal.length ? valsTotal.reduce((a: number, b: number) => a + b, 0) / valsTotal.length : 0
-
-    const valsTop25 = top25Alunos
-      .map((r: any) => r.notas_questoes?.[q])
-      .filter((v: any) => v !== null && v !== undefined)
-      .map(Number)
-
-    top25Turma[q] = valsTop25.length ? valsTop25.reduce((a: number, b: number) => a + b, 0) / valsTop25.length : 0
-  })
+  // Média da turma e top 25% por questão vêm prontos da RPC questoes_turma_agregado
+  // (SECURITY DEFINER) — o RLS não deixa o aluno ler as notas dos colegas linha a
+  // linha. Ver page.tsx → loadTurmaQuestoes e QUESTOES_TURMA_AGREGADO_RPC_MIGRATION.sql.
+  const agg = turmaAgg?.[cicloNum]?.[fase]
+  const mediaTurma: Record<string, number> = agg?.media || {}
+  const top25Turma: Record<string, number> = agg?.top25 || {}
 
   const n = questoes.length
   const cx = 160, cy = 155, raio = 110
   const niveis = [0.25, 0.5, 0.75, 1.0]
-  const hasData = registrosTurma.length > 0
+  const hasData = (agg?.n || 0) > 0
 
   function pontoEixo(idx: number, r: number): [number, number] {
     const angulo = (Math.PI * 2 * idx) / n - Math.PI / 2
