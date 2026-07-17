@@ -18,6 +18,9 @@ export default function Simulados() {
   const [filtroIngresso, setFiltroIngresso] = useState<'todos' | 'presencial' | 'pec'>('todos')
   const [loading, setLoading] = useState(true)
   const [erro, setErro] = useState<string | null>(null)
+  const [syncBanner, setSyncBanner] = useState<{ tipo: 'erro' | 'aviso'; texto: string } | null>(null)
+
+  const isGestor = perfil?.papel === 'coordenador' || perfil?.papel === 'direcao'
 
   useEffect(() => {
     if (authLoading) return
@@ -26,7 +29,33 @@ export default function Simulados() {
       return
     }
     load()
+    if (isGestor) checarSync()
   }, [authLoading, perfil])
+
+  // Dead man's switch: acende banner se a última sync OK for antiga (job morto)
+  // ou se houver ciclo novo aguardando importação manual.
+  async function checarSync() {
+    try {
+      const [{ data: ultima }, { data: sucesso }] = await Promise.all([
+        dbQuery('sync_log', { order: 'executado_em.desc', limit: '1' }, 'status,executado_em,avisos'),
+        dbQuery('sync_log', { status: 'in.(ok,skipped,ciclo_novo)', order: 'executado_em.desc', limit: '1' }, 'executado_em'),
+      ])
+      const ultOk = sucesso?.[0]?.executado_em ? new Date(sucesso[0].executado_em).getTime() : null
+      const horas = ultOk ? (Date.now() - ultOk) / 3.6e6 : Infinity
+      if (horas > 26) {
+        setSyncBanner({ tipo: 'erro', texto: ultOk
+          ? `Sincronização automática atrasada — última há ${Math.floor(horas)}h. Verifique o cron.`
+          : 'Sincronização automática nunca rodou com sucesso. Verifique a configuração.' })
+        return
+      }
+      const u = ultima?.[0]
+      if (u?.status === 'erro') {
+        setSyncBanner({ tipo: 'erro', texto: 'A última sincronização automática falhou. Veja os logs.' })
+      } else if (u?.avisos?.ciclos_novos?.length) {
+        setSyncBanner({ tipo: 'aviso', texto: `Ciclo(s) novo(s) na planilha: ${u.avisos.ciclos_novos.join(', ')}. Importe pela tela de Upload.` })
+      }
+    } catch { /* sync_log pode não existir ainda — silencioso */ }
+  }
 
   async function load() {
     setErro(null)
@@ -101,6 +130,20 @@ export default function Simulados() {
           <Link href="/simulados/upload" style={{ textDecoration: 'none', background: '#f97316', color: 'white', borderRadius: 10, padding: '7px 14px', fontSize: 13, fontWeight: 500 }}>↑ Upload</Link>
         )}
       </div>
+
+      {syncBanner && (
+        <Link href="/simulados/upload" style={{ textDecoration: 'none' }}>
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px', fontSize: 12, fontWeight: 500,
+            background: syncBanner.tipo === 'erro' ? '#FEF2F2' : '#FFFBEB',
+            color: syncBanner.tipo === 'erro' ? '#991B1B' : '#78350F',
+            borderBottom: `0.5px solid ${syncBanner.tipo === 'erro' ? 'rgba(220,38,38,0.2)' : 'rgba(217,119,6,0.2)'}`,
+          }}>
+            <AlertTriangle size={14} strokeWidth={2} />
+            {syncBanner.texto}
+          </div>
+        </Link>
+      )}
 
       <div style={{ padding: '10px 16px', background: 'white', borderBottom: '0.5px solid rgba(0,0,0,0.06)', display: 'flex', flexDirection: 'column', gap: 8 }}>
         <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar aluno ou mentor..." style={{ margin: 0 }} />
@@ -184,7 +227,7 @@ export default function Simulados() {
                       {c.ciclo_nome.replace('Ciclo ', 'C').replace(' - ITA', '').replace(' - IME', '')}
                     </span>
                   ))}
-                  {reprovados > 0 && <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 10, background: '#FFFBEB', color: '#78350F', fontWeight: 500, display: 'inline-flex', alignItems: 'center', gap: 4 }}><AlertTriangle size={10} strokeWidth={2} />{reprovados} reprovação{reprovados > 1 ? 'ões' : ''}</span>}
+                  {reprovados > 0 && <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 10, background: '#FFFBEB', color: '#78350F', fontWeight: 500, display: 'inline-flex', alignItems: 'center', gap: 4 }}><AlertTriangle size={10} strokeWidth={2} />{reprovados} reprovaç{reprovados > 1 ? 'ões' : 'ão'}</span>}
                 </div>
               </div>
             </Link>

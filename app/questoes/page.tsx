@@ -149,7 +149,7 @@ function QuestoesContent() {
           Sessão concluída!
         </div>
         <div style={{ fontSize: 14, color: '#64748b', marginBottom: 28 }}>
-          {questions.length} questão{questions.length !== 1 ? 'ões' : ''} percorrida{questions.length !== 1 ? 's' : ''}
+          {questions.length} quest{questions.length !== 1 ? 'ões' : 'ão'} percorrida{questions.length !== 1 ? 's' : ''}
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 28 }}>

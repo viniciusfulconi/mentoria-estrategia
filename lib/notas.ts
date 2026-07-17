@@ -10,6 +10,16 @@
 // ─────────────────────────────────────────────────────────────────────────────
 import { dbQueryAll, dbUpdate, dbInsert } from '@/lib/supabase'
 import { calcularRankings } from '@/lib/rankings'
+import type { Db } from '@/lib/db-server'
+
+// Implementação de `Db` para o BROWSER — usa os helpers de lib/supabase, que leem
+// o JWT do usuário no localStorage. É o default de salvarNotasAluno/recalcularCiclo,
+// então /gestao/notas continua idêntico. O cron passa `serverDb` (service_role).
+const browserDb: Db = {
+  queryAll: (table, params, select) => dbQueryAll(table, params, select),
+  insert: async (table, rows) => { const { error } = await dbInsert(table, rows); return { error } },
+  update: (table, filter, data) => dbUpdate(table, filter, data),
+}
 
 export type FaseConfig = {
   fase: string
@@ -73,7 +83,7 @@ export async function salvarNotasAluno(opts: {
   linhasAluno: any[]
   questoesPorFase: Record<string, Record<string, number>>
   valores: Record<string, number | null>
-}): Promise<void> {
+}, db: Db = browserDb): Promise<void> {
   const { ciclo, concurso, linhasAluno, questoesPorFase, valores } = opts
   const rowDe = (fase: string) => linhasAluno.find(l => l.fase === fase)
 
@@ -106,11 +116,11 @@ export async function salvarNotasAluno(opts: {
   for (const [fase, payload] of Object.entries(payloadPorFase)) {
     const row = rowDe(fase)
     if (row) {
-      const { error } = await dbUpdate('resultados', { id: `eq.${row.id}` }, payload)
+      const { error } = await db.update('resultados', { id: `eq.${row.id}` }, payload)
       if (error) throw new Error(`Erro ao salvar ${fase}: ${error}`)
     } else {
       const ref = linhasAluno[0] || {}
-      const { error } = await dbInsert('resultados', {
+      const { error } = await db.insert('resultados', {
         id_aluno: ref.id_aluno, nome_aluno: ref.nome_aluno, mentor: ref.mentor ?? null,
         ciclo_nome: ciclo, concurso, fase, ...payload,
       })
@@ -118,7 +128,7 @@ export async function salvarNotasAluno(opts: {
     }
   }
 
-  await recalcularCiclo(ciclo, concurso)
+  await recalcularCiclo(ciclo, concurso, db)
 }
 
 // Recalcula as linhas fase='ranking' de um ciclo+concurso a partir das linhas de
@@ -129,8 +139,8 @@ export async function salvarNotasAluno(opts: {
 // tem concurso divergente das linhas de fase. Inserir recriaria essas duplicatas
 // que merges manuais removeram. A classificação é renumerada apenas sobre os
 // alunos que já constam no ranking (renumeração contígua, sem buracos).
-export async function recalcularCiclo(ciclo: string, concurso: string): Promise<{ atualizados: number }> {
-  const { data: rows, error } = await dbQueryAll('resultados', {
+export async function recalcularCiclo(ciclo: string, concurso: string, db: Db = browserDb): Promise<{ atualizados: number }> {
+  const { data: rows, error } = await db.queryAll('resultados', {
     ciclo_nome: `eq.${ciclo}`,
     concurso: `eq.${concurso}`,
   })
@@ -173,7 +183,7 @@ export async function recalcularCiclo(ciclo: string, concurso: string): Promise<
           classificacao,
         }
       : { classificacao }
-    const { error: e } = await dbUpdate('resultados', { id: `eq.${row.id}` }, payload)
+    const { error: e } = await db.update('resultados', { id: `eq.${row.id}` }, payload)
     if (e) throw new Error(`Erro ao atualizar ranking de ${row.nome_aluno}: ${e}`)
     atualizados++
   }

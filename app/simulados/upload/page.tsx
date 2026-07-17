@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Nav from '@/components/Nav'
-import { dbQueryAll, dbInsert as dbInsertLib, dbDelete as dbDeleteLib } from '@/lib/supabase'
+import { dbQueryAll, dbInsert as dbInsertLib, dbDelete as dbDeleteLib, getToken } from '@/lib/supabase'
 import { calcularRankings, ordenarEClassificar } from '@/lib/rankings'
 import { stripAcentos } from '@/lib/format'
 
@@ -73,6 +73,38 @@ export default function UploadSimulados() {
   const [preview, setPreview] = useState<PreviewData | null>(null)
   const [etapa, setEtapa] = useState<'idle' | 'parsing' | 'preview' | 'saving' | 'done'>('idle')
   const [erro, setErro] = useState('')
+
+  // ── Importação direta da planilha do Google (via /api/sync-simulados) ──
+  const [gEtapa, setGEtapa] = useState<'idle' | 'loading' | 'preview' | 'done'>('idle')
+  const [gRep, setGRep] = useState<any>(null)
+  const [gErro, setGErro] = useState('')
+
+  async function chamarSync(payload: any) {
+    const resp = await fetch('/api/sync-simulados', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+      body: JSON.stringify(payload),
+    })
+    const json = await resp.json()
+    if (!resp.ok) throw new Error(json?.erro || json?.error || `Erro ${resp.status}`)
+    return json
+  }
+
+  async function gPreview() {
+    setGEtapa('loading'); setGErro('')
+    try { setGRep(await chamarSync({ acao: 'preview' })); setGEtapa('preview') }
+    catch (e: any) { setGErro(e.message); setGEtapa('idle') }
+  }
+  async function gSincronizar() {
+    setGEtapa('loading'); setGErro('')
+    try { setGRep(await chamarSync({ acao: 'sincronizar' })); setGEtapa('done') }
+    catch (e: any) { setGErro(e.message); setGEtapa('preview') }
+  }
+  async function gImportarCiclo(ciclo: string) {
+    setGEtapa('loading'); setGErro('')
+    try { setGRep(await chamarSync({ acao: 'importar-ciclo', ciclo })); setGEtapa('done') }
+    catch (e: any) { setGErro(e.message); setGEtapa('preview') }
+  }
 
   function addLog(msg: string) { setLog(prev => [...prev, msg]) }
 
@@ -323,6 +355,75 @@ export default function UploadSimulados() {
       </div>
 
       <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+        {/* Importar direto da planilha do Google (sincronização) */}
+        {(etapa === 'idle' || etapa === 'parsing') && (
+          <div className="card" style={{ borderLeft: '4px solid #16A34A' }}>
+            <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 6 }}>Importar da planilha do Google</div>
+            <div style={{ fontSize: 12, color: '#999', marginBottom: 12, lineHeight: 1.6 }}>
+              Lê a planilha oficial ao vivo (sem arquivo). Preenche lacunas e atualiza o ciclo ativo; não apaga nada.
+            </div>
+
+            {gErro && (
+              <div style={{ fontSize: 12, color: '#991B1B', background: '#FEF2F2', borderRadius: 8, padding: '8px 10px', marginBottom: 10, whiteSpace: 'pre-wrap' }}>❌ {gErro}</div>
+            )}
+
+            {gEtapa === 'idle' && (
+              <button className="btn-primary" onClick={gPreview}>Analisar planilha →</button>
+            )}
+            {gEtapa === 'loading' && (
+              <div style={{ textAlign: 'center', color: '#16A34A', padding: '10px 0', fontSize: 13, fontWeight: 500 }}>Lendo a planilha...</div>
+            )}
+
+            {gEtapa === 'preview' && gRep && (
+              <>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
+                  <div style={{ background: '#F8FAFC', borderRadius: 10, padding: '10px 14px' }}>
+                    <div style={{ fontSize: 22, fontWeight: 700, color: '#16A34A' }}>{gRep.inseridos}</div>
+                    <div style={{ fontSize: 11, color: '#999' }}>linhas a inserir</div>
+                  </div>
+                  <div style={{ background: '#F8FAFC', borderRadius: 10, padding: '10px 14px' }}>
+                    <div style={{ fontSize: 22, fontWeight: 700, color: '#16A34A' }}>{gRep.atualizados}</div>
+                    <div style={{ fontSize: 11, color: '#999' }}>linhas a atualizar</div>
+                  </div>
+                </div>
+                <div style={{ fontSize: 12, color: '#666', marginBottom: 4 }}>Ciclo ativo (sobrescrito): <b>{gRep.cicloAtivo || '—'}</b></div>
+                {gRep.gate && !gRep.gate.ok && (
+                  <div style={{ fontSize: 12, color: '#991B1B', marginBottom: 6 }}>⚠ Cross-check ITA falhou ({gRep.gate.divergencias.length}) — revise antes de gravar.</div>
+                )}
+                {gRep.avisos?.map((a: string, i: number) => (
+                  <div key={i} style={{ fontSize: 11, color: '#D97706', marginTop: 2 }}>⚠ {a}</div>
+                ))}
+                {gRep.ciclosNovos?.length > 0 && (
+                  <div style={{ marginTop: 10, padding: '10px 12px', background: '#FFFBEB', borderRadius: 8 }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: '#78350F', marginBottom: 6 }}>Ciclo(s) novo(s) detectado(s)</div>
+                    {gRep.ciclosNovos.map((c: string, i: number) => {
+                      const nome = c.replace(/\s*\(.*\)$/, '')
+                      return (
+                        <button key={i} className="btn-secondary" style={{ marginBottom: 6 }} onClick={() => gImportarCiclo(nome)}>
+                          Importar {c} por completo →
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
+                <button className="btn-primary" style={{ marginTop: 12 }} onClick={gSincronizar} disabled={gRep.gate && !gRep.gate.ok}>
+                  Sincronizar agora →
+                </button>
+                <button className="btn-secondary" style={{ marginTop: 8 }} onClick={() => { setGEtapa('idle'); setGRep(null) }}>Cancelar</button>
+              </>
+            )}
+
+            {gEtapa === 'done' && gRep && (
+              <>
+                <div style={{ fontSize: 13, color: '#16A34A', fontWeight: 600, marginBottom: 8 }}>
+                  ✅ {gRep.inseridos} inseridas · {gRep.atualizados} atualizadas{gRep.ciclosTocados?.length ? ` · ${gRep.ciclosTocados.join(', ')}` : ''}
+                </div>
+                <button className="btn-primary" onClick={() => router.push('/simulados')}>Ver alunos →</button>
+              </>
+            )}
+          </div>
+        )}
 
         {/* Seleção de arquivo */}
         {(etapa === 'idle' || etapa === 'parsing') && (

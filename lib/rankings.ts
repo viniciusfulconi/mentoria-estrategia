@@ -59,7 +59,10 @@ export function calcularRankings(todosDados: any[]): any[] {
     const notaFis = ffis?.nota_fisica ?? (existentes.has('2fase_fis') ? 0 : null)
     const notaQui = fqui?.nota_quimica ?? (existentes.has('2fase_qui') ? 0 : null)
     const notaPort = fport?.media_linguagens ?? (existentes.has('2fase_port') ? 0 : null)
-    const notaIng = fing?.nota_ingles ?? null  // inglês não é obrigatório, ausência não vira 0
+    // Inglês: no IME é componente OBRIGATÓRIO da 2ª fase (o ciclo tem aba '2fase_ing')
+    // → ausência vira 0, como as demais matérias. No ITA não existe 2ª fase de inglês,
+    // então 'existentes' nunca tem '2fase_ing' e a ausência continua null (excluída).
+    const notaIng = fing?.nota_ingles ?? (existentes.has('2fase_ing') ? 0 : null)
 
     let mediaFinal = null
     let resultado = null

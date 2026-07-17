@@ -701,7 +701,7 @@ export default function RankingProvaAntigaPage() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <div style={{ fontSize: 13, color: '#64748b' }}>
-                    {questaoStats.length} questões · {corrigidas.length} correção{corrigidas.length !== 1 ? 'ões' : ''}
+                    {questaoStats.length} questões · {corrigidas.length} correç{corrigidas.length !== 1 ? 'ões' : 'ão'}
                   </div>
                   <button
                     onClick={() => setSortQuestoes(s => s === 'numero' ? 'dificuldade' : 'numero')}

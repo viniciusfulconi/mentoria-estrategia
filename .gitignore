@@ -36,6 +36,10 @@ yarn-error.log*
 # vercel
 .vercel
 
+# planilha-fonte do AppSheet — contém PII (CPF, dados médicos); NUNCA versionar
+AppSheet*.xlsx
+*.xlsx
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
