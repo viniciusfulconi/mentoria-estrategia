@@ -79,6 +79,7 @@ export type SyncReport = {
   avisos: string[]
   gate: GateResultado
   cicloAtivo: string | null
+  ciclosPresentes: string[]
   ciclosTocados: string[]
   ciclosNovos: string[]
   inseridos: number
@@ -91,14 +92,19 @@ function reportBase(parse: ParseResult, dry: boolean): SyncReport {
     ok: false, dry, hash: hashLinhas(parse.linhas),
     fatais: parse.fatais, avisos: [...parse.avisos],
     gate: { ok: true, divergencias: [], comparados: 0 },
-    cicloAtivo: parse.cicloAtivo, ciclosTocados: [], ciclosNovos: [],
+    cicloAtivo: parse.cicloAtivo, ciclosPresentes: parse.ciclosPresentes,
+    ciclosTocados: [], ciclosNovos: [],
     inseridos: 0, atualizados: 0, ignoradosAlunoNovo: 0,
   }
 }
 
 // ─── CRON: manutenção ────────────────────────────────────────────────────────
-export async function sincronizarManutencao(opts: { sheets: SheetsInput; db: Db; dry?: boolean }): Promise<SyncReport> {
-  const { sheets, db, dry = false } = opts
+// forcarCiclos (só no caminho manual da UI): ciclos que devem ser SOBRESCRITOS por
+// completo além do ciclo ativo — para trazer correções feitas na planilha em ciclos
+// anteriores. O cron chama sem esse argumento → só o ciclo ativo é sobrescrito.
+export async function sincronizarManutencao(opts: { sheets: SheetsInput; db: Db; dry?: boolean; forcarCiclos?: string[] }): Promise<SyncReport> {
+  const { sheets, db, dry = false, forcarCiclos } = opts
+  const forcar = new Set(forcarCiclos ?? [])
   const parse = parseSimulados(sheets)
   const rep = reportBase(parse, dry)
 
@@ -123,7 +129,9 @@ export async function sincronizarManutencao(opts: { sheets: SheetsInput; db: Db;
   for (const [, linhas] of porCiclo) {
     const ciclo_nome = linhas[0].ciclo_nome
     const concurso = linhas[0].concurso
-    const ehAtivo = ciclo_nome === parse.cicloAtivo
+    // Sobrescreve por completo o ciclo ativo e os ciclos forçados pela UI; nos
+    // demais é gap-fill (só preenche coluna nula).
+    const ehOverwrite = ciclo_nome === parse.cicloAtivo || forcar.has(ciclo_nome)
 
     const { data: existentes, error } = await db.queryAll('resultados', {
       ciclo_nome: `eq.${ciclo_nome}`, concurso: `eq.${concurso}`,
@@ -149,7 +157,7 @@ export async function sincronizarManutencao(opts: { sheets: SheetsInput; db: Db;
       for (const [col, val] of colsDe(linha)) {
         if (val === null) continue                        // NUNCA escreve null
         if (existente) {
-          if (ehAtivo || existente[col] == null) payload[col] = val   // overwrite ativo / gap-fill antigo
+          if (ehOverwrite || existente[col] == null) payload[col] = val   // overwrite ativo/forçado / gap-fill antigo
         } else {
           payload[col] = val                              // linha de fase nova p/ aluno conhecido
         }

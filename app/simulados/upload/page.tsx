@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Nav from '@/components/Nav'
 import { dbQueryAll, dbInsert as dbInsertLib, dbDelete as dbDeleteLib, getToken } from '@/lib/supabase'
@@ -78,6 +78,25 @@ export default function UploadSimulados() {
   const [gEtapa, setGEtapa] = useState<'idle' | 'loading' | 'preview' | 'done'>('idle')
   const [gRep, setGRep] = useState<any>(null)
   const [gErro, setGErro] = useState('')
+  const [gLoadingMsg, setGLoadingMsg] = useState('Carregando...')
+  // Ciclos existentes no banco (para os checkboxes de "forçar sobrescrita") e a
+  // seleção atual. A escolha é feita ANTES de analisar, para uma leitura só.
+  const [gCiclosDisponiveis, setGCiclosDisponiveis] = useState<string[]>([])
+  const [gForcar, setGForcar] = useState<string[]>([])
+
+  // Lista os ciclos existentes a partir das linhas de ranking — mesmo padrão de
+  // /simulados. Não lê a planilha do Google (barato, só banco).
+  useEffect(() => {
+    dbQueryAll('resultados', { fase: 'eq.ranking' }, 'ciclo_nome').then(({ data }) => {
+      const ciclos = Array.from(new Set((data || []).map((r: any) => r.ciclo_nome).filter(Boolean)))
+        .sort((a, b) => parseInt(a.match(/\d+/)?.[0] || '0') - parseInt(b.match(/\d+/)?.[0] || '0'))
+      setGCiclosDisponiveis(ciclos)
+    }).catch(() => {})
+  }, [])
+
+  function toggleForcar(ciclo: string) {
+    setGForcar(prev => prev.includes(ciclo) ? prev.filter(c => c !== ciclo) : [...prev, ciclo])
+  }
 
   async function chamarSync(payload: any) {
     const resp = await fetch('/api/sync-simulados', {
@@ -91,17 +110,17 @@ export default function UploadSimulados() {
   }
 
   async function gPreview() {
-    setGEtapa('loading'); setGErro('')
-    try { setGRep(await chamarSync({ acao: 'preview' })); setGEtapa('preview') }
+    setGEtapa('loading'); setGLoadingMsg('Lendo a planilha...'); setGErro('')
+    try { setGRep(await chamarSync({ acao: 'preview', forcarCiclos: gForcar })); setGEtapa('preview') }
     catch (e: any) { setGErro(e.message); setGEtapa('idle') }
   }
   async function gSincronizar() {
-    setGEtapa('loading'); setGErro('')
-    try { setGRep(await chamarSync({ acao: 'sincronizar' })); setGEtapa('done') }
+    setGEtapa('loading'); setGLoadingMsg('Sincronizando dados... pode levar 1–2 minutos. Não feche a página.'); setGErro('')
+    try { setGRep(await chamarSync({ acao: 'sincronizar', forcarCiclos: gForcar })); setGEtapa('done') }
     catch (e: any) { setGErro(e.message); setGEtapa('preview') }
   }
   async function gImportarCiclo(ciclo: string) {
-    setGEtapa('loading'); setGErro('')
+    setGEtapa('loading'); setGLoadingMsg('Importando ciclo... pode levar 1–2 minutos. Não feche a página.'); setGErro('')
     try { setGRep(await chamarSync({ acao: 'importar-ciclo', ciclo })); setGEtapa('done') }
     catch (e: any) { setGErro(e.message); setGEtapa('preview') }
   }
@@ -369,10 +388,43 @@ export default function UploadSimulados() {
             )}
 
             {gEtapa === 'idle' && (
-              <button className="btn-primary" onClick={gPreview}>Analisar planilha →</button>
+              <>
+                {gCiclosDisponiveis.length > 0 && (
+                  <div style={{ marginBottom: 12 }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: '#555', marginBottom: 6 }}>
+                      Sobrescrever completamente também (além do ciclo ativo):
+                    </div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                      {gCiclosDisponiveis.map(ciclo => {
+                        const marcado = gForcar.includes(ciclo)
+                        return (
+                          <button key={ciclo} type="button" onClick={() => toggleForcar(ciclo)} style={{
+                            padding: '5px 12px', borderRadius: 16, fontSize: 12, cursor: 'pointer', fontFamily: 'inherit',
+                            border: `1.5px solid ${marcado ? '#16A34A' : 'rgba(0,0,0,0.12)'}`,
+                            background: marcado ? '#16A34A' : 'white',
+                            color: marcado ? 'white' : '#555', fontWeight: marcado ? 600 : 400,
+                          }}>
+                            {marcado ? '✓ ' : ''}{ciclo.replace('Ciclo ', 'Ciclo ')}
+                          </button>
+                        )
+                      })}
+                    </div>
+                    {gForcar.length > 0 && (
+                      <div style={{ fontSize: 11, color: '#D97706', marginTop: 8 }}>
+                        ⚠ Sobrescrever um ciclo substitui edições manuais feitas nele (em Notas). O ciclo ativo é sempre sobrescrito.
+                      </div>
+                    )}
+                  </div>
+                )}
+                <button className="btn-primary" onClick={gPreview}>Analisar planilha →</button>
+              </>
             )}
             {gEtapa === 'loading' && (
-              <div style={{ textAlign: 'center', color: '#16A34A', padding: '10px 0', fontSize: 13, fontWeight: 500 }}>Lendo a planilha...</div>
+              <div style={{ textAlign: 'center', color: '#16A34A', padding: '14px 0', fontSize: 13, fontWeight: 500, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+                <div style={{ width: 22, height: 22, border: '2.5px solid rgba(22,163,74,0.25)', borderTopColor: '#16A34A', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
+                <span>{gLoadingMsg}</span>
+                <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+              </div>
             )}
 
             {gEtapa === 'preview' && gRep && (
@@ -387,7 +439,10 @@ export default function UploadSimulados() {
                     <div style={{ fontSize: 11, color: '#999' }}>linhas a atualizar</div>
                   </div>
                 </div>
-                <div style={{ fontSize: 12, color: '#666', marginBottom: 4 }}>Ciclo ativo (sobrescrito): <b>{gRep.cicloAtivo || '—'}</b></div>
+                <div style={{ fontSize: 12, color: '#666', marginBottom: 4 }}>
+                  Sobrescrito por completo: <b>{[gRep.cicloAtivo, ...gForcar.filter((c: string) => c !== gRep.cicloAtivo)].filter(Boolean).join(', ') || '—'}</b>
+                  <span style={{ color: '#999' }}> · demais ciclos: só lacunas</span>
+                </div>
                 {gRep.gate && !gRep.gate.ok && (
                   <div style={{ fontSize: 12, color: '#991B1B', marginBottom: 6 }}>⚠ Cross-check ITA falhou ({gRep.gate.divergencias.length}) — revise antes de gravar.</div>
                 )}
@@ -415,12 +470,16 @@ export default function UploadSimulados() {
             )}
 
             {gEtapa === 'done' && gRep && (
-              <>
-                <div style={{ fontSize: 13, color: '#16A34A', fontWeight: 600, marginBottom: 8 }}>
-                  ✅ {gRep.inseridos} inseridas · {gRep.atualizados} atualizadas{gRep.ciclosTocados?.length ? ` · ${gRep.ciclosTocados.join(', ')}` : ''}
+              <div style={{ background: '#F0FDF4', borderRadius: 10, padding: 14 }}>
+                <div style={{ fontSize: 14, color: '#16A34A', fontWeight: 700, marginBottom: 4 }}>✅ Sincronização concluída</div>
+                <div style={{ fontSize: 13, color: '#166534', marginBottom: 4 }}>
+                  {gRep.inseridos} linha(s) inserida(s) · {gRep.atualizados} atualizada(s)
                 </div>
-                <button className="btn-primary" onClick={() => router.push('/simulados')}>Ver alunos →</button>
-              </>
+                {gRep.ciclosTocados?.length > 0 && (
+                  <div style={{ fontSize: 12, color: '#4D7C57', marginBottom: 10 }}>Ciclos: {gRep.ciclosTocados.join(', ')}</div>
+                )}
+                <button className="btn-primary" style={{ marginTop: 6 }} onClick={() => router.push('/simulados')}>Ver alunos →</button>
+              </div>
             )}
           </div>
         )}

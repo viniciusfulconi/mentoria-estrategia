@@ -95,13 +95,16 @@ export async function POST(request: NextRequest) {
   try {
     const sheets = await carregarSheets()
     const acao = body?.acao ?? 'preview'
+    // Ciclos a sobrescrever por completo além do ciclo ativo (marcados na UI).
+    const forcarCiclos = Array.isArray(body?.forcarCiclos)
+      ? body.forcarCiclos.map((c: any) => String(c)) : []
 
     if (acao === 'preview') {
-      const rep = await sincronizarManutencao({ sheets, db: serverDb, dry: true })
+      const rep = await sincronizarManutencao({ sheets, db: serverDb, dry: true, forcarCiclos })
       return NextResponse.json(rep)
     }
     if (acao === 'sincronizar') {
-      const rep = await sincronizarManutencao({ sheets, db: serverDb, dry: false })
+      const rep = await sincronizarManutencao({ sheets, db: serverDb, dry: false, forcarCiclos })
       const status = !rep.ok ? 'erro' : rep.ciclosNovos.length ? 'ciclo_novo' : 'ok'
       await registrarLog(logRowDe(rep, status, Date.now() - t0, `ui:${auth.user.nome ?? auth.user.id}`))
       return NextResponse.json({ ...rep, status }, { status: rep.ok ? 200 : 500 })
