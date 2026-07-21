@@ -104,12 +104,21 @@ export async function salvarNotasAluno(opts: {
 
   // Português: media_linguagens = (nota_portugues + nota_redacao) / 2 sempre que
   // a linha de português for tocada (por questões e/ou por redação).
+  //
+  // No ITA, português sem redação NÃO vira português puro: fica nulo, sinalizando
+  // redação pendente para calcularRankings (mesma regra do parse da planilha em
+  // lib/sheets-parse.ts). Sem isso, lançar só a objetiva por aqui fecharia o ciclo do
+  // aluno com uma média provisória. No IME a redação não entra na média — lá português
+  // puro é o valor correto e não pode virar nulo.
   if (payloadPorFase['2fase_port']) {
     const portRow = rowDe('2fase_port')
     const p = payloadPorFase['2fase_port']
     const port = ('nota_portugues' in p) ? p.nota_portugues : (portRow?.nota_portugues ?? null)
     const red = ('nota_redacao' in p) ? p.nota_redacao : (portRow?.nota_redacao ?? null)
-    p.media_linguagens = (port != null && red != null) ? arred((port + red) / 2) : (port ?? red)
+    p.media_linguagens =
+      (port != null && red != null) ? arred((port + red) / 2)
+      : (concurso === 'IME') ? (port ?? red)
+      : (red ?? null)                       // ITA: só objetiva = pendente (null)
   }
 
   // Aplica: UPDATE se a linha existe, senão INSERT.

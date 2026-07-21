@@ -444,7 +444,18 @@ export default function UploadSimulados() {
                   <span style={{ color: '#999' }}> · demais ciclos: só lacunas</span>
                 </div>
                 {gRep.gate && !gRep.gate.ok && (
-                  <div style={{ fontSize: 12, color: '#991B1B', marginBottom: 6 }}>⚠ Cross-check ITA falhou ({gRep.gate.divergencias.length}) — revise antes de gravar.</div>
+                  <div style={{ marginBottom: 6 }}>
+                    <div style={{ fontSize: 12, color: '#991B1B' }}>⚠ Cross-check ITA falhou ({gRep.gate.divergencias.length}) — revise antes de gravar.</div>
+                    {/* A lista já vem no payload; sem ela o diagnóstico exigia abrir o DevTools. */}
+                    <div style={{ fontSize: 11, color: '#991B1B', fontFamily: 'monospace', marginTop: 4, paddingLeft: 14, lineHeight: 1.6 }}>
+                      {gRep.gate.divergencias.slice(0, 8).map((d: string, i: number) => (
+                        <div key={i}>{d}</div>
+                      ))}
+                      {gRep.gate.divergencias.length > 8 && (
+                        <div style={{ color: '#B45309' }}>… e mais {gRep.gate.divergencias.length - 8}</div>
+                      )}
+                    </div>
+                  </div>
                 )}
                 {gRep.avisos?.map((a: string, i: number) => (
                   <div key={i} style={{ fontSize: 11, color: '#D97706', marginTop: 2 }}>⚠ {a}</div>
