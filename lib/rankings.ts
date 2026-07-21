@@ -58,7 +58,20 @@ export function calcularRankings(todosDados: any[]): any[] {
     const notaMat = fmat?.nota_matematica ?? (existentes.has('2fase_mat') ? 0 : null)
     const notaFis = ffis?.nota_fisica ?? (existentes.has('2fase_fis') ? 0 : null)
     const notaQui = fqui?.nota_quimica ?? (existentes.has('2fase_qui') ? 0 : null)
-    const notaPort = fport?.media_linguagens ?? (existentes.has('2fase_port') ? 0 : null)
+    // Português tem TRÊS estados, não dois:
+    //   linha com media_linguagens        → usa a nota;
+    //   linha SEM media_linguagens        → redação pendente: fica fora da média e o
+    //                                       ciclo DESSE aluno segue 'Em andamento';
+    //   sem linha, com a fase uploadada   → faltou na prova = 0 (regra das demais fases).
+    // O `??` anterior misturava os dois últimos e zerava quem só esperava a redação.
+    //
+    // O critério é media_linguagens, NUNCA nota_redacao: no IME a redação não entra na
+    // média (media_linguagens = português puro, nota_redacao nula por definição) e há
+    // ciclos ITA antigos gravados no mesmo formato. Ler nota_redacao reabriria ciclos
+    // fechados no próximo recálculo.
+    const notaPort = fport
+      ? (fport.media_linguagens ?? null)
+      : (existentes.has('2fase_port') ? 0 : null)
     // Inglês: no IME é componente OBRIGATÓRIO da 2ª fase (o ciclo tem aba '2fase_ing')
     // → ausência vira 0, como as demais matérias. No ITA não existe 2ª fase de inglês,
     // então 'existentes' nunca tem '2fase_ing' e a ausência continua null (excluída).

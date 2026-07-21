@@ -196,6 +196,7 @@ export function parseSimulados(input: SheetsInput): ParseResult {
   let orfaosAluno = 0
   let orfaosSimulado = 0
   let pulouPEC = 0
+  const redacaoPendente = new Map<string, number>()   // ciclo → nº de ITA com português sem redação
 
   for (const resp of input.respostas) {
     const idSimulado = str(pick(resp, 'Simulado'))
@@ -269,6 +270,18 @@ export function parseSimulados(input: SheetsInput): ParseResult {
             nota_ingles: Math.min(10, (ingAcertos / 20) * 10),
           })
         }
+      } else if (port !== null && red === null) {
+        // ITA com a objetiva corrigida e a REDAÇÃO AINDA NÃO LANÇADA. Deixar
+        // media_linguagens nula é o que sinaliza "pendente" para rankings.ts: o aluno
+        // fica com 4 notas, o ciclo dele segue Em andamento e sai do cross-check.
+        //
+        // O fallback antigo (media_linguagens = português puro) fechava o ciclo com uma
+        // média que a planilha não reconhece — foi o que travou o sync do Ciclo 6. Pior:
+        // como o sync nunca escreve null e ciclo não-ativo só faz gap-fill, o valor
+        // errado congelava assim que o ciclo seguinte começava, e a redação atrasada
+        // nunca mais entrava (é o estado em que o Ciclo 5 ficou).
+        base.media_linguagens = null
+        redacaoPendente.set(ciclo_nome, (redacaoPendente.get(ciclo_nome) ?? 0) + 1)
       } else {
         // ITA: média de linguagens = (português + redação) / 2, conferindo contra a
         // coluna pré-calculada da planilha (±0.05); se divergir, prevalece o cálculo.
@@ -302,6 +315,9 @@ export function parseSimulados(input: SheetsInput): ParseResult {
   if (orfaosAluno) avisos.push(`${orfaosAluno} resposta(s) de aluno sem cadastro — ignoradas.`)
   if (orfaosSimulado) avisos.push(`${orfaosSimulado} resposta(s) de simulado desconhecido — ignoradas.`)
   if (pulouPEC) avisos.push(`${pulouPEC} resposta(s) de aluno não-Presencial — fora do escopo (PEC).`)
+  for (const [ciclo, n] of redacaoPendente) {
+    avisos.push(`${ciclo} (ITA): ${n} resposta(s) de português sem nota de redação — esses alunos seguem Em andamento.`)
+  }
 
   // Validação de range de nota (invariante nº 1 do skill).
   for (const l of linhas) {
