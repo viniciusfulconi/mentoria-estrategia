@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --test scripts/test-rankings.mjs"
+    "test": "node --test scripts/test-rankings.mjs scripts/test-provas.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.109.1",

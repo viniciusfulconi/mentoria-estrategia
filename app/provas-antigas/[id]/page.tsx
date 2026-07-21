@@ -19,6 +19,9 @@ const EXATAS = ['Matemática', 'Física', 'Química']
 
 type EntradaRanking = {
   aluno_id: string
+  prova_aluno_id: string
+  mentorDoAluno: string | null
+  temComentario: boolean
   nome: string
   pontos: number | null
   total: number
@@ -97,6 +100,8 @@ export default function RankingProvaAntigaPage() {
   const [fetching,       setFetching]       = useState(true)
   const [aba,            setAba]            = useState<Aba>('ranking')
   const [filtro,         setFiltro]         = useState<Filtro>('todos')
+  // Booleano à parte, não um quarto valor de Filtro: compõe com Corrigiram/Pendentes.
+  const [soMeus,         setSoMeus]         = useState(false)
   const [sortQuestoes,   setSortQuestoes]   = useState<'numero' | 'dificuldade'>('numero')
   const [uploadingRes,   setUploadingRes]   = useState(false)
   const [resErro,        setResErro]        = useState('')
@@ -128,12 +133,16 @@ export default function RankingProvaAntigaPage() {
       { data: atribuicoes },
       { data: correcoes },
       { data: alunos },
+      { data: comentarios },
     ] = await Promise.all([
       dbQuery('provas_antigas',       { id: `eq.${id}` }),
       dbQuery('questoes_prova_antiga',{ prova_id: `eq.${id}`, order: 'numero' }),
-      dbQuery('provas_aluno',         { prova_id: `eq.${id}` }, 'aluno_id,data'),
+      dbQuery('provas_aluno',         { prova_id: `eq.${id}` }, 'id,aluno_id,data'),
       dbQuery('correcoes_prova',      { prova_id: `eq.${id}`, confirmed_at: 'not.is.null' }, 'aluno_id,respostas,notas,confirmed_at'),
-      dbQuery('alunos_dados',         { order: 'nome' }, 'id_aluno,nome'),
+      // `mentor` é o vínculo real mentor↔aluno. provas_aluno.mentor não serve:
+      // fica vazio quando o coordenador atribui a prova em lote.
+      dbQuery('alunos_dados',         { order: 'nome' }, 'id_aluno,nome,mentor'),
+      dbQuery('comentarios_prova',    { prova_id: `eq.${id}` }, 'prova_aluno_id'),
     ])
 
     const p = provaData?.[0]
@@ -154,7 +163,10 @@ export default function RankingProvaAntigaPage() {
 
     // ── Mapas auxiliares ──────────────────────────────────────────────────────
     const nomeMap: Record<string, string> = {}
-    ;(alunos || []).forEach((a: any) => { nomeMap[a.id_aluno] = a.nome })
+    const mentorMap: Record<string, string | null> = {}
+    ;(alunos || []).forEach((a: any) => { nomeMap[a.id_aluno] = a.nome; mentorMap[a.id_aluno] = a.mentor || null })
+
+    const comComentario = new Set((comentarios || []).map((c: { prova_aluno_id: string }) => c.prova_aluno_id))
 
     const correcaoMap: Record<string, any> = {}
     ;(correcoes || []).forEach((c: any) => { correcaoMap[c.aluno_id] = c })
@@ -165,9 +177,15 @@ export default function RankingProvaAntigaPage() {
     const lista: EntradaRanking[] = (atribuicoes || []).map((a: any) => {
       const c = correcaoMap[a.aluno_id]
       const total = p.num_questoes
+      const base = {
+        aluno_id: a.aluno_id, nome: nomeMap[a.aluno_id] || a.aluno_id,
+        prova_aluno_id: a.id,
+        mentorDoAluno: mentorMap[a.aluno_id] ?? null,
+        temComentario: comComentario.has(a.id),
+      }
       if (!c) {
         return {
-          aluno_id: a.aluno_id, nome: nomeMap[a.aluno_id] || a.aluno_id,
+          ...base,
           pontos: null, total, pct: null, pontosSemIngles: null, pontosExatas: null, data_correcao: null, porMateria: null,
         }
       }
@@ -186,7 +204,7 @@ export default function RankingProvaAntigaPage() {
         })
         const pontosExatas = EXATAS.reduce((acc, m) => acc + (porMateria[m] || 0), 0)
         return {
-          aluno_id: a.aluno_id, nome: nomeMap[a.aluno_id] || a.aluno_id,
+          ...base,
           pontos: acertouTotal, total,
           pct: Math.round((acertouTotal / total) * 100),
           pontosSemIngles: acertouTotal - (porMateria['Inglês'] || 0),
@@ -205,7 +223,7 @@ export default function RankingProvaAntigaPage() {
         const somaSemIngles = soma - (porMateria['Inglês'] || 0)
         const pontosExatas = parseFloat(EXATAS.reduce((acc, m) => acc + (porMateria[m] || 0), 0).toFixed(2))
         return {
-          aluno_id: a.aluno_id, nome: nomeMap[a.aluno_id] || a.aluno_id,
+          ...base,
           pontos: parseFloat(soma.toFixed(1)), total,
           pct: total > 0 ? Math.round((soma / total) * 100) : 0,
           pontosSemIngles: parseFloat(somaSemIngles.toFixed(1)),
@@ -348,7 +366,16 @@ export default function RankingProvaAntigaPage() {
 
   const corrigidas = ranking.filter(r => r.pontos !== null)
   const pendentes  = ranking.filter(r => r.pontos === null)
-  const listaFiltrada = filtro === 'corrigida' ? corrigidas : filtro === 'pendente' ? pendentes : ranking
+
+  // Mentor comenta só os próprios mentorados, e só em prova discursiva — é onde
+  // existe PDF de resolução para ele abrir.
+  const ehMentor   = perfil.papel === 'mentor'
+  const podeComentar = ehMentor && prova?.modelo === 'discursiva'
+  const meuAluno   = (e: EntradaRanking) => ehMentor && !!perfil.mentor_nome && e.mentorDoAluno === perfil.mentor_nome
+  const meusAlunos = ranking.filter(meuAluno)
+
+  const porStatus = filtro === 'corrigida' ? corrigidas : filtro === 'pendente' ? pendentes : ranking
+  const listaFiltrada = soMeus ? porStatus.filter(meuAluno) : porStatus
 
   const questoesSorted = sortQuestoes === 'dificuldade'
     ? [...questaoStats].sort((a, b) => a.pct_acerto - b.pct_acerto)
@@ -503,11 +530,25 @@ export default function RankingProvaAntigaPage() {
                     {l}
                   </button>
                 ))}
+
+                {ehMentor && meusAlunos.length > 0 && (
+                  <button onClick={() => setSoMeus(v => !v)} style={{
+                    padding: '7px 14px', borderRadius: 20, marginLeft: 'auto',
+                    border: `1.5px solid ${soMeus ? '#5B21B6' : '#e2e8f0'}`,
+                    background: soMeus ? '#F3F0FF' : 'white',
+                    color: soMeus ? '#5B21B6' : '#64748b',
+                    fontSize: 13, fontWeight: soMeus ? 700 : 400,
+                    cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',
+                  }}>
+                    Meus alunos ({meusAlunos.length})
+                  </button>
+                )}
               </div>
 
               {listaFiltrada.length === 0 ? (
                 <div style={{ padding: '48px 16px', textAlign: 'center', color: '#94a3b8', fontSize: 14 }}>
-                  {filtro === 'corrigida' ? 'Nenhuma correção registrada ainda.'
+                  {soMeus ? 'Nenhum dos seus alunos nesse filtro.'
+                    : filtro === 'corrigida' ? 'Nenhuma correção registrada ainda.'
                     : filtro === 'pendente' ? 'Todos os alunos já corrigiram!'
                     : 'Nenhum aluno atribuído a esta prova.'}
                 </div>
@@ -557,6 +598,23 @@ export default function RankingProvaAntigaPage() {
                                     : entry.data_correcao
                                     ? <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 1 }}>{new Date(entry.data_correcao).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
                                     : null}
+                                  {/* Mentor: escreve nos seus. Coordenação: só enxerga que existe. */}
+                                  {podeComentar && meuAluno(entry) ? (
+                                    <Link
+                                      href={`/provas-antigas/${id}/comentar/${entry.prova_aluno_id}`}
+                                      style={{
+                                        display: 'inline-block', marginTop: 5, fontSize: 11, fontWeight: 600,
+                                        padding: '3px 10px', borderRadius: 8, textDecoration: 'none',
+                                        border: `1.5px solid ${entry.temComentario ? '#5B21B6' : '#f97316'}`,
+                                        background: entry.temComentario ? '#F3F0FF' : 'white',
+                                        color: entry.temComentario ? '#5B21B6' : '#f97316',
+                                      }}
+                                    >
+                                      {entry.temComentario ? '💬 Editar comentário' : 'Comentar prova'}
+                                    </Link>
+                                  ) : entry.temComentario ? (
+                                    <div style={{ fontSize: 11, color: '#5B21B6', marginTop: 3 }} title="O mentor já comentou esta prova">💬 comentada</div>
+                                  ) : null}
                                 </div>
                               </div>
                             </td>

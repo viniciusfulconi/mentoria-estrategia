@@ -59,6 +59,7 @@ export default function AlunoPage() {
   const [erro, setErro] = useState<string | null>(null)
   const [provasAluno, setProvasAluno] = useState<any[]>([])
   const [correcoesProva, setCorrecoesProva] = useState<any[]>([])
+  const [comentariosProva, setComentariosProva] = useState<{ prova_aluno_id: string }[]>([])
   const [questoesProvas, setQuestoesProvas] = useState<any[]>([])
   const [provasLoaded, setProvasLoaded] = useState(false)
 
@@ -165,10 +166,12 @@ export default function AlunoPage() {
   }
 
   async function loadProvas() {
-    const [{ data: pa }, { data: cp }] = await Promise.all([
+    const [{ data: pa }, { data: cp }, { data: com }] = await Promise.all([
       dbQuery('provas_aluno', { aluno_id: `eq.${targetId}`, order: 'data.desc' }),
       dbQuery('correcoes_prova', { aluno_id: `eq.${targetId}` }, 'prova_aluno_id,prova_id,respostas,notas,confirmed_at'),
+      dbQuery('comentarios_prova', { aluno_id: `eq.${targetId}` }, 'prova_aluno_id'),
     ])
+    setComentariosProva(com || [])
     if (!pa?.length) { setProvasLoaded(true); return }
     const provaIds = [...new Set(pa.map((p: any) => p.prova_id))].join(',')
     const [{ data: detalhes }, { data: questoes }] = await Promise.all([
@@ -843,6 +846,7 @@ export default function AlunoPage() {
                   {provasAluno.map(pa => {
                     const correcao = correcoesProva.find(c => c.prova_aluno_id === pa.id)
                     const corrigida = !!correcao?.confirmed_at
+                    const comentada = comentariosProva.some(c => c.prova_aluno_id === pa.id)
                     return (
                       <Link key={pa.id} href={`/minhas-provas/${pa.id}`} style={{ textDecoration: 'none' }}>
                         <div className="card" style={{ marginBottom: 10, borderLeft: `3px solid ${corrigida ? '#16A34A' : '#f97316'}` }}>
@@ -859,6 +863,11 @@ export default function AlunoPage() {
                                 <span style={{ fontSize: 10, padding: '2px 7px', borderRadius: 10, background: '#F1F5F9', color: '#475569' }}>
                                   {pa.prova?.num_questoes}q
                                 </span>
+                                {comentada && (
+                                  <span style={{ fontSize: 10, padding: '2px 7px', borderRadius: 10, background: '#F3F0FF', color: '#5B21B6', fontWeight: 600 }}>
+                                    💬 Comentário do mentor
+                                  </span>
+                                )}
                               </div>
                               <div style={{ fontSize: 11, color: '#999' }}>
                                 📅 {new Date(pa.data + 'T12:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}
