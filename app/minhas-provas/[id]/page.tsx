@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { dbQuery, dbInsert, supabase } from '@/lib/supabase'
+import { resolverTopicos, questoesFracas } from '@/lib/provas'
 import { useAuth } from '@/contexts/AuthContext'
 import { useRouter, useParams } from 'next/navigation'
 import Nav from '@/components/Nav'
@@ -26,6 +27,7 @@ export default function MinhaProva() {
   const [prova, setProva] = useState<any>(null)
   const [questoes, setQuestoes] = useState<any[]>([])
   const [correcao, setCorrecao] = useState<any>(null)
+  const [comentario, setComentario] = useState<any>(null)
   const [loading, setLoading] = useState(true)
 
   // Formulários de correção
@@ -47,10 +49,12 @@ export default function MinhaProva() {
   useEffect(() => { if (provaAlunoId) load() }, [provaAlunoId])
 
   async function load() {
-    const [{ data: pa }, { data: corr }] = await Promise.all([
+    const [{ data: pa }, { data: corr }, { data: com }] = await Promise.all([
       dbQuery('provas_aluno', { id: `eq.${provaAlunoId}` }),
       dbQuery('correcoes_prova', { prova_aluno_id: `eq.${provaAlunoId}` }),
+      dbQuery('comentarios_prova', { prova_aluno_id: `eq.${provaAlunoId}` }),
     ])
+    setComentario(com?.[0] || null)
     const paData = pa?.[0]
     if (!paData) { setLoading(false); return }
     setProvaAluno(paData)
@@ -102,26 +106,17 @@ export default function MinhaProva() {
     setRankingLoaded(true)
   }
 
-  function resolverTopicos(ids: string[]): string[] {
-    if (!ids?.length) return []
-    return ids
-      .map(id => topicosDB.find((t: any) => t.id === id)?.topico)
-      .filter(Boolean) as string[]
-  }
-
   function assuntosErrados() {
     if (!correcao || !questoes.length || !prova) return []
     if (prova.modelo === 'multipla_escolha') {
       const resps = correcao.respostas || {}
       return questoes
         .filter(q => resps[String(q.numero)] && resps[String(q.numero)] !== 'acertou')
-        .map(q => ({ numero: q.numero, materia: q.materia, tipo: resps[String(q.numero)], topicos: resolverTopicos(q.topicos || []) }))
-    } else {
-      const notas = correcao.notas || {}
-      return questoes
-        .filter(q => Number(notas[String(q.numero)] ?? 1) < 0.7)
-        .map(q => ({ numero: q.numero, materia: q.materia, nota: notas[String(q.numero)], topicos: resolverTopicos(q.topicos || []) }))
+        .map(q => ({ numero: q.numero, materia: q.materia, tipo: resps[String(q.numero)], topicos: resolverTopicos(q.topicos, topicosDB) }))
     }
+    // Discursiva: mesmo critério que a tela de comentário do mentor usa, para
+    // ele comentar exatamente as questões que o aluno vê aqui (lib/provas.ts).
+    return questoesFracas(correcao.notas, questoes, topicosDB)
   }
 
   async function confirmarFase1() {
@@ -369,6 +364,48 @@ export default function MinhaProva() {
               </div>
             )}
           </>
+        )}
+
+        {/* ── Comentários do mentor ── */}
+        {/* Fora do bloco `jaCorrigida`: o mentor pode comentar antes de o aluno
+            confirmar a correção, e nesse caso o comentário não pode sumir. */}
+        {comentario && (comentario.letra || comentario.resolucao || comentario.conteudo || comentario.topicos?.length > 0) && (
+          <div className="card" style={{ background: '#F3F0FF', border: '0.5px solid rgba(91,33,182,0.15)' }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8, marginBottom: 12 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: '#5B21B6' }}>💬 Comentários do mentor</div>
+              {comentario.mentor && <div style={{ fontSize: 11, color: '#7c3aed' }}>{comentario.mentor}</div>}
+            </div>
+
+            {([
+              ['✍️ Letra e organização', comentario.letra],
+              ['🧩 Sobre a resolução',   comentario.resolucao],
+              ['📚 O que estudar',       comentario.conteudo],
+            ] as [string, string | null][])
+              .filter(([, texto]) => !!texto?.trim())
+              .map(([titulo, texto]) => (
+                <div key={titulo} style={{ marginBottom: 12 }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: '#6B7280', marginBottom: 4 }}>{titulo}</div>
+                  <div style={{ fontSize: 13, color: '#1a1a1a', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{texto}</div>
+                </div>
+              ))}
+
+            {comentario.topicos?.length > 0 && (
+              <div style={{ marginBottom: 12 }}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: '#6B7280', marginBottom: 6 }}>Tópicos recomendados</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+                  {resolverTopicos(comentario.topicos, topicosDB).map(t => (
+                    <span key={t} style={{ fontSize: 11, padding: '3px 10px', borderRadius: 20, background: 'white', color: '#5B21B6', border: '1px solid rgba(91,33,182,0.2)', fontWeight: 500 }}>
+                      {t}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div style={{ fontSize: 10, color: '#9CA3AF' }}>
+              Atualizado em {new Date(comentario.updated_at || comentario.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}
+            </div>
+          </div>
         )}
 
         {/* ── NÃO CORRIGIDA: botão ou formulário ── */}
