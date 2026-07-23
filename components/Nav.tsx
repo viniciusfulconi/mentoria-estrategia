@@ -8,7 +8,7 @@ import { dbQuery, dbUpdate } from '@/lib/supabase'
 import {
   LayoutDashboard, Users, Handshake, Calendar,
   GraduationCap, Star, ClipboardList, FileText, KeyRound,
-  PlayCircle, LogOut, MoreHorizontal, Menu, X, Bell, UserCircle, Bot, Trophy, BookOpen, NotebookPen, Feather, Swords,
+  PlayCircle, LogOut, MoreHorizontal, Menu, X, Bell, UserCircle, Bot, Trophy, BookOpen, NotebookPen, Feather, Swords, ListChecks,
 } from 'lucide-react'
 
 type LucideIcon = React.ComponentType<{ size?: number; strokeWidth?: number; color?: string }>
@@ -25,6 +25,7 @@ const tabsCoordenadorSecundarioITA = [
   { href: '/csat',           label: 'CSAT',       icon: Star },
   { href: '/cronograma',     label: 'Cronograma', icon: ClipboardList },
   { href: '/provas-antigas', label: 'Provas',     icon: FileText },
+  { href: '/tarefas',        label: 'Tarefas',    icon: ListChecks },
   { href: '/aulas',          label: 'Aulas',      icon: PlayCircle },
   { href: '/questoes',       label: 'Questões',   icon: BookOpen },
   { href: '/desafios',       label: 'Desafios',   icon: Swords },
@@ -39,6 +40,7 @@ const tabsCoordenadorSecundarioMed = [
   { href: '/gestao/notas',  label: 'Notas',     icon: NotebookPen },
   { href: '/mentores',      label: 'Mentores',  icon: Users },
   { href: '/cronograma',    label: 'Cronograma', icon: ClipboardList },
+  { href: '/tarefas',       label: 'Tarefas',   icon: ListChecks },
   { href: '/questoes',      label: 'Questões',  icon: BookOpen },
   { href: '/desafios',      label: 'Desafios',  icon: Swords },
   { href: '/csat',          label: 'CSAT',      icon: Star },
@@ -50,6 +52,7 @@ const tabsMentor = [
   { href: '/turma',          label: 'Turma',   icon: GraduationCap },
   { href: '/atendimentos',   label: 'Atend.',  icon: Handshake },
   { href: '/horario',        label: 'Horário', icon: Calendar },
+  { href: '/tarefas',        label: 'Tarefas', icon: ListChecks },
   { href: '/provas-antigas', label: 'Provas',  icon: FileText },
   { href: '/aulas',          label: 'Aulas',   icon: PlayCircle },
   { href: '/mentor/perfil',  label: 'Perfil',  icon: UserCircle },
@@ -58,6 +61,7 @@ const tabsAluno = [
   { href: '/meu-perfil',     label: 'Início',     icon: LayoutDashboard },
   { href: '/cronograma/meu', label: 'Cronograma', icon: ClipboardList },
   { href: '/horario',        label: 'Horário',    icon: Calendar },
+  { href: '/tarefas',        label: 'Tarefas',    icon: ListChecks },
   { href: '/questoes',       label: 'Questões',   icon: BookOpen },
   { href: '/desafios',       label: 'Desafios',   icon: Feather },
   { href: '/quadro',         label: 'Quadro',     icon: NotebookPen },

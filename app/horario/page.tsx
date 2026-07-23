@@ -9,6 +9,41 @@ import { Clock, BookOpen, User, ExternalLink, Trash2, CalendarX } from 'lucide-r
 
 type Visualizacao = 'dia' | 'semana' | 'mes' | 'ano'
 
+const TIPO_TAREFA_LABEL: Record<string, string> = { revisao: 'Revisão', lista: 'Lista de exercícios', teoria: 'Teoria' }
+
+// Converte uma linha tarefas_alunos (com tarefa embutida) em atividade(s) do calendário.
+// modo 'dia'  → 1 ocorrência (data + hora). modo 'janela' → 1 ocorrência/dia (o dia todo).
+function tarefaParaAtividades(l: any): any[] {
+  const t = l.tarefa
+  const base = {
+    tipo: 'tarefa',
+    is_tarefa: true,
+    titulo: `Tarefa · ${t.materia || ''}`.trim(),
+    materia: t.materia,
+    descricao: [t.comentario, `Tipo: ${TIPO_TAREFA_LABEL[t.tipo] || t.tipo}`, t.criado_por_nome ? `Por: ${t.criado_por_nome}` : '', l.status === 'cumprida' ? '✓ Cumprida' : '']
+      .filter(Boolean).join('\n'),
+    link: t.tipo === 'lista' ? t.link : null,
+    status_tarefa: l.status,
+  }
+  if (t.modo_prazo === 'dia' && t.data) {
+    const hi = (t.hora_inicio || '08:00').slice(0, 5)
+    const hf = (t.hora_fim || '09:00').slice(0, 5)
+    return [{ ...base, id: `tar_${l.id}`, data_inicio: `${t.data}T${hi}:00`, data_fim: `${t.data}T${hf}:00` }]
+  }
+  if (t.modo_prazo === 'janela' && t.janela_inicio && t.janela_fim) {
+    const out: any[] = []
+    const cur = new Date(`${t.janela_inicio}T07:00:00`)
+    const fim = new Date(`${t.janela_fim}T07:00:00`)
+    while (cur <= fim) {
+      const dia = cur.toISOString().split('T')[0]
+      out.push({ ...base, id: `tar_${l.id}_${dia}`, data_inicio: `${dia}T07:00:00`, data_fim: null })
+      cur.setDate(cur.getDate() + 1)
+    }
+    return out
+  }
+  return []
+}
+
 export default function Horario() {
   const { perfil, verticalAtiva } = useAuth()
   const [atividades, setAtividades] = useState<any[]>([])
@@ -32,7 +67,22 @@ export default function Horario() {
       params['or'] = `(aluno_id.eq.${perfil.aluno_id},aluno_id.is.null)`
     }
     const { data } = await dbQuery('atividades', params)
-    setAtividades(data || [])
+    let todas = data || []
+
+    // Tarefas do aluno entram no horário como tipo 'tarefa' (cor distinta)
+    if (perfil.papel === 'aluno' && perfil.aluno_id) {
+      const { data: tas } = await dbQuery(
+        'tarefas_alunos',
+        { aluno_id: `eq.${perfil.aluno_id}` },
+        '*, tarefa:tarefas(*)'
+      )
+      const tarefasCal = (tas || [])
+        .filter((l: any) => l.tarefa)
+        .flatMap((l: any) => tarefaParaAtividades(l))
+      todas = [...todas, ...tarefasCal]
+    }
+
+    setAtividades(todas)
     setLoading(false)
   }
 
