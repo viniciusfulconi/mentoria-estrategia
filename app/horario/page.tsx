@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState, useCallback } from 'react'
-import { dbQuery, dbDelete } from '@/lib/supabase'
+import { dbQuery, dbQueryAll, dbDelete } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import Nav from '@/components/Nav'
 import Link from 'next/link'
@@ -66,7 +66,9 @@ export default function Horario() {
     if (perfil.papel === 'aluno' && perfil.aluno_id) {
       params['or'] = `(aluno_id.eq.${perfil.aluno_id},aluno_id.is.null)`
     }
-    const { data } = await dbQuery('atividades', params)
+    // dbQueryAll (paginado): atividades já passou de 1000 linhas (provas antigas em massa),
+    // e o dbQuery normal trunca no teto do PostgREST — cortava tudo após ~06/08.
+    const { data } = await dbQueryAll('atividades', params)
     let todas = data || []
 
     // Tarefas do aluno entram no horário como tipo 'tarefa' (cor distinta)
