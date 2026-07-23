@@ -10,6 +10,7 @@ export const CORES_TIPO: Record<string, { bg: string, text: string }> = {
   prova_antiga: { bg: '#5C6BC0', text: '#FFFFFF' },
   estudo: { bg: '#2563EB', text: '#FFFFFF' },
   pessoal: { bg: '#26A69A', text: '#FFFFFF' },
+  tarefa: { bg: '#7C3AED', text: '#FFFFFF' },
 }
 
 export function corAtividade(ativ: any): { bg: string, text: string } {
