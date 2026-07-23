@@ -111,6 +111,8 @@ export default function Horario() {
   // Vestibulares futuros
   const vestibulares = atividades.filter(a => a.tipo === 'vestibular' && diasParaData(a.data_inicio) >= 0)
     .sort((a, b) => new Date(a.data_inicio).getTime() - new Date(b.data_inicio).getTime())
+  // Faixa do topo: 1 chip por vestibular (exames de 2+ dias contam 1×) e sem cortar em 3 — a faixa rola.
+  const vestibularesTopo = vestibulares.filter((v, i, arr) => arr.findIndex(x => x.titulo === v.titulo) === i)
 
   // Atividades do dia selecionado
   function atividadesDoDia(data: Date): any[] {
@@ -218,7 +220,7 @@ export default function Horario() {
       {/* Vestibulares futuros */}
       {vestibulares.length > 0 && (
         <div style={{ padding: '8px 16px 0', display: 'flex', gap: 8, overflowX: 'auto' }}>
-          {vestibulares.slice(0, 3).map(v => {
+          {vestibularesTopo.map(v => {
             const dias = diasParaData(v.data_inicio)
             return (
               <div key={v.id} style={{ flexShrink: 0, background: '#212121', color: 'white', borderRadius: 10, padding: '6px 12px', fontSize: 11 }}>
