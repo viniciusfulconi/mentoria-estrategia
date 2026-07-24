@@ -84,6 +84,19 @@ export default function Horario() {
       todas = [...todas, ...tarefasCal]
     }
 
+    // Gestores (coordenador/mentor/professor/direção) carregam TODAS as atividades do vertical,
+    // inclusive as per-aluno de provas antigas (1 linha por aluno) — que apareciam ~142× no mesmo
+    // dia. Colapsa eventos idênticos (mesmo tipo/título/horário) num só para a visão de gestão.
+    if (perfil.papel !== 'aluno') {
+      const vistos = new Set<string>()
+      todas = todas.filter((a: any) => {
+        const k = `${a.tipo}|${a.titulo}|${a.data_inicio}|${a.data_fim}`
+        if (vistos.has(k)) return false
+        vistos.add(k)
+        return true
+      })
+    }
+
     setAtividades(todas)
     setLoading(false)
   }
