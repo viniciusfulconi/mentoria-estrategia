@@ -96,7 +96,7 @@ export default function AprovadosITA() {
   const [tabelaAberta, setTabelaAberta] = useState(false)
 
   useEffect(() => {
-    if (!authLoading && perfil && perfil.papel !== 'coordenador' && perfil.papel !== 'direcao') {
+    if (!authLoading && perfil && perfil.papel !== 'coordenador' && perfil.papel !== 'direcao' && perfil.papel !== 'professor') {
       router.replace('/')
     }
   }, [authLoading, perfil])

@@ -27,9 +27,10 @@ export default function ProvasAntigas() {
   }
 
   const isCoordenador = perfil?.papel === 'coordenador' || perfil?.papel === 'direcao'
-  // Mentor ITA tem acesso de leitura ao ranking e PDFs (não pode criar/editar)
+  // Mentor ITA e professor têm acesso de leitura ao ranking e PDFs (não podem criar/editar)
   const isMentorITA = perfil?.papel === 'mentor' && perfil?.vertical !== 'Medicina'
-  const podeVerRanking = isCoordenador || isMentorITA
+  const isProfessor = perfil?.papel === 'professor'
+  const podeVerRanking = isCoordenador || isMentorITA || isProfessor
 
   return (
     <div style={{ paddingBottom: 80 }}>

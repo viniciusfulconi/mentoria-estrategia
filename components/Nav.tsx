@@ -8,7 +8,7 @@ import { dbQuery, dbUpdate } from '@/lib/supabase'
 import {
   LayoutDashboard, Users, Handshake, Calendar,
   GraduationCap, Star, ClipboardList, FileText, KeyRound,
-  PlayCircle, LogOut, MoreHorizontal, Menu, X, Bell, UserCircle, Bot, Trophy, BookOpen, NotebookPen, Feather, Swords, ListChecks,
+  PlayCircle, LogOut, MoreHorizontal, Menu, X, Bell, UserCircle, Bot, Trophy, BookOpen, NotebookPen, Feather, Swords, ListChecks, FolderOpen,
 } from 'lucide-react'
 
 type LucideIcon = React.ComponentType<{ size?: number; strokeWidth?: number; color?: string }>
@@ -26,6 +26,7 @@ const tabsCoordenadorSecundarioITA = [
   { href: '/cronograma',     label: 'Cronograma', icon: ClipboardList },
   { href: '/provas-antigas', label: 'Provas',     icon: FileText },
   { href: '/tarefas',        label: 'Tarefas',    icon: ListChecks },
+  { href: '/materiais',      label: 'Materiais',  icon: FolderOpen },
   { href: '/aulas',          label: 'Aulas',      icon: PlayCircle },
   { href: '/questoes',       label: 'Questões',   icon: BookOpen },
   { href: '/desafios',       label: 'Desafios',   icon: Swords },
@@ -53,6 +54,7 @@ const tabsMentor = [
   { href: '/atendimentos',   label: 'Atend.',  icon: Handshake },
   { href: '/horario',        label: 'Horário', icon: Calendar },
   { href: '/tarefas',        label: 'Tarefas', icon: ListChecks },
+  { href: '/materiais',      label: 'Materiais', icon: FolderOpen },
   { href: '/provas-antigas', label: 'Provas',  icon: FileText },
   { href: '/aulas',          label: 'Aulas',   icon: PlayCircle },
   { href: '/mentor/perfil',  label: 'Perfil',  icon: UserCircle },
@@ -62,14 +64,18 @@ const tabsAluno = [
   { href: '/cronograma/meu', label: 'Cronograma', icon: ClipboardList },
   { href: '/horario',        label: 'Horário',    icon: Calendar },
   { href: '/tarefas',        label: 'Tarefas',    icon: ListChecks },
+  { href: '/materiais',      label: 'Materiais',  icon: FolderOpen },
   { href: '/questoes',       label: 'Questões',   icon: BookOpen },
   { href: '/desafios',       label: 'Desafios',   icon: Feather },
   { href: '/quadro',         label: 'Quadro',     icon: NotebookPen },
 ]
 const tabsProfessor = [
-  { href: '/simulados', label: 'Alunos',  icon: Users },
-  { href: '/turma',     label: 'Turma',   icon: GraduationCap },
-  { href: '/horario',   label: 'Horário', icon: Calendar },
+  { href: '/simulados',      label: 'Alunos',  icon: Users },
+  { href: '/turma',          label: 'Turma',   icon: GraduationCap },
+  { href: '/horario',        label: 'Horário', icon: Calendar },
+  { href: '/provas-antigas', label: 'Provas',  icon: FileText },
+  { href: '/aprovados-ita',  label: 'ITA',     icon: Trophy },
+  { href: '/aprovados-ime',  label: 'IME',     icon: Trophy },
 ]
 const PAPEL_LABEL: Record<string, string> = {
   coordenador: 'Coordenador', direcao: 'Direção',

@@ -115,10 +115,11 @@ export default function RankingProvaAntigaPage() {
 
   useEffect(() => {
     if (!perfil || !id) return
-    // Coordenador/direção: acesso total. Mentor ITA: leitura (sem editar). Demais: bloqueado.
+    // Coordenador/direção: acesso total. Mentor ITA e professor: leitura (sem editar). Demais: bloqueado.
     const isGestor = perfil.papel === 'coordenador' || perfil.papel === 'direcao'
     const isMentorITA = perfil.papel === 'mentor' && perfil.vertical !== 'Medicina'
-    if (!isGestor && !isMentorITA) {
+    const isProfessor = perfil.papel === 'professor'
+    if (!isGestor && !isMentorITA && !isProfessor) {
       router.replace('/provas-antigas')
       return
     }
