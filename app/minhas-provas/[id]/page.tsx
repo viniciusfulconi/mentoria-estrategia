@@ -17,6 +17,10 @@ const OPCOES_FASE1 = [
 type Fase1Respostas = Record<string, string>
 type Fase2Notas = Record<string, number>
 
+// Limite de tamanho do PDF (limite global do Storage do Supabase = 50 MB).
+const MAX_PDF_MB = 50
+const MAX_PDF_BYTES = MAX_PDF_MB * 1024 * 1024
+
 export default function MinhaProva() {
   const { perfil } = useAuth()
   const router = useRouter()
@@ -347,12 +351,23 @@ export default function MinhaProva() {
                     ) : (
                       <div>
                         <div style={{ fontSize: 12, color: '#666', marginBottom: 8 }}>
-                          Anexe o PDF da sua prova dissertativa corrigida:
+                          Anexe o PDF da sua prova dissertativa corrigida.{' '}
+                          <span style={{ color: '#999' }}>Tamanho máximo: {MAX_PDF_MB} MB.</span>
                         </div>
                         <input
                           type="file"
                           accept="application/pdf"
-                          onChange={e => setPdfEdit(e.target.files?.[0] || null)}
+                          onChange={e => {
+                            const f = e.target.files?.[0] || null
+                            if (f && f.size > MAX_PDF_BYTES) {
+                              setErroPdf(`PDF muito grande (${(f.size / 1024 / 1024).toFixed(1)} MB). O limite é ${MAX_PDF_MB} MB.`)
+                              setPdfEdit(null)
+                              e.target.value = ''
+                              return
+                            }
+                            setErroPdf('')
+                            setPdfEdit(f)
+                          }}
                           style={{ padding: '8px 0', fontSize: 13 }}
                         />
                         {pdfEdit && <div style={{ fontSize: 11, color: '#16A34A', marginTop: 4 }}>✓ {pdfEdit.name}</div>}
@@ -563,10 +578,21 @@ export default function MinhaProva() {
 
             <div style={{ marginBottom: 14 }}>
               <label>PDF da sua correção (opcional)</label>
+              <div style={{ fontSize: 11, color: '#999', marginBottom: 4 }}>Tamanho máximo: {MAX_PDF_MB} MB.</div>
               <input
                 type="file"
                 accept="application/pdf"
-                onChange={e => setPdfCorrecao(e.target.files?.[0] || null)}
+                onChange={e => {
+                  const f = e.target.files?.[0] || null
+                  if (f && f.size > MAX_PDF_BYTES) {
+                    setErro(`PDF muito grande (${(f.size / 1024 / 1024).toFixed(1)} MB). O limite é ${MAX_PDF_MB} MB.`)
+                    setPdfCorrecao(null)
+                    e.target.value = ''
+                    return
+                  }
+                  setErro('')
+                  setPdfCorrecao(f)
+                }}
                 style={{ padding: '8px 0' }}
               />
               {pdfCorrecao && <div style={{ fontSize: 11, color: '#16A34A', marginTop: 4 }}>✓ {pdfCorrecao.name}</div>}
