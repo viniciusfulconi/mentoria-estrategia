@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { dbQuery, dbInsert, supabase } from '@/lib/supabase'
+import { dbQuery, dbInsert, dbUpdate, supabase } from '@/lib/supabase'
 import { resolverTopicos, questoesFracas } from '@/lib/provas'
 import { useAuth } from '@/contexts/AuthContext'
 import { useRouter, useParams } from 'next/navigation'
@@ -38,6 +38,12 @@ export default function MinhaProva() {
   const [saving, setSaving] = useState(false)
   const [uploadProgress, setUploadProgress] = useState('')
   const [erro, setErro] = useState('')
+
+  // Edição do PDF depois de a prova já ter sido corrigida (quem esqueceu de anexar)
+  const [editandoPdf, setEditandoPdf] = useState(false)
+  const [pdfEdit, setPdfEdit] = useState<File | null>(null)
+  const [savingPdf, setSavingPdf] = useState(false)
+  const [erroPdf, setErroPdf] = useState('')
 
   // Resultados
   const [rankingInfo, setRankingInfo] = useState<{ pos: number; total: number } | null>(null)
@@ -171,6 +177,27 @@ export default function MinhaProva() {
     setCorrigindo(false)
   }
 
+  // Anexar / trocar o PDF depois que a correção já foi confirmada — para quem
+  // não enviou na hora. Só atualiza o campo do PDF; notas/respostas ficam iguais.
+  async function salvarPdfCorrecao() {
+    if (!pdfEdit) { setErroPdf('Selecione um PDF.'); return }
+    setSavingPdf(true); setErroPdf('')
+    const path = `correcoes/${targetId}/${provaAlunoId}-${Date.now()}.pdf`
+    const { error: upErr } = await supabase.storage.from('provas-antigas').upload(path, pdfEdit, { upsert: true })
+    if (upErr) { setErroPdf('Erro ao enviar PDF: ' + upErr.message); setSavingPdf(false); return }
+    const { data: urlData } = supabase.storage.from('provas-antigas').getPublicUrl(path)
+    const { error } = await dbUpdate(
+      'correcoes_prova',
+      { prova_aluno_id: `eq.${provaAlunoId}`, aluno_id: `eq.${targetId}` },
+      { pdf_correcao_url: urlData.publicUrl },
+    )
+    if (error) { setErroPdf(error); setSavingPdf(false); return }
+    await load()
+    setSavingPdf(false)
+    setEditandoPdf(false)
+    setPdfEdit(null)
+  }
+
   if (loading) return <div style={{ padding: 40, textAlign: 'center', color: '#999' }}>Carregando...</div>
   if (!provaAluno || !prova) return <div style={{ padding: 40, textAlign: 'center', color: '#999' }}>Prova não encontrada.</div>
 
@@ -295,13 +322,69 @@ export default function MinhaProva() {
                           <div style={{ fontSize: 13, color: '#666' }}>de {total} pontos</div>
                         </div>
                         {correcao.pdf_correcao_url && (
-                          <a href={correcao.pdf_correcao_url} target="_blank" rel="noreferrer" style={{ fontSize: 12, color: '#f97316' }}>
+                          <a href={correcao.pdf_correcao_url} target="_blank" rel="noreferrer" style={{ fontSize: 12, color: '#f97316', display: 'inline-block', marginTop: 4 }}>
                             📎 Ver PDF enviado
                           </a>
                         )}
                       </div>
                     )
                   })()}
+
+                  {/* Anexar / trocar o PDF da prova dissertativa depois de corrigir */}
+                  <div style={{ marginTop: 12, paddingTop: 12, borderTop: '0.5px solid rgba(0,0,0,0.06)' }}>
+                    {!editandoPdf ? (
+                      <button
+                        onClick={() => { setEditandoPdf(true); setErroPdf(''); setPdfEdit(null) }}
+                        style={{
+                          background: correcao.pdf_correcao_url ? 'white' : '#FFF7ED',
+                          border: '0.5px solid rgba(234,88,12,0.35)', color: '#EA580C',
+                          borderRadius: 10, padding: '8px 14px', fontSize: 13, fontWeight: 600,
+                          cursor: 'pointer', fontFamily: 'DM Sans, sans-serif',
+                        }}
+                      >
+                        {correcao.pdf_correcao_url ? '🔁 Trocar PDF da correção' : '📎 Anexar PDF da correção'}
+                      </button>
+                    ) : (
+                      <div>
+                        <div style={{ fontSize: 12, color: '#666', marginBottom: 8 }}>
+                          Anexe o PDF da sua prova dissertativa corrigida:
+                        </div>
+                        <input
+                          type="file"
+                          accept="application/pdf"
+                          onChange={e => setPdfEdit(e.target.files?.[0] || null)}
+                          style={{ padding: '8px 0', fontSize: 13 }}
+                        />
+                        {pdfEdit && <div style={{ fontSize: 11, color: '#16A34A', marginTop: 4 }}>✓ {pdfEdit.name}</div>}
+                        {erroPdf && <div style={{ color: '#DC2626', fontSize: 12, marginTop: 6 }}>{erroPdf}</div>}
+                        <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                          <button
+                            onClick={salvarPdfCorrecao}
+                            disabled={savingPdf}
+                            style={{
+                              background: '#f97316', border: 'none', color: 'white',
+                              borderRadius: 10, padding: '8px 16px', fontSize: 13, fontWeight: 600,
+                              cursor: savingPdf ? 'default' : 'pointer', fontFamily: 'DM Sans, sans-serif',
+                              opacity: savingPdf ? 0.7 : 1,
+                            }}
+                          >
+                            {savingPdf ? 'Enviando...' : 'Salvar PDF'}
+                          </button>
+                          <button
+                            onClick={() => { setEditandoPdf(false); setPdfEdit(null); setErroPdf('') }}
+                            disabled={savingPdf}
+                            style={{
+                              background: 'white', border: '0.5px solid rgba(0,0,0,0.15)', color: '#666',
+                              borderRadius: 10, padding: '8px 16px', fontSize: 13, fontWeight: 500,
+                              cursor: 'pointer', fontFamily: 'DM Sans, sans-serif',
+                            }}
+                          >
+                            Cancelar
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </>
               )}
             </div>
