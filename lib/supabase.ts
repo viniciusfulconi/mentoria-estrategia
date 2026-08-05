@@ -201,6 +201,12 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     fetch: (url, options = {}) => {
       const urlStr = url instanceof Request ? url.url : String(url)
       const isAuth = urlStr.includes('/auth/v1/')
+      const isStorage = urlStr.includes('/storage/v1/')
+      // Uploads de Storage (PDFs de correção etc.): SEM keepalive — o spec do
+      // Fetch limita o corpo a 64KB quando keepalive=true, o que fazia o upload
+      // de qualquer PDF real falhar com "Failed to fetch". Também sem o timeout
+      // curto: arquivos podem ser grandes/lentos.
+      if (isStorage) return fetch(url, options)
       // Timeout em todas as requests: 10s para auth, 30s para dados
       const ctrl = new AbortController()
       const tid = setTimeout(() => ctrl.abort(), isAuth ? 10000 : 30000)
