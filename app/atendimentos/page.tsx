@@ -48,6 +48,10 @@ export default function Atendimentos() {
 
   useEffect(() => { carregar() }, [perfil, verticalAtiva])
 
+  // Cada vertical tem seu próprio conjunto de mentores/meses — manter o filtro da
+  // vertical anterior deixa a lista vazia sem que a tela mostre o porquê.
+  useEffect(() => { setFiltroMentor('todos'); setFiltroMes('todos'); setLimite(50) }, [verticalAtiva])
+
   // Datas vêm do Postgres como "YYYY-MM-DD"; new Date(...) interpreta como UTC e
   // .toLocaleDateString('pt-BR') (UTC-3) joga para o dia anterior. Parse manual.
   function ymd(s: string) {
@@ -103,9 +107,15 @@ export default function Atendimentos() {
     return mesAno(data)
   }
 
+  // O <select> exibe a primeira opção quando seu value não está entre as options,
+  // mas o estado continua com o valor antigo — a tela dizia "Todos os mentores" e a
+  // lista vinha vazia. Vale o que a tela mostra: valor órfão = "todos".
+  const mentorSel = filtroMentor !== 'todos' && !mentores.includes(filtroMentor) ? 'todos' : filtroMentor
+  const mesSel = filtroMes !== 'todos' && !meses.includes(filtroMes) ? 'todos' : filtroMes
+
   const filtrados = dados.filter(d => {
-    if (filtroMentor !== 'todos' && d.mentor !== filtroMentor) return false
-    if (filtroMes !== 'todos' && mesDaData(d.data_atendimento) !== filtroMes) return false
+    if (mentorSel !== 'todos' && d.mentor !== mentorSel) return false
+    if (mesSel !== 'todos' && mesDaData(d.data_atendimento) !== mesSel) return false
     return true
   })
 
@@ -356,13 +366,13 @@ export default function Atendimentos() {
         {/* Filtros */}
         <div style={{ display: 'flex', gap: 6, overflowX: 'auto', marginBottom: 8 }}>
           {(perfil?.papel === 'coordenador' || perfil?.papel === 'direcao') && (
-            <select value={filtroMentor} onChange={e => setFiltroMentor(e.target.value)}
+            <select value={mentorSel} onChange={e => setFiltroMentor(e.target.value)}
               style={{ fontSize: 11, padding: '4px 8px', borderRadius: 8, border: '0.5px solid rgba(0,0,0,0.12)', background: '#F7F6F3', fontFamily: 'DM Sans,sans-serif' }}>
               <option value="todos">Todos os mentores</option>
               {mentores.map(m => <option key={m} value={m}>{m}</option>)}
             </select>
           )}
-          <select value={filtroMes} onChange={e => setFiltroMes(e.target.value)}
+          <select value={mesSel} onChange={e => setFiltroMes(e.target.value)}
             style={{ fontSize: 11, padding: '4px 8px', borderRadius: 8, border: '0.5px solid rgba(0,0,0,0.12)', background: '#F7F6F3', fontFamily: 'DM Sans,sans-serif' }}>
             <option value="todos">Todos os meses</option>
             {meses.map(m => <option key={m} value={m}>{mesLabel(m)}</option>)}
