@@ -460,6 +460,24 @@ export default function UploadSimulados() {
                 {gRep.avisos?.map((a: string, i: number) => (
                   <div key={i} style={{ fontSize: 11, color: '#D97706', marginTop: 2 }}>⚠ {a}</div>
                 ))}
+                {gRep.ignoradosAlunoNovo > 0 && (
+                  <div style={{ marginTop: 10, padding: '10px 12px', background: '#FFFBEB', borderRadius: 8 }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: '#78350F', marginBottom: 6 }}>
+                      {gRep.ignoradosAlunoNovo} linha(s) da planilha ignorada(s) — aluno sem ranking no ciclo
+                    </div>
+                    {/* Só a contagem escondia QUEM ficou de fora; era preciso o nome
+                        para conferir na planilha se é aluno novo ou falha de import. */}
+                    <div style={{ fontSize: 11, color: '#78350F', fontFamily: 'monospace', lineHeight: 1.6 }}>
+                      {(gRep.ignoradosDetalhe ?? []).map((d: string, i: number) => (
+                        <div key={i}>{d}</div>
+                      ))}
+                      {gRep.ignoradosDetalhe?.length === 40 && <div style={{ color: '#B45309' }}>… (lista truncada em 40)</div>}
+                    </div>
+                    <div style={{ fontSize: 11, color: '#92400E', marginTop: 6 }}>
+                      Para trazer esses alunos, importe o ciclo por completo.
+                    </div>
+                  </div>
+                )}
                 {gRep.ciclosNovos?.length > 0 && (
                   <div style={{ marginTop: 10, padding: '10px 12px', background: '#FFFBEB', borderRadius: 8 }}>
                     <div style={{ fontSize: 12, fontWeight: 600, color: '#78350F', marginBottom: 6 }}>Ciclo(s) novo(s) detectado(s)</div>

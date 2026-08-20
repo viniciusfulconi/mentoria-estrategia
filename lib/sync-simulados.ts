@@ -101,6 +101,9 @@ export type SyncReport = {
   inseridos: number
   atualizados: number
   ignoradosAlunoNovo: number
+  // Quem foi ignorado, não só quantos: sem os nomes, um aluno que a planilha
+  // tem e o banco não some em silêncio e o contador não diz quem procurar.
+  ignoradosDetalhe: string[]
 }
 
 function reportBase(parse: ParseResult, dry: boolean): SyncReport {
@@ -110,8 +113,16 @@ function reportBase(parse: ParseResult, dry: boolean): SyncReport {
     gate: { ok: true, divergencias: [], comparados: 0 },
     cicloAtivo: parse.cicloAtivo, ciclosPresentes: parse.ciclosPresentes,
     ciclosTocados: [], ciclosNovos: [],
-    inseridos: 0, atualizados: 0, ignoradosAlunoNovo: 0,
+    inseridos: 0, atualizados: 0, ignoradosAlunoNovo: 0, ignoradosDetalhe: [],
   }
+}
+
+// Um aluno pode ter várias linhas de fase no mesmo ciclo; o detalhe é por
+// aluno+ciclo. Guarda no máximo 40 nomes — o resto vira "… e mais N".
+function registrarIgnorado(rep: SyncReport, linha: ResultadoFaseRow) {
+  const chave = `${linha.nome_aluno} (${linha.id_aluno}) — ${linha.ciclo_nome}/${linha.concurso}`
+  if (rep.ignoradosDetalhe.includes(chave)) return
+  if (rep.ignoradosDetalhe.length < 40) rep.ignoradosDetalhe.push(chave)
 }
 
 // ─── CRON: manutenção ────────────────────────────────────────────────────────
@@ -166,7 +177,11 @@ export async function sincronizarManutencao(opts: { sheets: SheetsInput; db: Db;
     let tocouCiclo = false
 
     for (const linha of linhas) {
-      if (!rankingAlunos.has(linha.id_aluno)) { rep.ignoradosAlunoNovo++; continue }
+      if (!rankingAlunos.has(linha.id_aluno)) {
+        rep.ignoradosAlunoNovo++
+        registrarIgnorado(rep, linha)
+        continue
+      }
 
       const existente = existentePorChave.get(`${linha.id_aluno}__${linha.fase}`)
       const payload: Record<string, unknown> = {}

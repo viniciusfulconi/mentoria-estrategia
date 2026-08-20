@@ -35,6 +35,9 @@ function logRowDe(rep: SyncReport, status: string, duracaoMs: number, origem: st
       avisos: rep.avisos,
       ciclos_novos: rep.ciclosNovos,
       ignorados_aluno_novo: rep.ignoradosAlunoNovo,
+      // Sem os nomes, um aluno ignorado só aparecia como um número no log e não
+      // dava para saber quem procurar na planilha.
+      ignorados_detalhe: rep.ignoradosDetalhe,
       gate_divergencias: rep.gate.divergencias.slice(0, 20),
     },
     erro: rep.erro ?? null,
