@@ -30,12 +30,13 @@ const input = {
   simulados: sheet('Simulados'),
   cadastroAlunos: sheet('Cadastro Alunos'),
   usuarios: sheet('Usuarios'),
+  gabaritos: sheet('Gabaritos'),
 }
 
 console.log('═'.repeat(72))
 console.log('PARSE DA PLANILHA (offline)')
 console.log('═'.repeat(72))
-console.log(`Respostas lidas: ${input.respostas.length} | Simulados: ${input.simulados.length} | Alunos: ${input.cadastroAlunos.length}`)
+console.log(`Respostas lidas: ${input.respostas.length} | Simulados: ${input.simulados.length} | Alunos: ${input.cadastroAlunos.length} | Gabaritos: ${input.gabaritos.length}`)
 
 const r = parseSimulados(input)
 
