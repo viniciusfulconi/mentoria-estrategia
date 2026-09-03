@@ -18,7 +18,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 import crypto from 'node:crypto'
 import type { Db } from '@/lib/db-server'
-import { parseSimulados, type SheetsInput, type ParseResult, type ResultadoFaseRow } from '@/lib/sheets-parse'
+import { parseSimulados, canonicalizar, type SheetsInput, type ParseResult, type ResultadoFaseRow } from '@/lib/sheets-parse'
 import { calcularRankings, ordenarEClassificar } from '@/lib/rankings'
 
 const COLS_NOTA = [
@@ -27,17 +27,33 @@ const COLS_NOTA = [
   'nota_redacao', 'nota_portugues', 'nota_ingles',
 ] as const
 
-// Colunas de nota definidas (não-undefined) numa linha de fase.
+// Colunas gravadas a partir de uma linha de fase: as de nota (escalares) mais o
+// detalhamento por questão (jsonb). `notas_questoes` fica FORA de COLS_NOTA de
+// propósito — COLS_NOTA é consumida como lista de escalares pelo gate e pelo
+// gap-fill numérico; o jsonb entra aqui, com a mesma regra de "nunca escrever null".
 function colsDe(linha: ResultadoFaseRow): [string, number | null][] {
   return COLS_NOTA
     .filter((c) => (linha as any)[c] !== undefined)
     .map((c) => [c, (linha as any)[c] as number | null])
 }
 
+function camposDe(linha: ResultadoFaseRow): [string, unknown][] {
+  const campos: [string, unknown][] = [...colsDe(linha)]
+  if (linha.notas_questoes !== undefined) {
+    const q = linha.notas_questoes
+    campos.push(['notas_questoes', q && Object.keys(q).length ? q : null])
+  }
+  return campos
+}
+
 // Hash estável do conteúdo mapeado — para pular execução quando nada mudou.
+// Usa canonicalizar (lib/sheets-parse) em vez do replacer-array de JSON.stringify:
+// aquele se aplica também aos objetos aninhados e apagaria o conteúdo de
+// `notas_questoes`, fazendo o cron pular a execução depois de uma correção de
+// gabarito ("hash igual"). Ver o teste em scripts/test-sheets-questoes.mjs.
 export function hashLinhas(linhas: ResultadoFaseRow[]): string {
   const canon = [...linhas]
-    .map((l) => JSON.stringify(l, Object.keys(l).sort()))
+    .map((l) => JSON.stringify(canonicalizar(l)))
     .sort()
     .join('\n')
   return crypto.createHash('sha256').update(canon).digest('hex')
@@ -153,8 +169,8 @@ export async function sincronizarManutencao(opts: { sheets: SheetsInput; db: Db;
       if (!rankingAlunos.has(linha.id_aluno)) { rep.ignoradosAlunoNovo++; continue }
 
       const existente = existentePorChave.get(`${linha.id_aluno}__${linha.fase}`)
-      const payload: Record<string, number> = {}
-      for (const [col, val] of colsDe(linha)) {
+      const payload: Record<string, unknown> = {}
+      for (const [col, val] of camposDe(linha)) {
         if (val === null) continue                        // NUNCA escreve null
         if (existente) {
           if (ehOverwrite || existente[col] == null) payload[col] = val   // overwrite ativo/forçado / gap-fill antigo
@@ -227,8 +243,8 @@ export async function importarCiclo(opts: { sheets: SheetsInput; db: Db; ciclo: 
   for (const [concurso, ls] of porConcurso) {
     if (!dry) {
       for (const l of ls) {
-        const payload: Record<string, number> = {}
-        for (const [col, val] of colsDe(l)) if (val !== null) payload[col] = val
+        const payload: Record<string, unknown> = {}
+        for (const [col, val] of camposDe(l)) if (val !== null) payload[col] = val
         const { error } = await db.insert('resultados', {
           id_aluno: l.id_aluno, nome_aluno: l.nome_aluno, mentor: l.mentor,
           ciclo_nome: ciclo, concurso, fase: l.fase, ...payload,
@@ -253,7 +269,7 @@ export async function importarCiclo(opts: { sheets: SheetsInput; db: Db; ciclo: 
 }
 
 // Nomes das abas necessárias (a rota busca e monta o SheetsInput).
-export const ABAS_NECESSARIAS = ['Respostas-Simulado', 'Simulados', 'Cadastro Alunos', 'Usuarios'] as const
+export const ABAS_NECESSARIAS = ['Respostas-Simulado', 'Simulados', 'Cadastro Alunos', 'Usuarios', 'Gabaritos'] as const
 
 export function montarSheetsInput(abas: Record<string, any[]>): SheetsInput {
   return {
@@ -261,5 +277,6 @@ export function montarSheetsInput(abas: Record<string, any[]>): SheetsInput {
     simulados: abas['Simulados'] || [],
     cadastroAlunos: abas['Cadastro Alunos'] || [],
     usuarios: abas['Usuarios'] || [],
+    gabaritos: abas['Gabaritos'] || [],
   }
 }
