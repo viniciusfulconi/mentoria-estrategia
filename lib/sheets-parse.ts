@@ -333,9 +333,16 @@ const SimuladoSchema = z.object({
 
 // ─── mapeamento de fase ──────────────────────────────────────────────────────
 
+// Sentinela de descarte DELIBERADO (Simulado Zero). Separa-se de `null` — que
+// significa "rótulo que o parse não reconhece" — porque os dois casos merecem
+// tratamento oposto: o primeiro é regra de negócio e some em silêncio; o segundo
+// é dado perdido e precisa virar aviso, senão uma aba com a Fase digitada fora do
+// padrão some do app sem deixar rastro (foi o ponto cego do Ciclo 9).
+export const FASE_IGNORADA = '__ignorar__'
+
 function detectarFase(faseRaw: string, materiaRaw: string | null): string | null {
   const f = norm(faseRaw)
-  if (f.includes('zero')) return null                 // Simulado Zero → ignorar
+  if (f.includes('zero')) return FASE_IGNORADA        // Simulado Zero → ignorar
   if (f.startsWith('1')) return '1fase'
   if (f.startsWith('2')) {
     const m = norm(materiaRaw ?? '')
@@ -388,6 +395,9 @@ export function parseSimulados(input: SheetsInput): ParseResult {
   let orfaosAluno = 0
   let orfaosSimulado = 0
   let pulouPEC = 0
+  // Rótulo de fase não reconhecido → nº de respostas descartadas. A chave guarda o
+  // que estava escrito na planilha para o aviso dizer O QUE corrigir, não só quanto.
+  const faseDesconhecida = new Map<string, number>()
   const divergenciasQ: string[] = []                  // detalhamento × agregado declarado
   const redacaoPendente = new Map<string, number>()   // ciclo → nº de ITA com português sem redação
 
@@ -413,8 +423,15 @@ export function parseSimulados(input: SheetsInput): ParseResult {
     if (numeroCiclo(ciclo_nome) < 1) continue
     const modelo = norm(simParsed.data.Modelo)
     const concurso: 'ITA' | 'IME' = modelo.includes('ime') ? 'IME' : 'ITA'
-    const fase = detectarFase(str(pick(sim, 'Fase')) ?? '', str(pick(sim, 'Materia')))
-    if (!fase) continue                                 // Simulado Zero / fase desconhecida
+    const faseRaw = str(pick(sim, 'Fase')) ?? ''
+    const materiaRaw = str(pick(sim, 'Materia'))
+    const fase = detectarFase(faseRaw, materiaRaw)
+    if (fase === FASE_IGNORADA) continue                // Simulado Zero → descarte deliberado
+    if (!fase) {                                        // rótulo fora do padrão → dado perdido
+      const chave = `${ciclo_nome}: Fase="${faseRaw}"${materiaRaw ? ` / Materia="${materiaRaw}"` : ''}`
+      faseDesconhecida.set(chave, (faseDesconhecida.get(chave) ?? 0) + 1)
+      continue
+    }
 
     // Escopo: só Presencial.
     const aluno = alunoById[idAluno]
@@ -528,6 +545,17 @@ export function parseSimulados(input: SheetsInput): ParseResult {
 
   if (orfaosAluno) avisos.push(`${orfaosAluno} resposta(s) de aluno sem cadastro — ignoradas.`)
   if (orfaosSimulado) avisos.push(`${orfaosSimulado} resposta(s) de simulado desconhecido — ignoradas.`)
+  if (faseDesconhecida.size) {
+    const total = [...faseDesconhecida.values()].reduce((a, b) => a + b, 0)
+    const chaves = [...faseDesconhecida.entries()].sort((a, b) => b[1] - a[1])
+    const TETO = 10
+    const detalhe = chaves.slice(0, TETO).map(([k, n]) => `${k} → ${n}`).join('; ')
+    const resto = chaves.length > TETO ? ` (e mais ${chaves.length - TETO} caso(s))` : ''
+    avisos.push(
+      `${total} resposta(s) com fase não reconhecida — IGNORADAS. Corrija a coluna ` +
+      `"Fase"/"Materia" na aba Simulados: ${detalhe}${resto}.`
+    )
+  }
   if (pulouPEC) avisos.push(`${pulouPEC} resposta(s) de aluno não-Presencial — fora do escopo (PEC).`)
   for (const [ciclo, n] of redacaoPendente) {
     avisos.push(`${ciclo} (ITA): ${n} resposta(s) de português sem nota de redação — esses alunos seguem Em andamento.`)

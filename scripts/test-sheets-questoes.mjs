@@ -229,3 +229,61 @@ test('a forma canônica preserva o detalhamento e ignora a ordem das chaves', ()
   assert.notEqual(antes, depois, 'mudar uma questão tem que mudar a forma canônica')
   assert.equal(antes, reordenado, 'ordem das chaves não pode inventar mudança')
 })
+
+// ─── fase não reconhecida: o descarte não pode ser silencioso ────────────────
+// Ponto cego real: no Ciclo 9 a 1ª fase não apareceu no app e não havia como
+// distinguir "não foi lançada" de "foi lançada com o rótulo fora do padrão",
+// porque `detectarFase` devolvia null e o parse dava `continue` sem contar nada.
+
+test('fase com rótulo fora do padrão vira AVISO, não some em silêncio', () => {
+  const r = parseSimulados(entrada({
+    simulado: { idSimulado: 's9', Ciclo: 'Ciclo 9', Modelo: 'ITA', Fase: 'Objetiva', Materia: null },
+    resposta: { Nota: 7 },
+  }))
+
+  assert.equal(r.linhas.length, 0, 'a resposta continua fora — o parse não adivinha o rótulo')
+  const aviso = r.avisos.find((a) => a.includes('fase não reconhecida'))
+  assert.ok(aviso, 'tem que avisar')
+  assert.ok(aviso.includes('Ciclo 9'), 'diz em qual ciclo')
+  assert.ok(aviso.includes('Objetiva'), 'diz o que estava escrito na planilha')
+})
+
+test('fase de 2ª com matéria fora do padrão também avisa', () => {
+  const r = parseSimulados(entrada({
+    simulado: { idSimulado: 's9', Ciclo: 'Ciclo 9', Modelo: 'ITA', Fase: '2ª Fase', Materia: 'Interdisciplinar' },
+    resposta: { Nota: 7 },
+  }))
+
+  const aviso = r.avisos.find((a) => a.includes('fase não reconhecida'))
+  assert.ok(aviso && aviso.includes('Interdisciplinar'), 'a matéria não mapeada aparece no aviso')
+})
+
+test('Simulado Zero segue sendo descarte deliberado — sem aviso', () => {
+  const r = parseSimulados(entrada({
+    simulado: { idSimulado: 's0', Ciclo: 'Ciclo 1', Modelo: 'ITA', Fase: 'Simulado Zero', Materia: null },
+    resposta: { Nota: 7 },
+  }))
+
+  assert.equal(r.linhas.length, 0)
+  assert.equal(r.avisos.find((a) => a.includes('fase não reconhecida')), undefined,
+    'regra de negócio não é anomalia — avisar aqui viraria ruído em toda execução')
+})
+
+test('respostas do mesmo rótulo quebrado são agregadas numa linha só do aviso', () => {
+  const sim = { idSimulado: 's9', Ciclo: 'Ciclo 9', Modelo: 'ITA', Fase: 'Objetiva', Materia: null }
+  const r = parseSimulados({
+    simulados: [sim],
+    respostas: [
+      { idResposta: 'r1', Simulado: 's9', Aluno: 'a1', Nota: 7 },
+      { idResposta: 'r2', Simulado: 's9', Aluno: 'a1', Nota: 8 },
+      { idResposta: 'r3', Simulado: 's9', Aluno: 'a1', Nota: 9 },
+    ],
+    cadastroAlunos: [ALUNO],
+    usuarios: [USUARIO],
+    gabaritos: [],
+  })
+
+  const aviso = r.avisos.find((a) => a.includes('fase não reconhecida'))
+  assert.ok(aviso.startsWith('3 resposta(s)'), 'conta as respostas perdidas')
+  assert.ok(aviso.includes('→ 3'), 'e mostra quantas caíram em cada rótulo')
+})
