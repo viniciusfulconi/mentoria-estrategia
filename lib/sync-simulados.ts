@@ -20,6 +20,7 @@ import crypto from 'node:crypto'
 import type { Db } from '@/lib/db-server'
 import { parseSimulados, canonicalizar, type SheetsInput, type ParseResult, type ResultadoFaseRow } from '@/lib/sheets-parse'
 import { calcularRankings, ordenarEClassificar } from '@/lib/rankings'
+import { emBlocos } from '@/lib/concorrencia'
 
 const COLS_NOTA = [
   'media_1fase', 'acertos_mat_1f', 'acertos_fis_1f', 'acertos_qui_1f', 'acertos_ing_1f',
@@ -176,6 +177,9 @@ export async function sincronizarManutencao(opts: { sheets: SheetsInput; db: Db;
     const existentePorChave = new Map((existentes || []).map((r) => [`${r.id_aluno}__${r.fase}`, r]))
     let tocouCiclo = false
 
+    // Passo 1 (puro): decide o que escrever em cada linha. Sem I/O, para o passo 2
+    // poder rodar concorrente sem que a decisão de uma linha veja a escrita de outra.
+    const pendentes: { linha: ResultadoFaseRow; existente: any; payload: Record<string, unknown> }[] = []
     for (const linha of linhas) {
       if (!rankingAlunos.has(linha.id_aluno)) {
         rep.ignoradosAlunoNovo++
@@ -195,22 +199,30 @@ export async function sincronizarManutencao(opts: { sheets: SheetsInput; db: Db;
       }
       if (Object.keys(payload).length === 0) continue
 
-      if (dry) { if (existente) rep.atualizados++; else rep.inseridos++; tocouCiclo = true; continue }
+      tocouCiclo = true
+      if (dry) { if (existente) rep.atualizados++; else rep.inseridos++; continue }
+      pendentes.push({ linha, existente, payload })
+    }
 
+    // Passo 2: as escritas. `pendentes` fica vazio no dry-run, que só conta acima.
+    // Os contadores sobem por escrita CONFIRMADA, como no laço serial: se o sync
+    // abortar no meio, o relatório não pode alegar linha que não foi gravada.
+    const erroEscrita = await emBlocos(pendentes, async ({ linha, existente, payload }) => {
       if (existente) {
         const { error: e } = await db.update('resultados', { id: `eq.${existente.id}` }, payload)
-        if (e) { rep.erro = `Erro update ${linha.nome_aluno}/${linha.fase}: ${e}`; return rep }
+        if (e) return `Erro update ${linha.nome_aluno}/${linha.fase}: ${e}`
         rep.atualizados++
-      } else {
-        const { error: e } = await db.insert('resultados', {
-          id_aluno: linha.id_aluno, nome_aluno: linha.nome_aluno, mentor: linha.mentor,
-          ciclo_nome, concurso, fase: linha.fase, ...payload,
-        })
-        if (e) { rep.erro = `Erro insert ${linha.nome_aluno}/${linha.fase}: ${e}`; return rep }
-        rep.inseridos++
+        return null
       }
-      tocouCiclo = true
-    }
+      const { error: e } = await db.insert('resultados', {
+        id_aluno: linha.id_aluno, nome_aluno: linha.nome_aluno, mentor: linha.mentor,
+        ciclo_nome, concurso, fase: linha.fase, ...payload,
+      })
+      if (e) return `Erro insert ${linha.nome_aluno}/${linha.fase}: ${e}`
+      rep.inseridos++
+      return null
+    })
+    if (erroEscrita) { rep.erro = erroEscrita; return rep }
 
     if (tocouCiclo) ciclosTocados.add(`${ciclo_nome}__${concurso}`)
   }

@@ -11,6 +11,7 @@
 import { dbQueryAll, dbUpdate, dbInsert } from '@/lib/supabase'
 import { calcularRankings } from '@/lib/rankings'
 import type { Db } from '@/lib/db-server'
+import { emBlocos } from '@/lib/concorrencia'
 
 // Implementação de `Db` para o BROWSER — usa os helpers de lib/supabase, que leem
 // o JWT do usuário no localStorage. É o default de salvarNotasAluno/recalcularCiclo,
@@ -175,9 +176,9 @@ export async function recalcularCiclo(ciclo: string, concurso: string, db: Db = 
       return String(a.row.id_aluno) < String(b.row.id_aluno) ? -1 : 1
     })
 
-  let atualizados = 0
-  for (let i = 0; i < ordenadas.length; i++) {
-    const { row, nr } = ordenadas[i]
+  // A posição sai da ordem do array, então o payload de cada linha é decidido
+  // antes de qualquer escrita — nenhuma linha depende do resultado de outra.
+  const escritas = ordenadas.map(({ row, nr }, i) => {
     const classificacao = i + 1
     const payload = nr
       ? {
@@ -192,9 +193,19 @@ export async function recalcularCiclo(ciclo: string, concurso: string, db: Db = 
           classificacao,
         }
       : { classificacao }
+    return { row, payload }
+  })
+
+  // Em blocos, não em série: o sync recalcula todo ciclo que tocou, e no backfill
+  // do detalhamento isso é ~880 linhas de ranking de uma vez — em série estoura o
+  // maxDuration da rota sozinho. Ver lib/concorrencia.ts.
+  let atualizados = 0
+  const erro2 = await emBlocos(escritas, async ({ row, payload }) => {
     const { error: e } = await db.update('resultados', { id: `eq.${row.id}` }, payload)
-    if (e) throw new Error(`Erro ao atualizar ranking de ${row.nome_aluno}: ${e}`)
+    if (e) return `Erro ao atualizar ranking de ${row.nome_aluno}: ${e}`
     atualizados++
-  }
+    return null
+  })
+  if (erro2) throw new Error(erro2)
   return { atualizados }
 }
