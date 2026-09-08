@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState, useCallback } from 'react'
 import { dbQuery, dbUpdate } from '@/lib/supabase'
+import { carregarAlunos } from '@/lib/alunos'
 import { useAuth } from '@/contexts/AuthContext'
 import Nav from '@/components/Nav'
 import Link from 'next/link'
@@ -48,12 +49,9 @@ export default function Tarefas() {
     let mapaNomes: Record<string, string> = {}
     let idsAlunos: string[] = []
     if (isMentor || isCoord) {
-      const paramsAlunos: Record<string, string> = isMentor
-        ? { mentor: `eq.${perfil.mentor_nome || ''}`, order: 'nome' }
-        : { order: 'nome' }
-      const { data: als } = await dbQuery('alunos_dados', paramsAlunos, 'id_aluno,nome')
-      ;(als || []).forEach((a: any) => { mapaNomes[a.id_aluno] = a.nome })
-      idsAlunos = (als || []).map((a: any) => a.id_aluno)
+      const als = await carregarAlunos(verticalAtiva || 'ITA', perfil)
+      als.forEach(a => { mapaNomes[a.id] = a.nome })
+      idsAlunos = als.map(a => a.id)
       setNomes(mapaNomes)
     }
 

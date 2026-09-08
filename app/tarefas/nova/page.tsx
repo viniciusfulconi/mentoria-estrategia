@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { dbQuery, dbInsert } from '@/lib/supabase'
+import { dbInsert } from '@/lib/supabase'
+import { carregarAlunos, carregarMaterias } from '@/lib/alunos'
 import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
 import Nav from '@/components/Nav'
@@ -16,7 +17,6 @@ const TIPOS = [
 export default function NovaTarefa() {
   const { perfil, verticalAtiva } = useAuth()
   const router = useRouter()
-  const isMentor = perfil?.papel === 'mentor'
 
   const [alunos, setAlunos] = useState<any[]>([])
   const [materias, setMaterias] = useState<string[]>([])
@@ -41,24 +41,22 @@ export default function NovaTarefa() {
 
   useEffect(() => {
     if (!perfil) return
-    const paramsAlunos: Record<string, string> = isMentor
-      ? { mentor: `eq.${perfil.mentor_nome || ''}`, order: 'nome' }
-      : { order: 'nome' }
+    const vert = verticalAtiva || 'ITA'
     Promise.all([
-      dbQuery('alunos_dados', paramsAlunos, 'id_aluno,nome,mentor'),
-      dbQuery('topicos', {}, 'materia'),
-    ]).then(([{ data: a }, { data: m }]) => {
-      setAlunos(a || [])
-      setMaterias([...new Set((m || []).map((x: any) => x.materia))].sort() as string[])
+      carregarAlunos(vert, perfil),
+      carregarMaterias(vert),
+    ]).then(([a, m]) => {
+      setAlunos(a)
+      setMaterias(m)
     })
-  }, [perfil])
+  }, [perfil, verticalAtiva])
 
   const alunosFiltrados = alunos.filter(a =>
     a.nome?.toLowerCase().includes(busca.toLowerCase())
   )
   const idsSelecionados = Object.keys(selecionados).filter(k => selecionados[k])
   const todosVisiveisSelecionados = alunosFiltrados.length > 0 &&
-    alunosFiltrados.every(a => selecionados[a.id_aluno])
+    alunosFiltrados.every(a => selecionados[a.id])
 
   function toggle(id: string) {
     setSelecionados(s => ({ ...s, [id]: !s[id] }))
@@ -66,7 +64,7 @@ export default function NovaTarefa() {
   function toggleTodos() {
     const novo = { ...selecionados }
     const marcar = !todosVisiveisSelecionados
-    alunosFiltrados.forEach(a => { novo[a.id_aluno] = marcar })
+    alunosFiltrados.forEach(a => { novo[a.id] = marcar })
     setSelecionados(novo)
   }
 
@@ -146,9 +144,9 @@ export default function NovaTarefa() {
             {alunosFiltrados.length === 0 ? (
               <div style={{ padding: 16, textAlign: 'center', color: '#999', fontSize: 13 }}>Nenhum aluno encontrado.</div>
             ) : alunosFiltrados.map(a => {
-              const sel = !!selecionados[a.id_aluno]
+              const sel = !!selecionados[a.id]
               return (
-                <div key={a.id_aluno} onClick={() => toggle(a.id_aluno)} style={{
+                <div key={a.id} onClick={() => toggle(a.id)} style={{
                   display: 'flex', alignItems: 'center', gap: 10, padding: '9px 10px', borderRadius: 8,
                   cursor: 'pointer', background: sel ? '#fff7ed' : 'transparent',
                 }}>

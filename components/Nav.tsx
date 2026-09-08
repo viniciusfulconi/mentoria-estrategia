@@ -8,7 +8,7 @@ import { dbQuery, dbUpdate } from '@/lib/supabase'
 import {
   LayoutDashboard, Users, Handshake, Calendar,
   GraduationCap, Star, ClipboardList, FileText, KeyRound,
-  PlayCircle, LogOut, MoreHorizontal, Menu, X, Bell, UserCircle, Bot, Trophy, BookOpen, NotebookPen, Feather, Swords, ListChecks, FolderOpen,
+  PlayCircle, LogOut, MoreHorizontal, Menu, X, Bell, UserCircle, Bot, Trophy, BookOpen, NotebookPen, Feather, Swords, ListChecks, FolderOpen, Target,
 } from 'lucide-react'
 
 type LucideIcon = React.ComponentType<{ size?: number; strokeWidth?: number; color?: string }>
@@ -37,6 +37,7 @@ const tabsCoordenadorSecundarioITA = [
 ]
 const tabsCoordenadorSecundarioMed = [
   { href: '/med/simulados', label: 'Simulados', icon: BookOpen },
+  { href: '/med/mapa',      label: 'Mapa',      icon: Target },
   { href: '/turmas',        label: 'Turmas',    icon: GraduationCap },
   { href: '/gestao/notas',  label: 'Notas',     icon: NotebookPen },
   { href: '/mentores',      label: 'Mentores',  icon: Users },
@@ -205,6 +206,9 @@ export default function Nav() {
         // Medicina não tem visão de turma nem provas antigas (feature ITA)
         .filter(t => t.href !== '/turma' && t.href !== '/provas-antigas')
         .map(t => t.href === '/mentor' ? { ...t, href: '/med/mentor' } : t)
+        .flatMap(t => t.href === '/med/mentor'
+          ? [t, { href: '/med/mapa', label: 'Mapa', icon: Target }]
+          : [t])
     : tabsMentor
 
   const tabs = isGestor ? tabsPrimarioFinal
