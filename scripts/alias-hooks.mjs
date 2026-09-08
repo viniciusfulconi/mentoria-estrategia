@@ -32,6 +32,13 @@ registerHooks({
       if (!alvo) throw new Error(`alias-hooks: não achei "${especificador}" a partir de ${raiz}`)
       return { url: pathToFileURL(alvo).href, shortCircuit: true }
     }
+    // Import relativo sem extensão entre módulos TS (ex.: lib/tri/simulado.ts
+    // faz `from './index'`). O bundler resolve; o Node exige o arquivo exato.
+    if (especificador.startsWith('.') && contexto.parentURL?.startsWith('file:')) {
+      const base = resolvePath(dirname(fileURLToPath(contexto.parentURL)), especificador)
+      const alvo = arquivoDe(base)
+      if (alvo) return { url: pathToFileURL(alvo).href, shortCircuit: true }
+    }
     return seguinte(especificador, contexto)
   },
 })

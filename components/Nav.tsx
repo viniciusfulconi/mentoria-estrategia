@@ -38,6 +38,7 @@ const tabsCoordenadorSecundarioITA = [
 const tabsCoordenadorSecundarioMed = [
   { href: '/med/simulados', label: 'Simulados', icon: BookOpen },
   { href: '/med/mapa',      label: 'Mapa',      icon: Target },
+  { href: '/med/enem',      label: 'ENEM',      icon: FileText },
   { href: '/turmas',        label: 'Turmas',    icon: GraduationCap },
   { href: '/gestao/notas',  label: 'Notas',     icon: NotebookPen },
   { href: '/mentores',      label: 'Mentores',  icon: Users },
@@ -192,7 +193,12 @@ export default function Nav() {
     ? '/med/aluno'
     : perfil?.aluno_id ? `/aluno/${perfil.aluno_id}` : '/meu-perfil'
 
-  const tabsAlunoFinal = tabsAluno.map(t => t.href === '/meu-perfil' ? { ...t, href: alunoHome } : t)
+  const tabsAlunoFinal = tabsAluno
+    .map(t => t.href === '/meu-perfil' ? { ...t, href: alunoHome } : t)
+    // Provas do ENEM são da vertical Medicina; o aluno do ITA não vê.
+    .flatMap(t => t.href === alunoHome && perfil?.vertical === 'Medicina'
+      ? [t, { href: '/med/enem', label: 'ENEM', icon: FileText }]
+      : [t])
 
   const tabsPrimarioFinal = isGestor && verticalAtiva === 'Medicina'
     ? tabsCoordenadorPrimario.map(t => {
@@ -209,7 +215,8 @@ export default function Nav() {
         .flatMap(t => t.href === '/med/mentor'
           ? [t,
              { href: '/med/mapa',      label: 'Mapa',      icon: Target },
-             { href: '/med/simulados', label: 'Simulados', icon: BookOpen }]
+             { href: '/med/simulados', label: 'Simulados', icon: BookOpen },
+             { href: '/med/enem',      label: 'ENEM',      icon: FileText }]
           : [t])
     : tabsMentor
 

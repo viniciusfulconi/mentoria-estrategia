@@ -11,7 +11,13 @@ interface Props {
 // Tokens reconhecidos: imagem ![](...), molécula {smiles:...} ou [smiles:...],
 // LaTeX $$...$$ e $...$. A forma {smiles:...} aceita colchetes no SMILES
 // (ex.: cargas [CH2+], [O-]); a forma [smiles:...] é mantida por compatibilidade.
-const SPLIT_RE = /(!\[[^\]]*\]\([^)]+\)|\{smiles:[^}]*\}|\[smiles:[^\]]*\]|\$\$[\s\S]*?\$\$|\$(?!\$)[^$\n]*?\$)/g
+// Um cifrão escapado (\$) é dinheiro, não fórmula: sem o lookbehind, um
+// enunciado com "R\$ 14.240,00 … R\$ 36,00" pareia os dois como se fosse math e
+// engole o texto no meio. 63 itens do acervo do ENEM caem nisso.
+const SPLIT_RE = /(!\[[^\]]*\]\([^)]+\)|\{smiles:[^}]*\}|\[smiles:[^\]]*\]|(?<!\\)\$\$[\s\S]*?(?<!\\)\$\$|(?<!\\)\$(?!\$)[^$\n]*?(?<!\\)\$)/g
+
+/** Devolve o cifrão escapado ao texto exibido: "R\$ 10" → "R$ 10". */
+const desescapaCifrao = (t: string) => t.replace(/\\\$/g, '$')
 
 export default function LatexRenderer({ text, className }: Props) {
   const ref = useRef<HTMLDivElement>(null)
@@ -66,7 +72,7 @@ export default function LatexRenderer({ text, className }: Props) {
         continue
       }
 
-      html.push(escapeHtml(part).replace(/\n/g, '<br/>'))
+      html.push(escapeHtml(desescapaCifrao(part)).replace(/\n/g, '<br/>'))
     }
 
     ref.current.innerHTML = html.join('')
