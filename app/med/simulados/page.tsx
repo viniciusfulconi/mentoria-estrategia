@@ -26,11 +26,12 @@ type Simulado = {
 export default function SimuladosMed() {
   const router = useRouter()
   const { perfil } = useAuth()
+  const isGestor = perfil?.papel === 'coordenador' || perfil?.papel === 'direcao'
   const [simulados, setSimulados] = useState<Simulado[]>([])
   const [carregando, setCarregando] = useState(true)
 
   useEffect(() => {
-    if (perfil && perfil.papel !== 'coordenador' && perfil.papel !== 'direcao') { router.replace('/'); return }
+    if (perfil && !['coordenador', 'direcao', 'mentor'].includes(perfil.papel)) { router.replace('/'); return }
     dbQuery<Simulado>('simulados_med', { vertical: 'eq.Medicina', order: 'created_at.desc' }, '*,turmas(nome),simulado_templates(nome)')
       .then(({ data }) => { setSimulados(data || []); setCarregando(false) })
   }, [perfil])
@@ -46,9 +47,11 @@ export default function SimuladosMed() {
       }}>
         <div>
           <div style={{ fontSize: 17, fontWeight: 700 }}>Simulados</div>
-          <div style={{ fontSize: 11, color: '#999' }}>Medicina</div>
+          <div style={{ fontSize: 11, color: '#999' }}>
+            {isGestor ? 'Medicina' : 'Desempenho dos seus alunos'}
+          </div>
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
+        {isGestor && <div style={{ display: 'flex', gap: 8 }}>
           <Link href="/med/simulados/templates" style={{
             display: 'flex', alignItems: 'center', gap: 5,
             background: 'white', border: '1px solid rgba(0,0,0,0.12)',
@@ -66,7 +69,7 @@ export default function SimuladosMed() {
           }}>
             <Plus size={15} /> Novo
           </Link>
-        </div>
+        </div>}
       </div>
 
       <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -77,16 +80,16 @@ export default function SimuladosMed() {
             <div style={{ fontSize: 32, marginBottom: 12 }}>📝</div>
             <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 6 }}>Nenhum simulado ainda</div>
             <div style={{ fontSize: 13, color: '#aaa', marginBottom: 20 }}>
-              Crie um modelo de prova e depois o primeiro simulado.
+              {isGestor ? 'Crie um modelo de prova e depois o primeiro simulado.' : 'Nenhum simulado foi aplicado ainda.'}
             </div>
-            <Link href="/med/simulados/novo" style={{
+            {isGestor && <Link href="/med/simulados/novo" style={{
               display: 'inline-flex', alignItems: 'center', gap: 6,
               background: 'var(--purple)', color: 'white', textDecoration: 'none',
               padding: '10px 20px', borderRadius: 10, fontSize: 13, fontWeight: 600,
               fontFamily: 'DM Sans, sans-serif',
             }}>
               <Plus size={14} /> Criar primeiro simulado
-            </Link>
+            </Link>}
           </div>
         ) : simulados.map(s => {
           const cfg = STATUS_SIM[s.status] || STATUS_SIM.criado

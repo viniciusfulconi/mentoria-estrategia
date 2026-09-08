@@ -207,7 +207,9 @@ export default function Nav() {
         .filter(t => t.href !== '/turma' && t.href !== '/provas-antigas')
         .map(t => t.href === '/mentor' ? { ...t, href: '/med/mentor' } : t)
         .flatMap(t => t.href === '/med/mentor'
-          ? [t, { href: '/med/mapa', label: 'Mapa', icon: Target }]
+          ? [t,
+             { href: '/med/mapa',      label: 'Mapa',      icon: Target },
+             { href: '/med/simulados', label: 'Simulados', icon: BookOpen }]
           : [t])
     : tabsMentor
 

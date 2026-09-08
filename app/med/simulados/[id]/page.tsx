@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState, useMemo, useRef } from 'react'
 import { dbQuery, dbUpdate, dbInsert, dbUpsert, dbDelete } from '@/lib/supabase'
+import { carregarAlunos } from '@/lib/alunos'
 import { useRouter, useParams } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import Nav from '@/components/Nav'
@@ -96,10 +97,19 @@ export default function SimuladoDetalhe() {
   const [triScores, setTriScores] = useState<TriScore[]>([])
   const [modoRanking, setModoRanking] = useState<'bruto' | 'tri'>('bruto')
 
+  // Gestor vê a turma inteira e edita; mentor vê só os alunos dele, em leitura.
+  const isGestor = perfil?.papel === 'coordenador' || perfil?.papel === 'direcao'
+  // Média da turma toda, calculada ANTES do recorte — serve de referência para
+  // o mentor saber se o aluno foi mal ou se a prova inteira foi difícil.
+  const [refTurma, setRefTurma] = useState<{
+    n: number; mediaObj: number; mediaTotal: number; porMateria: Record<string, number>
+  } | null>(null)
+
   useEffect(() => {
     if (perfil && perfil.papel !== 'coordenador' && perfil.papel !== 'direcao' && perfil.papel !== 'mentor') {
       router.replace('/'); return
     }
+    if (perfil?.papel === 'mentor') setTab('resultados')
     carregar()
   }, [perfil, id])
 
@@ -123,12 +133,43 @@ export default function SimuladoDetalhe() {
     })
     setGabaritoMap(map)
     setTopicosMap(tm)
-    setScores(sc || [])
-    setScoresMat(sm || [])
+    const todosScores = sc || []
+    const todosMat = sm || []
+
+    // Referência da turma sai do conjunto completo, sempre.
+    if (todosScores.length > 0) {
+      const somaMat: Record<string, { acertos: number; total: number }> = {}
+      todosMat.filter(m => m.fase === 1).forEach(m => {
+        const acc = (somaMat[m.materia] ||= { acertos: 0, total: 0 })
+        acc.acertos += m.acertos; acc.total += m.total_questoes
+      })
+      const porMateria: Record<string, number> = {}
+      Object.entries(somaMat).forEach(([mat, v]) => {
+        if (v.total > 0) porMateria[mat] = v.acertos / v.total
+      })
+      setRefTurma({
+        n: todosScores.length,
+        mediaObj:   todosScores.reduce((a, x) => a + (x.pontos_objetiva || 0), 0) / todosScores.length,
+        mediaTotal: todosScores.reduce((a, x) => a + (x.total_pontos || 0), 0) / todosScores.length,
+        porMateria,
+      })
+    }
+
+    // Mentor só enxerga os próprios alunos.
+    let visiveis = todosScores, visiveisMat = todosMat
+    let idsMeus: Set<string> | null = null
+    if (perfil?.papel === 'mentor') {
+      const meus = await carregarAlunos('Medicina', perfil)
+      idsMeus = new Set(meus.map(a => a.id))
+      visiveis    = todosScores.filter(x => idsMeus!.has(x.aluno_id))
+      visiveisMat = todosMat.filter(x => idsMeus!.has(x.aluno_id))
+    }
+    setScores(visiveis)
+    setScoresMat(visiveisMat)
 
     if (sim?.simulado_templates?.tipo === 'enem') {
       const { data: tri } = await dbQuery<TriScore>('enem_tri_area_scores', { simulado_id: `eq.${id}` })
-      setTriScores(tri || [])
+      setTriScores(idsMeus ? (tri || []).filter(t => idsMeus!.has(t.aluno_id)) : (tri || []))
     }
 
     setCarregando(false)
@@ -337,7 +378,7 @@ export default function SimuladoDetalhe() {
             {simulado.turmas?.nome && <span style={{ fontSize: 11, color: '#999' }}>{simulado.turmas.nome}</span>}
           </div>
         </div>
-        <button
+        {isGestor && <button
           onClick={deletarSimulado}
           title="Excluir simulado"
           style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ccc', padding: 8, borderRadius: 8, display: 'flex', alignItems: 'center' }}
@@ -345,17 +386,19 @@ export default function SimuladoDetalhe() {
           onMouseLeave={e => (e.currentTarget.style.color = '#ccc')}
         >
           <Trash2 size={18} />
-        </button>
+        </button>}
       </div>
 
       {/* Tabs */}
       <div style={{ background: 'white', borderBottom: '1px solid rgba(0,0,0,0.08)' }}>
         <div style={{ display: 'flex', padding: '0 16px' }}>
-          {([
+          {((isGestor ? [
             { id: 'questoes',   label: `Questões (${questoes.length})` },
             { id: 'gabarito',   label: 'Gabarito' },
             { id: 'resultados', label: 'Resultados' },
-          ] as { id: Tab; label: string }[]).map(t => (
+          ] : [
+            { id: 'resultados', label: 'Desempenho dos meus alunos' },
+          ]) as { id: Tab; label: string }[]).map(t => (
             <button key={t.id} onClick={() => setTab(t.id)} style={{
               padding: '12px 16px', background: 'none', border: 'none', cursor: 'pointer',
               fontSize: 13, fontWeight: tab === t.id ? 600 : 400,
@@ -622,6 +665,43 @@ export default function SimuladoDetalhe() {
             )
           })()}
 
+          {!isGestor && scores.length === 0 && (
+            <div style={{ background: 'white', border: '0.5px solid rgba(0,0,0,0.08)', borderRadius: 12, padding: '28px 20px', textAlign: 'center' }}>
+              <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 5 }}>Nenhum aluno seu fez este simulado</div>
+              <div style={{ fontSize: 13, color: '#999' }}>
+                {refTurma ? `${refTurma.n} aluno(s) da turma participaram.` : 'Os resultados ainda não foram importados.'}
+              </div>
+            </div>
+          )}
+
+          {/* Referência da turma — sem nomear alunos de outros mentores */}
+          {!isGestor && refTurma && scores.length > 0 && (
+            <div style={{ background: '#F8FAFC', border: '0.5px solid rgba(0,0,0,0.08)', borderRadius: 12, padding: '12px 14px' }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, marginBottom: 8 }}>
+                <span style={{ fontSize: 12.5, fontWeight: 700, color: '#333' }}>Referência da turma</span>
+                <span style={{ fontSize: 11.5, color: '#888' }}>
+                  {refTurma.n} alunos · média {refTurma.mediaObj.toFixed(1)} pts
+                </span>
+              </div>
+              <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+                {Object.entries(refTurma.porMateria)
+                  .sort((a, b) => b[1] - a[1])
+                  .map(([mat, pct]) => (
+                    <span key={mat} style={{
+                      fontSize: 10.5, padding: '2px 7px', borderRadius: 6,
+                      background: 'white', border: '0.5px solid rgba(0,0,0,0.10)', color: '#555',
+                    }}>
+                      {mat} <b style={{ color: '#333' }}>{(pct * 100).toFixed(0)}%</b>
+                    </span>
+                  ))}
+              </div>
+              <div style={{ fontSize: 11, color: '#aaa', marginTop: 7, lineHeight: 1.45 }}>
+                Média de acertos de todos os alunos que fizeram a prova. Serve para separar
+                o que foi dificuldade do seu aluno do que foi dificuldade da prova.
+              </div>
+            </div>
+          )}
+
           {/* Ranking de alunos (bruto) */}
           {(!isENEM || modoRanking === 'bruto') && scores.length > 0 && (() => {
             const temRedacao = questoes.some(q => q.fase === 2)
@@ -635,7 +715,7 @@ export default function SimuladoDetalhe() {
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
                   <div style={{ fontSize: 13, fontWeight: 700, color: '#333' }}>
-                    Ranking — {ranking.length} aluno(s) · {pontoMax} pts possíveis
+                    {isGestor ? 'Ranking' : 'Meus alunos'} — {ranking.length} aluno(s) · {pontoMax} pts possíveis
                   </div>
                   {temRedacao && (
                     <div style={{ display: 'flex', background: '#F1F5F9', borderRadius: 8, padding: 3, gap: 2 }}>
@@ -720,6 +800,7 @@ export default function SimuladoDetalhe() {
             )
           })()}
 
+          {isGestor && (<>
           <div style={{ background: '#F0F9FF', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: '#0369a1', lineHeight: 1.6 }}>
             <strong>Formato CSV:</strong> Col A: Nome · Col B: E-mail · Col C+: respostas em ordem (objetiva = letra, dissertativa = pontuação).<br />
             Uma importação por dia de prova.
@@ -840,6 +921,7 @@ export default function SimuladoDetalhe() {
               </button>
             </>
           )}
+          </>)}
         </div>
       )}
     </div>
