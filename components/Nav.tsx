@@ -8,7 +8,7 @@ import { dbQuery, dbUpdate } from '@/lib/supabase'
 import {
   LayoutDashboard, Users, Handshake, Calendar,
   GraduationCap, Star, ClipboardList, FileText, KeyRound,
-  PlayCircle, LogOut, MoreHorizontal, Menu, X, Bell, UserCircle, Bot, Trophy, BookOpen, NotebookPen, Feather, Swords, ListChecks, FolderOpen, Target,
+  PlayCircle, LogOut, MoreHorizontal, Menu, X, Bell, UserCircle, Bot, Trophy, BookOpen, NotebookPen, Feather, Swords, ListChecks, FolderOpen, Target, CalendarClock,
 } from 'lucide-react'
 
 type LucideIcon = React.ComponentType<{ size?: number; strokeWidth?: number; color?: string }>
@@ -39,6 +39,7 @@ const tabsCoordenadorSecundarioMed = [
   { href: '/med/simulados', label: 'Simulados', icon: BookOpen },
   { href: '/med/mapa',      label: 'Mapa',      icon: Target },
   { href: '/med/enem',      label: 'ENEM',      icon: FileText },
+  { href: '/revisoes',      label: 'Revisões',  icon: CalendarClock },
   { href: '/turmas',        label: 'Turmas',    icon: GraduationCap },
   { href: '/gestao/notas',  label: 'Notas',     icon: NotebookPen },
   { href: '/mentores',      label: 'Mentores',  icon: Users },
@@ -197,7 +198,9 @@ export default function Nav() {
     .map(t => t.href === '/meu-perfil' ? { ...t, href: alunoHome } : t)
     // Provas do ENEM são da vertical Medicina; o aluno do ITA não vê.
     .flatMap(t => t.href === alunoHome && perfil?.vertical === 'Medicina'
-      ? [t, { href: '/med/enem', label: 'ENEM', icon: FileText }]
+      ? [t,
+         { href: '/med/enem',  label: 'ENEM',     icon: FileText },
+         { href: '/revisoes',  label: 'Revisões', icon: CalendarClock }]
       : [t])
 
   const tabsPrimarioFinal = isGestor && verticalAtiva === 'Medicina'
@@ -216,7 +219,8 @@ export default function Nav() {
           ? [t,
              { href: '/med/mapa',      label: 'Mapa',      icon: Target },
              { href: '/med/simulados', label: 'Simulados', icon: BookOpen },
-             { href: '/med/enem',      label: 'ENEM',      icon: FileText }]
+             { href: '/med/enem',      label: 'ENEM',      icon: FileText },
+             { href: '/revisoes',      label: 'Revisões',  icon: CalendarClock }]
           : [t])
     : tabsMentor
 

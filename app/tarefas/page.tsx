@@ -2,6 +2,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { dbQuery, dbUpdate } from '@/lib/supabase'
 import { carregarAlunos } from '@/lib/alunos'
+import { criarRevisoes730 } from '@/lib/revisao730'
 import { useAuth } from '@/contexts/AuthContext'
 import Nav from '@/components/Nav'
 import Link from 'next/link'
@@ -85,6 +86,19 @@ export default function Tarefas() {
     })
     setSalvando(false)
     if (error) { alert(error); return }
+
+    // Medicina: cumprir a tarefa fecha o conteúdo → agenda as revisões 7-15-30.
+    // O dedupe (30 dias por conteúdo) evita ciclo duplicado se reticar.
+    const t = sel.tarefa
+    if (t?.vertical === 'Medicina' && t?.materia) {
+      criarRevisoes730(sel.aluno_id, [{
+        materia: t.materia,
+        label: t.topico || t.comentario?.split(' — ')[0] || t.materia,
+        origem: 'tarefa',
+        tarefa_id: t.id,
+      }]).catch(() => {})
+    }
+
     setSel(null); setComentarioAluno('')
     carregar()
   }

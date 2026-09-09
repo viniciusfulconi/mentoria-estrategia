@@ -140,6 +140,7 @@ export default function MapaDetalhe() {
       criado_por_papel: perfil?.papel ?? null,
       criado_por_nome: perfil?.nome ?? null,
       materia: b.materia,
+      topico: b.topico,
       tipo: b.tipo,                         // 'teoria' | 'lista'
       // A tarefa só guarda a matéria, então o tópico vai no comentário —
       // senão o aluno recebe "Biologia · Teoria" sem saber o que revisar.
