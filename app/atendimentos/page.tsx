@@ -334,13 +334,13 @@ export default function Atendimentos() {
     <div style={{ paddingBottom: 80 }}>
       <div style={{ background: 'white', borderBottom: '0.5px solid rgba(0,0,0,0.08)', padding: '16px', position: 'sticky', top: 0, zIndex: 10 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-          <div style={{ fontSize: 17, fontWeight: 600 }}>Atendimentos</div>
+          <div style={{ fontFamily: 'var(--font-display), sans-serif', fontSize: 21, fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--navy)' }}>Atendimentos</div>
           <div style={{ display: 'flex', gap: 6 }}>
             {perfil?.papel === 'coordenador' && (
               <>
                 {verticalAtiva !== 'Medicina' && (
                   <button onClick={abrirResumo}
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#F3F0FF', color: '#f97316', border: 'none', borderRadius: 10, padding: '6px 12px', fontSize: 12, fontWeight: 500, cursor: 'pointer' }}>
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'var(--primary-light)', color: 'var(--primary-dark)', border: 'none', borderRadius: 10, padding: '6px 12px', fontSize: 12, fontWeight: 500, cursor: 'pointer' }}>
                     <Sparkles size={13} strokeWidth={2} />Resumo IA
                   </button>
                 )}
@@ -698,7 +698,7 @@ export default function Atendimentos() {
                       <button key={t.id} onClick={() => setTipoResumo(t.id)} style={{
                         flex: 1, padding: '7px 4px', borderRadius: 10, fontSize: 11, fontWeight: tipoResumo === t.id ? 600 : 400,
                         border: `1.5px solid ${tipoResumo === t.id ? '#f97316' : 'rgba(0,0,0,0.1)'}`,
-                        background: tipoResumo === t.id ? '#F3F0FF' : 'white',
+                        background: tipoResumo === t.id ? 'var(--primary-light)' : 'white',
                         color: tipoResumo === t.id ? '#f97316' : '#666',
                         cursor: 'pointer', 
                       }}>{t.label}</button>
@@ -726,7 +726,7 @@ export default function Atendimentos() {
                             style={{
                               padding: '10px 14px', cursor: 'pointer',
                               borderBottom: i < arr.length - 1 ? '0.5px solid rgba(0,0,0,0.06)' : 'none',
-                              background: alunoSelecionado?.id_aluno === a.id_aluno ? '#F3F0FF' : 'white',
+                              background: alunoSelecionado?.id_aluno === a.id_aluno ? 'var(--primary-light)' : 'white',
                             }}>
                             <div style={{ fontSize: 13, fontWeight: alunoSelecionado?.id_aluno === a.id_aluno ? 600 : 400, color: alunoSelecionado?.id_aluno === a.id_aluno ? '#f97316' : '#1a1a1a' }}>{a.nome}</div>
                             <div style={{ fontSize: 11, color: '#999', marginTop: 1 }}>{a.mentor}</div>

@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { dbQuery, dbQueryAll } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import Nav from '@/components/Nav'
+import PageHeader from '@/components/PageHeader'
 import Link from 'next/link'
 
 export default function Cronograma() {
@@ -74,14 +75,11 @@ export default function Cronograma() {
 
   return (
     <div style={{ paddingBottom: 80 }}>
-      <div style={{ background: 'white', borderBottom: '0.5px solid rgba(0,0,0,0.08)', padding: '16px', position: 'sticky', top: 0, zIndex: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ fontSize: 17, fontWeight: 600 }}>Cronograma</div>
-        {perfil?.papel === 'coordenador' && (
-          <Link href="/cronograma/novo" style={{ textDecoration: 'none', background: '#f97316', color: 'white', borderRadius: 10, padding: '7px 14px', fontSize: 13, fontWeight: 500 }}>
-            {concurso ? '✎ Editar' : '+ Novo'}
-          </Link>
-        )}
-      </div>
+      <PageHeader title="Cronograma" actions={perfil?.papel === 'coordenador' && (
+        <Link href="/cronograma/novo" style={{ textDecoration: 'none', background: 'var(--primary)', color: 'white', borderRadius: 10, padding: '8px 15px', fontSize: 13, fontWeight: 600, boxShadow: '0 2px 8px rgba(249,115,22,0.32)' }}>
+          {concurso ? 'Editar' : '+ Novo'}
+        </Link>
+      )} />
 
       {/* Abas */}
       <div style={{ display: 'flex', gap: 4, padding: '8px 16px', background: 'white', borderBottom: '0.5px solid rgba(0,0,0,0.06)' }}>

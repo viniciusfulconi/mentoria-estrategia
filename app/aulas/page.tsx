@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { dbQuery } from '@/lib/supabase'
 import Nav from '@/components/Nav'
+import PageHeader from '@/components/PageHeader'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
 import { X, PlayCircle, FileText, ExternalLink } from 'lucide-react'
@@ -36,12 +37,9 @@ export default function Aulas() {
 
   return (
     <div style={{ paddingBottom: 80 }}>
-      <div style={{ background: 'white', borderBottom: '0.5px solid rgba(0,0,0,0.08)', padding: '16px', position: 'sticky', top: 0, zIndex: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ fontSize: 17, fontWeight: 600 }}>Aulas</div>
-        {isCoordenador && (
-          <Link href="/aulas/nova" style={{ textDecoration: 'none', background: '#f97316', color: 'white', borderRadius: 10, padding: '7px 14px', fontSize: 13, fontWeight: 500 }}>+ Nova</Link>
-        )}
-      </div>
+      <PageHeader title="Aulas" actions={isCoordenador && (
+        <Link href="/aulas/nova" style={{ textDecoration: 'none', background: 'var(--primary)', color: 'white', borderRadius: 10, padding: '8px 15px', fontSize: 13, fontWeight: 600, boxShadow: '0 2px 8px rgba(249,115,22,0.32)' }}>+ Nova</Link>
+      )} />
 
       <div style={{ display: 'flex', gap: 6, overflowX: 'auto', padding: '10px 16px', background: 'white', borderBottom: '0.5px solid rgba(0,0,0,0.06)' }}>
         {filtros.map(f => (
@@ -90,7 +88,7 @@ export default function Aulas() {
                       ) : tipo !== 'pdf' ? (
                         <img src={ytThumb(a.youtube_id)} alt={a.titulo} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.85, position: 'absolute', inset: 0 }} onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
                       ) : (
-                        <div style={{ position: 'absolute', inset: 0, background: '#F3F0FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <div style={{ position: 'absolute', inset: 0, background: 'var(--primary-light)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                           <FileText size={32} color="#f97316" strokeWidth={1.5} />
                         </div>
                       )}

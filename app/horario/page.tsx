@@ -191,7 +191,7 @@ export default function Horario() {
       {/* Header */}
       <div style={{ background: 'white', borderBottom: '0.5px solid rgba(0,0,0,0.08)', padding: '12px 16px', position: 'sticky', top: 0, zIndex: 10 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-          <div style={{ fontSize: 17, fontWeight: 600 }}>Horário</div>
+          <div style={{ fontFamily: 'var(--font-display), sans-serif', fontSize: 21, fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--navy)' }}>Horário</div>
           <div style={{ display: 'flex', gap: 6 }}>
             {isCoord && (
               <div style={{ display: 'flex', gap: 4 }}>
