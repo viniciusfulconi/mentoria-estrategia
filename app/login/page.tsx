@@ -112,7 +112,7 @@ export default function Login() {
         background: '#0A1628',
       }}>
         <img
-          src="/login-bg.png"
+          src="/login-bg.jpg"
           alt=""
           style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }}
         />
