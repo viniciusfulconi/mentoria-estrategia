@@ -63,8 +63,12 @@ export default function Horario() {
     setTurmaId(turmas?.[0]?.id || null)
 
     const params: Record<string, string> = { vertical: `eq.${vertical}`, order: 'data_inicio' }
-    if (perfil.papel === 'aluno' && perfil.aluno_id) {
-      params['or'] = `(aluno_id.eq.${perfil.aluno_id},aluno_id.is.null)`
+    if (perfil.papel === 'aluno') {
+      // Aluno sem vínculo vê só a agenda geral — sem o filtro ele receberia
+      // as atividades per-aluno de todo mundo.
+      params['or'] = perfil.aluno_id
+        ? `(aluno_id.eq.${perfil.aluno_id},aluno_id.is.null)`
+        : `(aluno_id.is.null)`
     }
     // dbQueryAll (paginado): atividades já passou de 1000 linhas (provas antigas em massa),
     // e o dbQuery normal trunca no teto do PostgREST — cortava tudo após ~06/08.

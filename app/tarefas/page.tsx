@@ -56,7 +56,10 @@ export default function Tarefas() {
     }
 
     const params: Record<string, string> = { order: 'created_at.desc' }
-    if (isAluno && perfil.aluno_id) {
+    if (isAluno) {
+      // Sem vínculo não há o que mostrar — jamais consultar sem filtro, senão
+      // o aluno recebe as tarefas de todo mundo (RLS de leitura é aberto).
+      if (!perfil.aluno_id) { setLinhas([]); setLoading(false); return }
       params.aluno_id = `eq.${perfil.aluno_id}`
     } else if (isMentor) {
       if (idsAlunos.length === 0) { setLinhas([]); setLoading(false); return }

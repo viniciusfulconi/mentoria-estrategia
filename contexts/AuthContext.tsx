@@ -116,7 +116,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           )
           if (resp.ok) {
             const data = await resp.json()
-            if (Array.isArray(data) && data.length > 0) setPerfil(data[0])
+            if (Array.isArray(data) && data.length > 0) {
+              const p = data[0]
+              // O cadastro público não vincula aluno de Medicina a `alunos`
+              // (só o ITA escolhe o nome na lista), então o perfil nasce com
+              // aluno_id nulo — e sem ele tarefas, horário, ENEM e Mapa não
+              // acham o aluno. Resolve pelo email uma única vez e persiste.
+              if (p.papel === 'aluno' && p.vertical === 'Medicina' && !p.aluno_id && p.email) {
+                try {
+                  const ar = await fetch(
+                    `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/alunos?email=eq.${encodeURIComponent(p.email)}&vertical=eq.Medicina&select=id`,
+                    { headers: { apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, Authorization: `Bearer ${session.access_token}` }, signal: ctrl.signal }
+                  )
+                  const al = ar.ok ? await ar.json() : []
+                  if (al?.[0]?.id) {
+                    p.aluno_id = al[0].id
+                    // best-effort: se a policy de self-update deixar, grava para
+                    // as próximas sessões; se não deixar, o app segue funcionando
+                    fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/perfis?id=eq.${p.id}`, {
+                      method: 'PATCH',
+                      headers: {
+                        apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+                        Authorization: `Bearer ${session.access_token}`,
+                        'Content-Type': 'application/json',
+                        Prefer: 'return=minimal',
+                      },
+                      body: JSON.stringify({ aluno_id: p.aluno_id }),
+                    }).catch(() => {})
+                  }
+                } catch { /* segue sem vínculo; as telas tratam */ }
+              }
+              setPerfil(p)
+            }
           }
         } finally {
           clearTimeout(tid)
