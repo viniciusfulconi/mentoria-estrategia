@@ -58,16 +58,46 @@ export default function RelatorioEnem({ tentativaId }: { tentativaId: string }) 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
-      {/* ── Ranking ───────────────────────────────────────────────── */}
-      <div style={{ display: 'grid', gap: 8, gridTemplateColumns: 'repeat(auto-fit, minmax(132px, 1fr))' }}>
-        {['GERAL', ...porArea.map(a => a.key)].map(k => {
-          const r = dados.ranking[k]
+      {/* ── Ranking: nota geral em destaque + áreas ─────────────────── */}
+      {dados.ranking.GERAL && (
+        <div style={{
+          background: 'linear-gradient(135deg, #12305f, #0a1a3a)', borderRadius: 18, padding: '18px 20px',
+          display: 'flex', alignItems: 'center', gap: 18, color: 'white',
+          boxShadow: '0 8px 30px rgba(15,37,84,0.28)',
+        }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '.06em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.6)' }}>
+              Média geral
+            </div>
+            <div style={{
+              fontFamily: 'var(--font-display), sans-serif', fontSize: 40, fontWeight: 800,
+              fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em', lineHeight: 1,
+            }}>
+              {dados.ranking.GERAL.nota.toFixed(1)}
+            </div>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ fontSize: 24, fontWeight: 700, color: '#fdba74', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
+              {dados.ranking.GERAL.rank}º
+            </div>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)', marginTop: 4 }}>
+              de {dados.ranking.GERAL.total}
+              {dados.ranking.GERAL.percentil != null && ` · top ${100 - dados.ranking.GERAL.percentil + 1}%`}
+            </div>
+          </div>
+        </div>
+      )}
+      <div style={{ display: 'grid', gap: 8, gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))' }}>
+        {porArea.map(a => {
+          const r = dados.ranking[a.key]
           if (!r) return null
-          const label = k === 'GERAL' ? 'Média geral' : ENEM_AREAS.find(a => a.key === k)?.short
           return (
-            <div key={k} style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 12, padding: '11px 13px' }}>
-              <div style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: .4, color: 'var(--text-hint)' }}>{label}</div>
-              <div style={{ fontSize: 21, fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: 'var(--navy)', lineHeight: 1.2 }}>
+            <div key={a.key} style={{
+              background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 14,
+              padding: '12px 13px', boxShadow: 'var(--shadow-xs)',
+            }}>
+              <div style={{ fontSize: 10.5, fontWeight: 600, textTransform: 'uppercase', letterSpacing: .4, color: 'var(--text-hint)' }}>{a.short}</div>
+              <div style={{ fontSize: 21, fontWeight: 800, fontVariantNumeric: 'tabular-nums', color: 'var(--navy)', lineHeight: 1.2, letterSpacing: '-0.01em' }}>
                 {r.nota.toFixed(1)}
               </div>
               <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
@@ -81,7 +111,7 @@ export default function RelatorioEnem({ tentativaId }: { tentativaId: string }) 
 
       {/* ── Acertos por matéria ───────────────────────────────────── */}
       <div style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 12, padding: '13px 15px' }}>
-        <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 10 }}>Acertos por matéria</div>
+        <div style={{ fontFamily: 'var(--font-display), sans-serif', fontSize: 14.5, fontWeight: 700, marginBottom: 12, color: 'var(--navy)', letterSpacing: '-0.01em' }}>Acertos por matéria</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           {dados.materias.map(m => (
             <div key={m.materia} style={{ display: 'flex', alignItems: 'center', gap: 9, fontSize: 12.5 }}>
@@ -106,9 +136,11 @@ export default function RelatorioEnem({ tentativaId }: { tentativaId: string }) 
         const acertos = qs.filter(q => q.acertou).length
         return (
           <div key={area.key} style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 12, padding: '13px 15px' }}>
-            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
-              <span style={{ fontSize: 13, fontWeight: 700 }}>{area.label}</span>
-              <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{acertos}/{qs.length} acertos</span>
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 12 }}>
+              <span style={{ fontFamily: 'var(--font-display), sans-serif', fontSize: 14.5, fontWeight: 700, color: 'var(--navy)', letterSpacing: '-0.01em' }}>{area.label}</span>
+              <span style={{ fontSize: 12.5, color: 'var(--text-muted)' }}>
+                <b style={{ color: 'var(--teal-dark)', fontVariantNumeric: 'tabular-nums' }}>{acertos}</b>/{qs.length} acertos
+              </span>
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
               {qs.map(q => {
@@ -116,10 +148,13 @@ export default function RelatorioEnem({ tentativaId }: { tentativaId: string }) 
                 return (
                   <button key={q.qid} onClick={() => setAberta(q)}
                     title={`Questão ${q.n}${q.materia ? ' · ' + q.materia : ''}${q.anulada ? ' · anulada' : ''}`}
+                    onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 4px 10px rgba(15,37,84,0.15)' }}
+                    onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = 'none' }}
                     style={{
-                      width: 30, height: 30, borderRadius: 8, cursor: 'pointer',
+                      width: 31, height: 31, borderRadius: 9, cursor: 'pointer',
                       border: `1px solid ${c.bd}`, background: c.bg, color: c.fg,
-                      fontSize: 11, fontWeight: 700, fontVariantNumeric: 'tabular-nums',
+                      fontSize: 11.5, fontWeight: 700, fontVariantNumeric: 'tabular-nums',
+                      transition: 'transform .15s ease, box-shadow .15s ease',
                     }}>
                     {q.n}
                   </button>

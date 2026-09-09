@@ -233,16 +233,20 @@ label {
    FASE 2 — refinamentos por componente
 ───────────────────────────────────────── */
 
-/* Card de aluno (dashboard do mentor): eleva e destaca a seta no hover */
-a:hover .aluno-card {
+/* Card de lista: eleva e destaca a seta no hover.
+   Cobre o card DENTRO de um link (a:hover .aluno-card) e o link que É o card
+   (a.aluno-card:hover) — as duas formas usadas nas telas. */
+a:hover .aluno-card,
+a.aluno-card:hover {
   box-shadow: var(--shadow-md);
   transform: translateY(-1px);
   border-color: rgba(249, 115, 22, 0.35);
 }
-a:hover .aluno-card .aluno-chevron { transform: translateX(3px); color: var(--primary); }
+a:hover .aluno-card .aluno-chevron,
+a.aluno-card:hover .aluno-chevron { transform: translateX(3px); color: var(--primary); }
 
 /* Respeita quem pediu menos movimento */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition: none !important; animation: none !important; }
-  a:hover .aluno-card { transform: none; }
+  a:hover .aluno-card, a.aluno-card:hover { transform: none; }
 }

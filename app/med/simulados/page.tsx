@@ -95,14 +95,14 @@ export default function SimuladosMed() {
           const cfg = STATUS_SIM[s.status] || STATUS_SIM.criado
           return (
             <Link key={s.id} href={`/med/simulados/${s.id}`} style={{ textDecoration: 'none' }}>
-              <div style={{
-                background: 'white', borderRadius: 14, padding: '14px 16px',
-                border: '0.5px solid rgba(0,0,0,0.08)',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-                display: 'flex', alignItems: 'center', gap: 12,
+              <div className="aluno-card" style={{
+                background: 'var(--card)', borderRadius: 14, padding: '13px 15px',
+                border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)',
+                display: 'flex', alignItems: 'center', gap: 13,
+                transition: 'box-shadow .18s ease, transform .18s ease, border-color .18s ease',
               }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: '#1a1a1a', marginBottom: 4 }}>{s.nome}</div>
+                  <div style={{ fontSize: 14.5, fontWeight: 600, color: 'var(--navy)', marginBottom: 5, letterSpacing: '-0.01em' }}>{s.nome}</div>
                   <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
                     <span style={{ background: cfg.bg, color: cfg.color, fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 20 }}>
                       {cfg.label}
@@ -118,7 +118,7 @@ export default function SimuladosMed() {
                     </span>
                   </div>
                 </div>
-                <ChevronRight size={18} color="#ccc" />
+                <ChevronRight size={17} color="var(--text-hint)" className="aluno-chevron" style={{ transition: 'transform .18s ease' }} />
               </div>
             </Link>
           )

@@ -65,13 +65,18 @@ export default function EnemLista() {
               const enviadas = !isAluno ? tentativas.filter(t => t.prova_id === p.id).length : 0
               const nota = minha?.resultado?.nota_media_areas
               return (
-                <Link key={p.id} href={`/med/enem/${p.id}`} style={{
-                  display: 'flex', alignItems: 'center', gap: 12, textDecoration: 'none', color: 'inherit',
-                  background: 'white', border: '1px solid var(--border)', borderRadius: 12, padding: '13px 15px',
+                <Link key={p.id} href={`/med/enem/${p.id}`} className="aluno-card" style={{
+                  display: 'flex', alignItems: 'center', gap: 13, textDecoration: 'none', color: 'inherit',
+                  background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 14, padding: '13px 15px',
+                  boxShadow: 'var(--shadow-xs)',
+                  transition: 'box-shadow .18s ease, transform .18s ease, border-color .18s ease',
                 }}>
-                  <FileText size={17} color="var(--text-hint)" style={{ flex: 'none' }} />
+                  <div style={{
+                    width: 34, height: 34, borderRadius: 9, flex: 'none',
+                    background: 'var(--navy-light)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}><FileText size={16} color="var(--navy)" /></div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 14, fontWeight: 600 }}>{p.titulo}</div>
+                    <div style={{ fontSize: 14.5, fontWeight: 600, color: 'var(--navy)', letterSpacing: '-0.01em' }}>{p.titulo}</div>
                     <div style={{ fontSize: 11.5, color: 'var(--text-hint)', marginTop: 2 }}>
                       {isAluno
                         ? (minha?.status === 'enviada'
@@ -88,7 +93,7 @@ export default function EnemLista() {
                       {nota != null ? nota.toFixed(0) : '✓'}
                     </span>
                   )}
-                  <ChevronRight size={16} color="var(--text-hint)" />
+                  <ChevronRight size={17} color="var(--text-hint)" className="aluno-chevron" style={{ transition: 'transform .18s ease' }} />
                 </Link>
               )
             })}
