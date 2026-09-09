@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { supabase, dbQuery } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import Nav from '@/components/Nav'
+import PageHeader from '@/components/PageHeader'
 import Link from 'next/link'
 import { Clock, Brain, CalendarCheck, Video } from 'lucide-react'
 
@@ -78,28 +79,22 @@ export default function MentorDashboard() {
 
   return (
     <div style={{ paddingBottom: 80 }}>
-      <div style={{ background: 'white', borderBottom: '0.5px solid rgba(0,0,0,0.08)', padding: '16px', position: 'sticky', top: 0, zIndex: 10 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <div style={{ fontSize: 11, color: '#999' }}>Mentor</div>
-            <div style={{ fontSize: 16, fontWeight: 600 }}>{perfil?.mentor_nome || perfil?.nome}</div>
-          </div>
-          <button onClick={signOut} style={{ background: 'none', border: '0.5px solid rgba(0,0,0,0.12)', borderRadius: 8, padding: '6px 12px', fontSize: 12, cursor: 'pointer', color: '#999' }}>Sair</button>
-        </div>
-      </div>
+      <PageHeader eyebrow="Mentor" title={perfil?.mentor_nome || perfil?.nome || 'Mentor'} actions={
+        <button onClick={signOut} style={{ background: 'none', border: '1px solid var(--border-strong)', borderRadius: 9, padding: '7px 13px', fontSize: 12.5, fontWeight: 600, cursor: 'pointer', color: 'var(--text-muted)' }}>Sair</button>
+      } />
 
       {/* Métricas do mês */}
       {metricas !== null && (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, padding: '12px 16px', background: 'white', borderBottom: '0.5px solid rgba(0,0,0,0.06)' }}>
-          <div style={{ textAlign: 'center', padding: '10px 8px', borderRadius: 12, background: '#fff7ed' }}>
-            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 4 }}><CalendarCheck size={16} color="#f97316" strokeWidth={2} /></div>
-            <div style={{ fontSize: 18, fontWeight: 700, color: '#f97316' }}>{metricas.sessoes}</div>
-            <div style={{ fontSize: 10, color: '#64748B' }}>sessões/mês</div>
+          <div style={{ textAlign: 'center', padding: '12px 8px', borderRadius: 14, background: 'var(--primary-light)' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 5 }}><CalendarCheck size={16} color="#f97316" strokeWidth={2.2} /></div>
+            <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--primary-dark)', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>{metricas.sessoes}</div>
+            <div style={{ fontSize: 10.5, color: 'var(--text-muted)', marginTop: 3 }}>sessões/mês</div>
           </div>
-          <div style={{ textAlign: 'center', padding: '10px 8px', borderRadius: 12, background: '#F0FDF4' }}>
-            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 4 }}><Clock size={16} color="#16A34A" strokeWidth={2} /></div>
-            <div style={{ fontSize: 18, fontWeight: 700, color: '#16A34A' }}>{metricas.horas}h</div>
-            <div style={{ fontSize: 10, color: '#64748B' }}>horas/mês</div>
+          <div style={{ textAlign: 'center', padding: '12px 8px', borderRadius: 14, background: '#F0FDF4' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 5 }}><Clock size={16} color="#16A34A" strokeWidth={2.2} /></div>
+            <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--teal-dark)', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>{metricas.horas}h</div>
+            <div style={{ fontSize: 10.5, color: 'var(--text-muted)', marginTop: 3 }}>horas/mês</div>
           </div>
           <div style={{ textAlign: 'center', padding: '10px 8px', borderRadius: 12, background: metricas.psico > 0 ? '#FFF7ED' : '#F8FAFC' }}>
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 4 }}><Brain size={16} color={metricas.psico > 0 ? '#EA580C' : '#94A3B8'} strokeWidth={2} /></div>
@@ -166,11 +161,17 @@ export default function MentorDashboard() {
               return (
                 <div key={r.id} className="card" style={{ marginBottom: 8, display: 'flex', alignItems: 'center', gap: 12 }}>
                   <Link href={`/aluno/${r.id_aluno}`} style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0 }}>
-                    <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#fff7ed', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 600, color: '#f97316', flexShrink: 0 }}>
+                    <div style={{
+                      width: 30, height: 30, borderRadius: '50%', flexShrink: 0,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 12, fontWeight: 800, fontVariantNumeric: 'tabular-nums',
+                      background: (r.classificacao || i + 1) <= 3 ? 'var(--navy)' : 'var(--primary-light)',
+                      color: (r.classificacao || i + 1) <= 3 ? '#fff' : 'var(--primary-dark)',
+                    }}>
                       {r.classificacao || i + 1}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 13, fontWeight: 500 }}>{r.nome_aluno}</div>
+                      <div style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--navy)', letterSpacing: '-0.01em' }}>{r.nome_aluno}</div>
                       <div style={{ display: 'flex', gap: 8, fontSize: 10, color: '#999', marginTop: 2 }}>
                         {r.media_1fase !== null && <span>1ª: {Number(r.media_1fase).toFixed(1)}</span>}
                         {r.nota_matematica !== null && <span>Mat: {Number(r.nota_matematica).toFixed(1)}</span>}

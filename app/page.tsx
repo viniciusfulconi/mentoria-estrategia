@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { dbQuery, dbQueryAll } from '@/lib/supabase'
 import { mediaFinalCiclo } from '@/lib/rankings'
 import Nav from '@/components/Nav'
+import PageHeader from '@/components/PageHeader'
 import ErroLoad from '@/components/ErroLoad'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
@@ -291,13 +292,9 @@ export default function Home() {
 
   return (
     <div style={{ paddingBottom: 80 }}>
-      <div style={{ background: 'white', borderBottom: '0.5px solid rgba(0,0,0,0.08)', padding: '16px', position: 'sticky', top: 0, zIndex: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
-          <div style={{ fontSize: 11, color: '#999', marginBottom: 2 }}>Estratégia Concursos</div>
-          <div style={{ fontSize: 17, fontWeight: 600, color: '#f97316' }}>Mentoria</div>
-        </div>
-        <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#fff7ed', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 600, color: '#1E40AF' }}>CO</div>
-      </div>
+      <PageHeader eyebrow="Estratégia Concursos" title="Mentoria" actions={
+        <div style={{ width: 38, height: 38, borderRadius: '50%', background: 'var(--navy-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: 'var(--navy)' }}>CO</div>
+      } />
 
       <div style={{ padding: 16 }}>
 
@@ -308,15 +305,15 @@ export default function Home() {
           {statCards.map(s => {
             const Icon = s.icon
             return (
-              <div key={s.label} style={{ background: 'white', border: '0.5px solid rgba(0,0,0,0.08)', borderRadius: 16, padding: '14px 16px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <div style={{ fontSize: 11, color: '#999' }}>{s.label}</div>
-                  <div style={{ width: 28, height: 28, borderRadius: 8, background: s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <Icon size={14} color={s.color} strokeWidth={2} />
+              <div key={s.label} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, padding: '15px 16px', boxShadow: 'var(--shadow-xs)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '.03em', textTransform: 'uppercase', color: 'var(--text-hint)' }}>{s.label}</div>
+                  <div style={{ width: 30, height: 30, borderRadius: 9, background: s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <Icon size={15} color={s.color} strokeWidth={2.2} />
                   </div>
                 </div>
-                <div style={{ fontSize: 26, fontWeight: 700, color: '#1a1a1a', lineHeight: 1 }}>{loading ? '—' : s.value}</div>
-                <div style={{ fontSize: 11, color: '#bbb', marginTop: 3 }}>{s.sub}</div>
+                <div style={{ fontSize: 27, fontWeight: 800, color: 'var(--navy)', lineHeight: 1, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>{loading ? '—' : s.value}</div>
+                <div style={{ fontSize: 11.5, color: 'var(--text-muted)', marginTop: 4 }}>{s.sub}</div>
               </div>
             )
           })}
