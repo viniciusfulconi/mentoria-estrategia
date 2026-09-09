@@ -221,7 +221,7 @@ export default function Horario() {
             <button key={v} onClick={() => setVis(v)} style={{
               padding: '4px 12px', borderRadius: 16, fontSize: 11, border: 'none',
               background: vis === v ? '#f97316' : '#F1F5F9', color: vis === v ? 'white' : '#666',
-              cursor: 'pointer', fontFamily: 'DM Sans,sans-serif',
+              cursor: 'pointer', 
             }}>{v === 'dia' ? 'Dia' : v === 'semana' ? 'Semana' : v === 'mes' ? 'Mês' : 'Ano'}</button>
           ))}
         </div>
@@ -346,11 +346,11 @@ export default function Horario() {
                   await dbDelete('atividades', { id: `eq.${id}` })
                   setAtividades(prev => prev.filter(a => a.id !== id))
                   setAtividadeSelecionada(null)
-                }} style={{ flex: 1, padding: 10, borderRadius: 10, border: '1px solid #DC2626', background: 'white', color: '#DC2626', fontSize: 13, cursor: 'pointer', fontFamily: 'DM Sans,sans-serif', fontWeight: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                }} style={{ flex: 1, padding: 10, borderRadius: 10, border: '1px solid #DC2626', background: 'white', color: '#DC2626', fontSize: 13, cursor: 'pointer', fontWeight: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
                   <Trash2 size={14} strokeWidth={2} />Apagar
                 </button>
               )}
-              <button onClick={() => setAtividadeSelecionada(null)} style={{ flex: 1, padding: 10, borderRadius: 10, border: 'none', background: '#F1F5F9', color: '#666', fontSize: 13, cursor: 'pointer', fontFamily: 'DM Sans,sans-serif' }}>
+              <button onClick={() => setAtividadeSelecionada(null)} style={{ flex: 1, padding: 10, borderRadius: 10, border: 'none', background: '#F1F5F9', color: '#666', fontSize: 13, cursor: 'pointer' }}>
                 Fechar
               </button>
             </div>

@@ -201,7 +201,7 @@ export default function ProfessorCSAT() {
         <div style={{ display: 'flex', gap: 6, overflowX: 'auto', padding: '8px 16px', background: 'white', borderBottom: '0.5px solid rgba(0,0,0,0.06)' }}>
           <button
             onClick={() => { setMateriaAtiva('todas'); setAvaliacaoAtiva('todas') }}
-            style={{ padding: '4px 12px', borderRadius: 16, fontSize: 11, border: 'none', background: materiaAtiva === 'todas' ? '#1a1a1a' : '#F1F5F9', color: materiaAtiva === 'todas' ? 'white' : '#666', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'DM Sans,sans-serif' }}
+            style={{ padding: '4px 12px', borderRadius: 16, fontSize: 11, border: 'none', background: materiaAtiva === 'todas' ? '#1a1a1a' : '#F1F5F9', color: materiaAtiva === 'todas' ? 'white' : '#666', cursor: 'pointer', whiteSpace: 'nowrap' }}
           >
             Todas
           </button>
@@ -209,7 +209,7 @@ export default function ProfessorCSAT() {
             <button
               key={m}
               onClick={() => { setMateriaAtiva(m); setAvaliacaoAtiva('todas') }}
-              style={{ padding: '4px 12px', borderRadius: 16, fontSize: 11, border: 'none', background: materiaAtiva === m ? '#1a1a1a' : '#F1F5F9', color: materiaAtiva === m ? 'white' : '#666', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'DM Sans,sans-serif' }}
+              style={{ padding: '4px 12px', borderRadius: 16, fontSize: 11, border: 'none', background: materiaAtiva === m ? '#1a1a1a' : '#F1F5F9', color: materiaAtiva === m ? 'white' : '#666', cursor: 'pointer', whiteSpace: 'nowrap' }}
             >
               {m}
             </button>
@@ -221,7 +221,7 @@ export default function ProfessorCSAT() {
       <div style={{ display: 'flex', gap: 6, overflowX: 'auto', padding: '8px 16px', background: 'white', borderBottom: '0.5px solid rgba(0,0,0,0.06)' }}>
         <button
           onClick={() => setAvaliacaoAtiva('todas')}
-          style={{ padding: '4px 12px', borderRadius: 16, fontSize: 11, border: 'none', background: avaliacaoAtiva === 'todas' ? '#f97316' : '#F1F5F9', color: avaliacaoAtiva === 'todas' ? 'white' : '#666', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'DM Sans,sans-serif' }}
+          style={{ padding: '4px 12px', borderRadius: 16, fontSize: 11, border: 'none', background: avaliacaoAtiva === 'todas' ? '#f97316' : '#F1F5F9', color: avaliacaoAtiva === 'todas' ? 'white' : '#666', cursor: 'pointer', whiteSpace: 'nowrap' }}
         >
           Geral
         </button>
@@ -229,7 +229,7 @@ export default function ProfessorCSAT() {
           <button
             key={a.id}
             onClick={() => setAvaliacaoAtiva(a.id)}
-            style={{ padding: '4px 12px', borderRadius: 16, fontSize: 11, border: 'none', background: avaliacaoAtiva === a.id ? '#f97316' : '#F1F5F9', color: avaliacaoAtiva === a.id ? 'white' : '#666', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'DM Sans,sans-serif' }}
+            style={{ padding: '4px 12px', borderRadius: 16, fontSize: 11, border: 'none', background: avaliacaoAtiva === a.id ? '#f97316' : '#F1F5F9', color: avaliacaoAtiva === a.id ? 'white' : '#666', cursor: 'pointer', whiteSpace: 'nowrap' }}
           >
             {a.nome}
           </button>

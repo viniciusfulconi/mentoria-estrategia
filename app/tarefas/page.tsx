@@ -155,7 +155,7 @@ export default function Tarefas() {
             <button key={a.val} onClick={() => setAba(a.val)} style={{
               padding: '6px 16px', borderRadius: 16, fontSize: 12, border: 'none',
               background: aba === a.val ? '#7C3AED' : '#F1F5F9', color: aba === a.val ? 'white' : '#666',
-              cursor: 'pointer', fontFamily: 'DM Sans,sans-serif', fontWeight: aba === a.val ? 600 : 400,
+              cursor: 'pointer', fontWeight: aba === a.val ? 600 : 400,
             }}>{a.label}</button>
           ))}
         </div>
@@ -271,7 +271,7 @@ export default function Tarefas() {
                 </div>
               )}
 
-              <button onClick={() => setSel(null)} style={{ marginTop: 12, width: '100%', padding: 10, borderRadius: 10, border: 'none', background: '#F1F5F9', color: '#666', fontSize: 13, cursor: 'pointer', fontFamily: 'DM Sans,sans-serif' }}>
+              <button onClick={() => setSel(null)} style={{ marginTop: 12, width: '100%', padding: 10, borderRadius: 10, border: 'none', background: '#F1F5F9', color: '#666', fontSize: 13, cursor: 'pointer' }}>
                 Fechar
               </button>
             </div>

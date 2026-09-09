@@ -97,7 +97,7 @@ export default function Admin() {
                           fontSize: 11, fontWeight: 500, color: papelCor(p.papel),
                           border: '0.5px solid rgba(0,0,0,0.12)', borderRadius: 8,
                           padding: '4px 6px', background: '#F7F6F3',
-                          fontFamily: 'DM Sans, sans-serif', cursor: 'pointer',
+                          cursor: 'pointer',
                         }}
                       >
                         <option value="coordenador">⬡ Coord.</option>
@@ -144,7 +144,7 @@ export default function Admin() {
                       fontSize: 11, fontWeight: 500, color: papelCor(p.papel),
                       border: '0.5px solid rgba(0,0,0,0.12)', borderRadius: 8,
                       padding: '4px 6px', background: '#F7F6F3',
-                      fontFamily: 'DM Sans, sans-serif', cursor: 'pointer',
+                      cursor: 'pointer',
                     }}
                   >
                     <option value="coordenador">⬡ Coord.</option>

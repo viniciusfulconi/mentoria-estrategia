@@ -340,20 +340,20 @@ export default function Atendimentos() {
               <>
                 {verticalAtiva !== 'Medicina' && (
                   <button onClick={abrirResumo}
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#F3F0FF', color: '#f97316', border: 'none', borderRadius: 10, padding: '6px 12px', fontSize: 12, fontWeight: 500, cursor: 'pointer', fontFamily: 'DM Sans,sans-serif' }}>
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#F3F0FF', color: '#f97316', border: 'none', borderRadius: 10, padding: '6px 12px', fontSize: 12, fontWeight: 500, cursor: 'pointer' }}>
                     <Sparkles size={13} strokeWidth={2} />Resumo IA
                   </button>
                 )}
                 <Link href="/atendimentos/upload" style={{ textDecoration: 'none', background: '#F1F5F9', color: '#666', borderRadius: 10, padding: '6px 12px', fontSize: 12 }}>↑ Import</Link>
                 <button onClick={abrirExport}
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#F1F5F9', color: '#444', border: 'none', borderRadius: 10, padding: '6px 12px', fontSize: 12, fontWeight: 500, cursor: 'pointer', fontFamily: 'DM Sans,sans-serif' }}>
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#F1F5F9', color: '#444', border: 'none', borderRadius: 10, padding: '6px 12px', fontSize: 12, fontWeight: 500, cursor: 'pointer' }}>
                   <Download size={13} strokeWidth={2} />XLSX
                 </button>
               </>
             )}
             {perfil?.papel === 'mentor' && (
               <button onClick={abrirExport}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#F1F5F9', color: '#444', border: 'none', borderRadius: 10, padding: '6px 12px', fontSize: 12, fontWeight: 500, cursor: 'pointer', fontFamily: 'DM Sans,sans-serif' }}>
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#F1F5F9', color: '#444', border: 'none', borderRadius: 10, padding: '6px 12px', fontSize: 12, fontWeight: 500, cursor: 'pointer' }}>
                 <Download size={13} strokeWidth={2} />XLSX
               </button>
             )}
@@ -367,13 +367,13 @@ export default function Atendimentos() {
         <div style={{ display: 'flex', gap: 6, overflowX: 'auto', marginBottom: 8 }}>
           {(perfil?.papel === 'coordenador' || perfil?.papel === 'direcao') && (
             <select value={mentorSel} onChange={e => setFiltroMentor(e.target.value)}
-              style={{ fontSize: 11, padding: '4px 8px', borderRadius: 8, border: '0.5px solid rgba(0,0,0,0.12)', background: '#F7F6F3', fontFamily: 'DM Sans,sans-serif' }}>
+              style={{ fontSize: 11, padding: '4px 8px', borderRadius: 8, border: '0.5px solid rgba(0,0,0,0.12)', background: '#F7F6F3' }}>
               <option value="todos">Todos os mentores</option>
               {mentores.map(m => <option key={m} value={m}>{m}</option>)}
             </select>
           )}
           <select value={mesSel} onChange={e => setFiltroMes(e.target.value)}
-            style={{ fontSize: 11, padding: '4px 8px', borderRadius: 8, border: '0.5px solid rgba(0,0,0,0.12)', background: '#F7F6F3', fontFamily: 'DM Sans,sans-serif' }}>
+            style={{ fontSize: 11, padding: '4px 8px', borderRadius: 8, border: '0.5px solid rgba(0,0,0,0.12)', background: '#F7F6F3' }}>
             <option value="todos">Todos os meses</option>
             {meses.map(m => <option key={m} value={m}>{mesLabel(m)}</option>)}
           </select>
@@ -390,7 +390,7 @@ export default function Atendimentos() {
               padding: '4px 12px', borderRadius: 14, fontSize: 11, border: 'none',
               background: aba === a.id ? '#1a1a1a' : '#F1F5F9',
               color: aba === a.id ? 'white' : '#666',
-              cursor: 'pointer', fontFamily: 'DM Sans,sans-serif',
+              cursor: 'pointer', 
               display: 'inline-flex', alignItems: 'center', gap: 5,
             }}>
               <a.Icon size={11} strokeWidth={2} />
@@ -424,7 +424,7 @@ export default function Atendimentos() {
         ) : erro ? (
           <div className="card" style={{ textAlign: 'center', padding: 40 }}>
             <div style={{ fontSize: 13, color: '#DC2626', marginBottom: 12 }}>{erro}</div>
-            <button onClick={carregar} style={{ padding: '8px 20px', borderRadius: 10, background: '#f97316', color: 'white', border: 'none', fontSize: 13, cursor: 'pointer', fontFamily: 'DM Sans, sans-serif' }}>Tentar novamente</button>
+            <button onClick={carregar} style={{ padding: '8px 20px', borderRadius: 10, background: '#f97316', color: 'white', border: 'none', fontSize: 13, cursor: 'pointer' }}>Tentar novamente</button>
           </div>
         ) : (
           <>
@@ -466,7 +466,7 @@ export default function Atendimentos() {
             {aba === 'lista' && filtrados.length > limite && (
               <button
                 onClick={() => setLimite(l => l + 50)}
-                style={{ width: '100%', padding: '12px', borderRadius: 12, border: '0.5px solid rgba(0,0,0,0.12)', background: 'white', color: '#f97316', fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', marginBottom: 10 }}
+                style={{ width: '100%', padding: '12px', borderRadius: 12, border: '0.5px solid rgba(0,0,0,0.12)', background: 'white', color: '#f97316', fontSize: 13, fontWeight: 500, cursor: 'pointer', marginBottom: 10 }}
               >
                 Carregar mais ({filtrados.length - limite} restantes)
               </button>
@@ -543,7 +543,7 @@ export default function Atendimentos() {
                       border: `1.5px solid ${editForm.tipo === t ? '#f97316' : 'rgba(0,0,0,0.1)'}`,
                       background: editForm.tipo === t ? '#fff7ed' : 'transparent',
                       color: editForm.tipo === t ? '#f97316' : '#666',
-                      cursor: 'pointer', fontFamily: 'DM Sans,sans-serif', fontSize: 13, fontWeight: 500,
+                      cursor: 'pointer', fontSize: 13, fontWeight: 500,
                     }}>{t}</button>
                   ))}
                 </div>
@@ -599,7 +599,7 @@ export default function Atendimentos() {
               {/* Descrição */}
               <div>
                 <label style={{ fontSize: 12, fontWeight: 600, color: '#555', display: 'block', marginBottom: 6 }}>Descrição</label>
-                <textarea value={editForm.descricao} onChange={e => setEditForm((f: any) => ({ ...f, descricao: e.target.value }))} rows={4} style={{ resize: 'vertical', margin: 0, fontSize: 13, width: '100%', padding: '8px 12px', borderRadius: 10, border: '0.5px solid rgba(0,0,0,0.12)', fontFamily: 'DM Sans,sans-serif' }} />
+                <textarea value={editForm.descricao} onChange={e => setEditForm((f: any) => ({ ...f, descricao: e.target.value }))} rows={4} style={{ resize: 'vertical', margin: 0, fontSize: 13, width: '100%', padding: '8px 12px', borderRadius: 10, border: '0.5px solid rgba(0,0,0,0.12)' }} />
               </div>
 
               {/* Links */}
@@ -617,7 +617,7 @@ export default function Atendimentos() {
               <button onClick={salvarEdicao} disabled={editSaving} style={{
                 padding: '12px', borderRadius: 12, border: 'none',
                 background: '#f97316', color: 'white', fontSize: 14, fontWeight: 600,
-                cursor: 'pointer', fontFamily: 'DM Sans,sans-serif', marginTop: 4,
+                cursor: 'pointer', marginTop: 4,
               }}>
                 {editSaving ? 'Salvando...' : 'Salvar alterações'}
               </button>
@@ -660,7 +660,7 @@ export default function Atendimentos() {
               <button onClick={exportarXLSX} disabled={exportLoading} style={{
                 padding: '12px', borderRadius: 12, border: 'none',
                 background: '#f97316', color: 'white', fontSize: 14, fontWeight: 600,
-                cursor: exportLoading ? 'default' : 'pointer', fontFamily: 'DM Sans,sans-serif', marginTop: 4,
+                cursor: exportLoading ? 'default' : 'pointer', marginTop: 4,
                 display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
               }}>
                 <Download size={16} strokeWidth={2} />
@@ -700,7 +700,7 @@ export default function Atendimentos() {
                         border: `1.5px solid ${tipoResumo === t.id ? '#f97316' : 'rgba(0,0,0,0.1)'}`,
                         background: tipoResumo === t.id ? '#F3F0FF' : 'white',
                         color: tipoResumo === t.id ? '#f97316' : '#666',
-                        cursor: 'pointer', fontFamily: 'DM Sans,sans-serif',
+                        cursor: 'pointer', 
                       }}>{t.label}</button>
                     ))}
                   </div>
@@ -736,7 +736,7 @@ export default function Atendimentos() {
                   </div>
 
                   <button onClick={gerarResumo} disabled={resumoLoading || !alunoSelecionado}
-                    style={{ width: '100%', padding: '12px', borderRadius: 12, border: 'none', background: alunoSelecionado ? '#f97316' : '#E2E8F0', color: alunoSelecionado ? 'white' : '#999', fontSize: 14, fontWeight: 600, cursor: alunoSelecionado ? 'pointer' : 'default', fontFamily: 'DM Sans,sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                    style={{ width: '100%', padding: '12px', borderRadius: 12, border: 'none', background: alunoSelecionado ? '#f97316' : '#E2E8F0', color: alunoSelecionado ? 'white' : '#999', fontSize: 14, fontWeight: 600, cursor: alunoSelecionado ? 'pointer' : 'default', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
                     <Sparkles size={16} strokeWidth={2} />
                     {resumoLoading ? 'Gerando resumo...' : alunoSelecionado ? `Analisar ${alunoSelecionado.nome.split(' ')[0]}` : 'Selecione um aluno'}
                   </button>
@@ -745,7 +745,7 @@ export default function Atendimentos() {
                       <div style={{ fontSize: 12, color: '#999', marginBottom: 8 }}>
                         Extraindo relatórios e consultando IA. Pode levar até 60s.
                       </div>
-                      <button onClick={cancelarResumo} style={{ fontSize: 12, color: '#DC2626', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'DM Sans,sans-serif', textDecoration: 'underline' }}>
+                      <button onClick={cancelarResumo} style={{ fontSize: 12, color: '#DC2626', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>
                         Cancelar
                       </button>
                     </div>
@@ -760,7 +760,7 @@ export default function Atendimentos() {
                     <div style={{ fontSize: 12, color: '#991B1B' }}>{resumoErro}</div>
                   </div>
                   <button onClick={() => { setResumoErro(null) }}
-                    style={{ width: '100%', padding: 10, borderRadius: 10, border: '0.5px solid rgba(0,0,0,0.12)', background: 'transparent', color: '#666', fontSize: 13, cursor: 'pointer', fontFamily: 'DM Sans,sans-serif' }}>
+                    style={{ width: '100%', padding: 10, borderRadius: 10, border: '0.5px solid rgba(0,0,0,0.12)', background: 'transparent', color: '#666', fontSize: 13, cursor: 'pointer' }}>
                     Tentar novamente
                   </button>
                 </div>
@@ -770,7 +770,7 @@ export default function Atendimentos() {
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10 }}>
                     <button onClick={copiarResumo}
-                      style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: copiado ? '#DCFCE7' : '#F1F5F9', color: copiado ? '#14532D' : '#555', border: 'none', borderRadius: 8, padding: '6px 14px', fontSize: 12, fontWeight: 500, cursor: 'pointer', fontFamily: 'DM Sans,sans-serif' }}>
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: copiado ? '#DCFCE7' : '#F1F5F9', color: copiado ? '#14532D' : '#555', border: 'none', borderRadius: 8, padding: '6px 14px', fontSize: 12, fontWeight: 500, cursor: 'pointer' }}>
                       {copiado ? <><Check size={13} strokeWidth={2.5} />Copiado!</> : <><Copy size={13} strokeWidth={2} />Copiar</>}
                     </button>
                   </div>
@@ -778,7 +778,7 @@ export default function Atendimentos() {
                     {resumoTexto}
                   </div>
                   <button onClick={() => { setResumoTexto(null); setResumoErro(null); setAlunoSelecionado(null); setBusca('') }}
-                    style={{ width: '100%', marginTop: 14, padding: 10, borderRadius: 10, border: '0.5px solid rgba(0,0,0,0.12)', background: 'transparent', color: '#666', fontSize: 13, cursor: 'pointer', fontFamily: 'DM Sans,sans-serif' }}>
+                    style={{ width: '100%', marginTop: 14, padding: 10, borderRadius: 10, border: '0.5px solid rgba(0,0,0,0.12)', background: 'transparent', color: '#666', fontSize: 13, cursor: 'pointer' }}>
                     Gerar outro resumo
                   </button>
                 </div>

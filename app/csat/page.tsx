@@ -154,9 +154,9 @@ function AbaMentoria({ podeUpload, vertical }: { podeUpload: boolean; vertical: 
   return (
     <>
       <div style={{ display: 'flex', gap: 6, overflowX: 'auto', padding: '8px 16px 0', background: 'white', borderBottom: '0.5px solid rgba(0,0,0,0.06)' }}>
-        <button onClick={() => setPesquisaAtiva('todas')} style={{ padding: '4px 12px', borderRadius: 16, fontSize: 11, border: 'none', background: pesquisaAtiva === 'todas' ? '#f97316' : '#F1F5F9', color: pesquisaAtiva === 'todas' ? 'white' : '#666', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'DM Sans,sans-serif' }}>Geral</button>
+        <button onClick={() => setPesquisaAtiva('todas')} style={{ padding: '4px 12px', borderRadius: 16, fontSize: 11, border: 'none', background: pesquisaAtiva === 'todas' ? '#f97316' : '#F1F5F9', color: pesquisaAtiva === 'todas' ? 'white' : '#666', cursor: 'pointer', whiteSpace: 'nowrap' }}>Geral</button>
         {pesquisas.map(p => (
-          <button key={p.id} onClick={() => setPesquisaAtiva(p.id)} style={{ padding: '4px 12px', borderRadius: 16, fontSize: 11, border: 'none', background: pesquisaAtiva === p.id ? '#f97316' : '#F1F5F9', color: pesquisaAtiva === p.id ? 'white' : '#666', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'DM Sans,sans-serif' }}>{p.nome}</button>
+          <button key={p.id} onClick={() => setPesquisaAtiva(p.id)} style={{ padding: '4px 12px', borderRadius: 16, fontSize: 11, border: 'none', background: pesquisaAtiva === p.id ? '#f97316' : '#F1F5F9', color: pesquisaAtiva === p.id ? 'white' : '#666', cursor: 'pointer', whiteSpace: 'nowrap' }}>{p.nome}</button>
         ))}
       </div>
 
@@ -166,7 +166,7 @@ function AbaMentoria({ podeUpload, vertical }: { podeUpload: boolean; vertical: 
         ) : erro ? (
           <div className="card" style={{ textAlign: 'center', padding: 40 }}>
             <div style={{ fontSize: 13, color: '#DC2626', marginBottom: 12 }}>{erro}</div>
-            <button onClick={carregar} style={{ padding: '8px 20px', borderRadius: 10, background: '#f97316', color: 'white', border: 'none', fontSize: 13, cursor: 'pointer', fontFamily: 'DM Sans, sans-serif' }}>Tentar novamente</button>
+            <button onClick={carregar} style={{ padding: '8px 20px', borderRadius: 10, background: '#f97316', color: 'white', border: 'none', fontSize: 13, cursor: 'pointer' }}>Tentar novamente</button>
           </div>
         ) : respostas.length === 0 ? (
           <div className="card" style={{ textAlign: 'center', padding: 40, color: '#999' }}>
@@ -275,18 +275,18 @@ function AbaProfessores({ podeUpload, vertical }: { podeUpload: boolean; vertica
     <>
       {/* Matéria filter */}
       <div style={{ display: 'flex', gap: 6, overflowX: 'auto', padding: '8px 16px 0', background: 'white', borderBottom: '0.5px solid rgba(0,0,0,0.06)' }}>
-        <button onClick={() => { setMateriaAtiva('todas'); setAvaliacaoAtiva('todas') }} style={{ padding: '4px 12px', borderRadius: 16, fontSize: 11, border: 'none', background: materiaAtiva === 'todas' ? '#1a1a1a' : '#F1F5F9', color: materiaAtiva === 'todas' ? 'white' : '#666', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'DM Sans,sans-serif' }}>Todas</button>
+        <button onClick={() => { setMateriaAtiva('todas'); setAvaliacaoAtiva('todas') }} style={{ padding: '4px 12px', borderRadius: 16, fontSize: 11, border: 'none', background: materiaAtiva === 'todas' ? '#1a1a1a' : '#F1F5F9', color: materiaAtiva === 'todas' ? 'white' : '#666', cursor: 'pointer', whiteSpace: 'nowrap' }}>Todas</button>
         {materias.map(m => (
-          <button key={m} onClick={() => { setMateriaAtiva(m); setAvaliacaoAtiva('todas') }} style={{ padding: '4px 12px', borderRadius: 16, fontSize: 11, border: 'none', background: materiaAtiva === m ? '#1a1a1a' : '#F1F5F9', color: materiaAtiva === m ? 'white' : '#666', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'DM Sans,sans-serif' }}>{m}</button>
+          <button key={m} onClick={() => { setMateriaAtiva(m); setAvaliacaoAtiva('todas') }} style={{ padding: '4px 12px', borderRadius: 16, fontSize: 11, border: 'none', background: materiaAtiva === m ? '#1a1a1a' : '#F1F5F9', color: materiaAtiva === m ? 'white' : '#666', cursor: 'pointer', whiteSpace: 'nowrap' }}>{m}</button>
         ))}
       </div>
 
       {/* Avaliação filter */}
       {avaliacoesDisponiveis.length > 0 && (
         <div style={{ display: 'flex', gap: 6, overflowX: 'auto', padding: '8px 16px 0', background: 'white', borderBottom: '0.5px solid rgba(0,0,0,0.06)' }}>
-          <button onClick={() => setAvaliacaoAtiva('todas')} style={{ padding: '4px 12px', borderRadius: 16, fontSize: 11, border: 'none', background: avaliacaoAtiva === 'todas' ? '#f97316' : '#F1F5F9', color: avaliacaoAtiva === 'todas' ? 'white' : '#666', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'DM Sans,sans-serif' }}>Geral</button>
+          <button onClick={() => setAvaliacaoAtiva('todas')} style={{ padding: '4px 12px', borderRadius: 16, fontSize: 11, border: 'none', background: avaliacaoAtiva === 'todas' ? '#f97316' : '#F1F5F9', color: avaliacaoAtiva === 'todas' ? 'white' : '#666', cursor: 'pointer', whiteSpace: 'nowrap' }}>Geral</button>
           {avaliacoesDisponiveis.map(a => (
-            <button key={a.id} onClick={() => setAvaliacaoAtiva(a.id)} style={{ padding: '4px 12px', borderRadius: 16, fontSize: 11, border: 'none', background: avaliacaoAtiva === a.id ? '#f97316' : '#F1F5F9', color: avaliacaoAtiva === a.id ? 'white' : '#666', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'DM Sans,sans-serif' }}>{a.nome}</button>
+            <button key={a.id} onClick={() => setAvaliacaoAtiva(a.id)} style={{ padding: '4px 12px', borderRadius: 16, fontSize: 11, border: 'none', background: avaliacaoAtiva === a.id ? '#f97316' : '#F1F5F9', color: avaliacaoAtiva === a.id ? 'white' : '#666', cursor: 'pointer', whiteSpace: 'nowrap' }}>{a.nome}</button>
           ))}
         </div>
       )}
@@ -297,7 +297,7 @@ function AbaProfessores({ podeUpload, vertical }: { podeUpload: boolean; vertica
         ) : erro ? (
           <div className="card" style={{ textAlign: 'center', padding: 40 }}>
             <div style={{ fontSize: 13, color: '#DC2626', marginBottom: 12 }}>{erro}</div>
-            <button onClick={carregar} style={{ padding: '8px 20px', borderRadius: 10, background: '#f97316', color: 'white', border: 'none', fontSize: 13, cursor: 'pointer', fontFamily: 'DM Sans, sans-serif' }}>Tentar novamente</button>
+            <button onClick={carregar} style={{ padding: '8px 20px', borderRadius: 10, background: '#f97316', color: 'white', border: 'none', fontSize: 13, cursor: 'pointer' }}>Tentar novamente</button>
           </div>
         ) : respostas.length === 0 ? (
           <div className="card" style={{ textAlign: 'center', padding: 40, color: '#999' }}>
@@ -396,7 +396,7 @@ export default function CSAT() {
                 onClick={() => setAba(t)}
                 style={{
                   flex: 1, padding: '8px 0', fontSize: 13, fontWeight: aba === t ? 600 : 400,
-                  border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'DM Sans,sans-serif',
+                  border: 'none', background: 'none', cursor: 'pointer', 
                   color: aba === t ? '#f97316' : '#999',
                   borderBottom: aba === t ? '2px solid #f97316' : '2px solid transparent',
                   transition: 'all 0.15s',

@@ -76,7 +76,7 @@ export default function ResetPassword() {
   return (
     <div style={{
       minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
-      background: '#F7F6F3', padding: 24, fontFamily: 'DM Sans, sans-serif',
+      background: '#F7F6F3', padding: 24, 
     }}>
       <div style={{
         width: '100%', maxWidth: 380, background: 'white',
@@ -102,7 +102,7 @@ export default function ResetPassword() {
                 <input
                   type="password" value={senha} onChange={e => setSenha(e.target.value)}
                   placeholder="Mínimo 6 caracteres"
-                  style={{ width: '100%', padding: '12px 16px', borderRadius: 12, border: '1.5px solid rgba(0,0,0,0.1)', background: '#F7F6F3', fontSize: 14, outline: 'none', boxSizing: 'border-box', fontFamily: 'DM Sans, sans-serif' }}
+                  style={{ width: '100%', padding: '12px 16px', borderRadius: 12, border: '1.5px solid rgba(0,0,0,0.1)', background: '#F7F6F3', fontSize: 14, outline: 'none', boxSizing: 'border-box' }}
                 />
               </div>
               <div>
@@ -111,7 +111,7 @@ export default function ResetPassword() {
                   type="password" value={confirmacao} onChange={e => setConfirmacao(e.target.value)}
                   placeholder="Repita a nova senha"
                   onKeyDown={e => e.key === 'Enter' && salvarSenha()}
-                  style={{ width: '100%', padding: '12px 16px', borderRadius: 12, border: '1.5px solid rgba(0,0,0,0.1)', background: '#F7F6F3', fontSize: 14, outline: 'none', boxSizing: 'border-box', fontFamily: 'DM Sans, sans-serif' }}
+                  style={{ width: '100%', padding: '12px 16px', borderRadius: 12, border: '1.5px solid rgba(0,0,0,0.1)', background: '#F7F6F3', fontSize: 14, outline: 'none', boxSizing: 'border-box' }}
                 />
               </div>
 
@@ -127,7 +127,7 @@ export default function ResetPassword() {
                   background: loading ? '#aaa' : '#f97316',
                   color: 'white', border: 'none', fontSize: 15, fontWeight: 600,
                   cursor: loading ? 'not-allowed' : 'pointer',
-                  fontFamily: 'DM Sans, sans-serif', marginTop: 4,
+                  marginTop: 4,
                 }}
               >
                 {loading ? 'Salvando...' : 'Salvar nova senha'}

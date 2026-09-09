@@ -17,7 +17,7 @@ const STATUS_CONFIG: Record<string, { label: string; bg: string; color: string }
 
 // Avatar com cor determinística pela inicial
 const AVATAR_COLORS = [
-  ['#0f2554', '#1e3a8a'], ['#7c3aed', '#5b21b6'],
+  ['#0f2554', '#1e3a8a'], ['#1d4ed8', '#1e3a8a'],
   ['#0891b2', '#0e7490'], ['#059669', '#065f46'],
   ['#b45309', '#92400e'], ['#be123c', '#9f1239'],
 ]

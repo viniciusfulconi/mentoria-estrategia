@@ -167,7 +167,7 @@ export default function NovoAlunoMed() {
     width: '100%', padding: '10px 14px', borderRadius: 10,
     border: '1px solid rgba(0,0,0,0.12)', fontSize: 14,
     background: 'white', outline: 'none', boxSizing: 'border-box' as const,
-    fontFamily: 'DM Sans, sans-serif', color: '#1a1a1a',
+    color: '#1a1a1a',
   }
 
   return (
@@ -197,7 +197,7 @@ export default function NovoAlunoMed() {
             fontSize: 13, fontWeight: aba === a.id ? 600 : 400,
             color: aba === a.id ? 'var(--purple)' : '#888',
             borderBottom: aba === a.id ? '2px solid var(--purple)' : '2px solid transparent',
-            fontFamily: 'DM Sans, sans-serif',
+            
           }}>
             {a.icon} {a.label}
           </button>
@@ -245,7 +245,7 @@ export default function NovoAlunoMed() {
                   <button key={m} onClick={() => setForm({ ...form, modalidade: m as any })} style={{
                     flex: 1, padding: '10px', borderRadius: 10, border: '1px solid',
                     cursor: 'pointer', fontSize: 13, fontWeight: 500,
-                    fontFamily: 'DM Sans, sans-serif',
+                    
                     borderColor: form.modalidade === m ? 'var(--purple)' : 'rgba(0,0,0,0.12)',
                     background: form.modalidade === m ? 'var(--purple-light)' : 'white',
                     color: form.modalidade === m ? 'var(--purple)' : '#555',
@@ -300,7 +300,7 @@ export default function NovoAlunoMed() {
                     width: '100%', padding: '10px 14px', background: 'white', border: 'none',
                     cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                     fontSize: 13, color: form.vestibulares_interesse.length ? '#1a1a1a' : '#aaa',
-                    fontFamily: 'DM Sans, sans-serif',
+                    
                   }}
                 >
                   <span>
@@ -315,7 +315,7 @@ export default function NovoAlunoMed() {
                     {VESTIBULARES.map(v => (
                       <button key={v} onClick={() => toggleVestibular(v)} style={{
                         padding: '4px 10px', borderRadius: 20, border: '1px solid', cursor: 'pointer',
-                        fontSize: 12, fontWeight: 500, fontFamily: 'DM Sans, sans-serif',
+                        fontSize: 12, fontWeight: 500, 
                         background: form.vestibulares_interesse.includes(v) ? 'var(--purple)' : 'white',
                         borderColor: form.vestibulares_interesse.includes(v) ? 'var(--purple)' : 'rgba(0,0,0,0.15)',
                         color: form.vestibulares_interesse.includes(v) ? 'white' : '#555',
@@ -359,7 +359,7 @@ export default function NovoAlunoMed() {
               style={{
                 padding: '13px', borderRadius: 12, border: 'none', cursor: saving ? 'not-allowed' : 'pointer',
                 background: saving ? '#aaa' : 'var(--purple)', color: 'white',
-                fontSize: 15, fontWeight: 600, fontFamily: 'DM Sans, sans-serif', marginTop: 4,
+                fontSize: 15, fontWeight: 600, marginTop: 4,
               }}
             >
               {saving ? 'Cadastrando...' : 'Cadastrar aluno'}
@@ -432,7 +432,7 @@ export default function NovoAlunoMed() {
                 style={{
                   padding: '13px', borderRadius: 12, border: 'none', cursor: savingLote ? 'not-allowed' : 'pointer',
                   background: savingLote ? '#aaa' : 'var(--purple)', color: 'white',
-                  fontSize: 15, fontWeight: 600, fontFamily: 'DM Sans, sans-serif',
+                  fontSize: 15, fontWeight: 600, 
                 }}
               >
                 {savingLote ? 'Cadastrando...' : `Cadastrar ${alunosLote.length} aluno(s)`}

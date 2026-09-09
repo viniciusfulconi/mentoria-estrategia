@@ -522,7 +522,7 @@ export default function AlunoPage() {
             padding: '5px 14px', borderRadius: 16, fontSize: 11, border: 'none',
             background: aba === a.id ? '#f97316' : '#F1F5F9',
             color: aba === a.id ? 'white' : '#666',
-            cursor: 'pointer', fontFamily: 'DM Sans,sans-serif'
+            cursor: 'pointer'
           }}>{a.label}</button>
         ))}
       </div>
@@ -620,7 +620,7 @@ export default function AlunoPage() {
                 <button key={c} onClick={() => setCicloAtivo(c)} style={{
                   padding: '5px 12px', borderRadius: 20, fontSize: 11, border: '0.5px solid rgba(0,0,0,0.12)',
                   background: cicloAtivo === c ? '#f97316' : 'transparent', color: cicloAtivo === c ? 'white' : '#666',
-                  cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'DM Sans,sans-serif'
+                  cursor: 'pointer', whiteSpace: 'nowrap'
                 }}>{c.replace('Ciclo ', 'C').replace(' - ITA', '').replace(' - IME', '')}</button>
               ))}
             </div>

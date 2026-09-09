@@ -82,7 +82,7 @@ export default function ListasPage({ alunoId: propAlunoId }: { alunoId?: string 
                   border: `1.5px solid ${active ? cor : 'rgba(0,0,0,0.08)'}`,
                   background: active ? cor + '15' : 'white',
                   cursor: 'pointer', textAlign: 'center', minWidth: 90,
-                  fontFamily: 'DM Sans,sans-serif'
+                  fontFamily: 'inherit'
                 }}>
                   <div style={{ fontSize: 18, fontWeight: 700, color: cor }}>{s.pct}%</div>
                   <div style={{ fontSize: 10, fontWeight: 500, color: active ? cor : '#666', marginTop: 2 }}>{m}</div>

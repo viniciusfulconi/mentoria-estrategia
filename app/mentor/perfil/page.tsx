@@ -120,7 +120,7 @@ export default function MentorPerfil() {
         <div style={{ fontSize: 17, fontWeight: 600, flex: 1 }}>Meu Perfil</div>
         <button
           onClick={signOut}
-          style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: '0.5px solid rgba(220,38,38,0.3)', borderRadius: 8, padding: '6px 12px', fontSize: 12, cursor: 'pointer', color: '#DC2626', fontFamily: 'DM Sans, sans-serif' }}
+          style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: '0.5px solid rgba(220,38,38,0.3)', borderRadius: 8, padding: '6px 12px', fontSize: 12, cursor: 'pointer', color: '#DC2626' }}
         >
           <LogOut size={13} strokeWidth={2} /> Sair
         </button>
@@ -142,7 +142,7 @@ export default function MentorPerfil() {
                     onChange={e => setNomeEdit(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && salvarNome()}
                     autoFocus
-                    style={{ flex: 1, fontSize: 14, fontWeight: 600, padding: '6px 10px', borderRadius: 8, border: '1.5px solid #f97316', fontFamily: 'DM Sans, sans-serif', outline: 'none', minWidth: 0 }}
+                    style={{ flex: 1, fontSize: 14, fontWeight: 600, padding: '6px 10px', borderRadius: 8, border: '1.5px solid #f97316', outline: 'none', minWidth: 0 }}
                   />
                   <button onClick={salvarNome} disabled={savingNome} style={{ background: '#f97316', border: 'none', borderRadius: 8, padding: 8, cursor: 'pointer', display: 'flex', alignItems: 'center', flexShrink: 0 }}>
                     <Check size={14} color="white" strokeWidth={2.5} />

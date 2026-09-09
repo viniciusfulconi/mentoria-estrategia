@@ -83,7 +83,7 @@ export default function NovaLista() {
                 padding: '6px 14px', borderRadius: 20, fontSize: 12, border: '0.5px solid rgba(0,0,0,0.12)',
                 background: form.materia === m ? '#f97316' : 'transparent',
                 color: form.materia === m ? 'white' : '#666',
-                cursor: 'pointer', fontFamily: 'DM Sans,sans-serif'
+                cursor: 'pointer'
               }}>{m}</button>
             ))}
           </div>

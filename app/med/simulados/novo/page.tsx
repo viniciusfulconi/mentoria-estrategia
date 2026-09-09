@@ -154,7 +154,7 @@ export default function NovoSimulado() {
     width: '100%', padding: '10px 14px', borderRadius: 10,
     border: '1px solid rgba(0,0,0,0.12)', fontSize: 14,
     background: 'white', outline: 'none', boxSizing: 'border-box',
-    fontFamily: 'DM Sans, sans-serif', color: '#1a1a1a',
+    color: '#1a1a1a',
   }
 
   const templateSel = templates.find(t => t.id === templateId)
@@ -233,7 +233,7 @@ export default function NovoSimulado() {
             background: saving || templates.length === 0 ? '#ccc' : 'var(--purple)',
             color: 'white', fontSize: 15, fontWeight: 600,
             cursor: saving || templates.length === 0 ? 'not-allowed' : 'pointer',
-            fontFamily: 'DM Sans, sans-serif', marginTop: 4,
+            marginTop: 4,
           }}
         >
           {saving ? 'Criando...' : 'Criar simulado'}

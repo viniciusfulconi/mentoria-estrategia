@@ -95,11 +95,14 @@ function NavItem({ href, icon: Icon, label, active }: {
       style={{
         display: 'flex', alignItems: 'center', gap: 10,
         padding: '10px 14px', borderRadius: 10, textDecoration: 'none',
-        background: active ? 'rgba(249,115,22,0.18)' : 'transparent',
-        color: active ? '#fb923c' : 'rgba(255,255,255,0.6)',
+        background: active
+          ? 'linear-gradient(90deg, rgba(249,115,22,0.24), rgba(249,115,22,0.10))'
+          : 'transparent',
+        color: active ? '#fdba74' : 'rgba(255,255,255,0.6)',
         fontWeight: active ? 700 : 400,
         fontSize: 14,
-        transition: 'background 0.15s, color 0.15s',
+        boxShadow: active ? 'inset 3px 0 0 0 #f97316' : 'none',
+        transition: 'background 0.18s, color 0.18s, box-shadow 0.18s',
       }}
       onMouseEnter={e => { if (!active) { e.currentTarget.style.background = 'rgba(255,255,255,0.07)'; e.currentTarget.style.color = 'rgba(255,255,255,0.9)' } }}
       onMouseLeave={e => { if (!active) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.6)' } }}

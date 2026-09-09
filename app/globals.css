@@ -33,7 +33,7 @@
   --amber-light:    #fef3c7;
 
   /* Fundo e neutros */
-  --bg:             #f1f5f9;
+  --bg:             #f6f7fb;
   --card:           #ffffff;
   --border:         rgba(15, 23, 42, 0.08);
   --border-strong:  rgba(15, 23, 42, 0.18);
@@ -71,6 +71,37 @@ body {
   -moz-osx-font-smoothing: grayscale;
   line-height: 1.5;
   font-size: 15px;
+}
+
+/* ─────────────────────────────────────────
+   POLIMENTO GLOBAL (fase 1 do refresh visual)
+   Regras propositalmente restritas a propriedades que os estilos inline
+   das telas não definem — inline sempre vence, então nada aqui briga.
+───────────────────────────────────────── */
+
+/* Botões e links inline não têm transition: hover deixava de ser suave. */
+button, a, select, input[type="checkbox"] {
+  transition:
+    background-color 0.18s ease, color 0.18s ease, border-color 0.18s ease,
+    box-shadow 0.18s ease, opacity 0.18s ease, transform 0.14s ease;
+}
+button:active:not(:disabled) { transform: scale(0.985); }
+
+/* Foco visível para teclado sem sujar o clique de mouse */
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+input:focus-visible, select:focus-visible, textarea:focus-visible { outline: none; }
+
+/* Seleção de texto na cor da marca */
+::selection { background: rgba(249, 115, 22, 0.22); }
+
+/* Títulos semânticos ganham a display */
+h1, h2, h3 {
+  font-family: var(--font-display), var(--font-jakarta), sans-serif;
+  letter-spacing: -0.02em;
 }
 
 /* Scrollbar */
@@ -196,4 +227,22 @@ label {
   background-size: 600px 100%;
   animation: shimmer 1.4s ease-in-out infinite;
   border-radius: 8px;
+}
+
+/* ─────────────────────────────────────────
+   FASE 2 — refinamentos por componente
+───────────────────────────────────────── */
+
+/* Card de aluno (dashboard do mentor): eleva e destaca a seta no hover */
+a:hover .aluno-card {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+  border-color: rgba(249, 115, 22, 0.35);
+}
+a:hover .aluno-card .aluno-chevron { transform: translateX(3px); color: var(--primary); }
+
+/* Respeita quem pediu menos movimento */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+  a:hover .aluno-card { transform: none; }
 }

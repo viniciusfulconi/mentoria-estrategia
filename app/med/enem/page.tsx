@@ -4,6 +4,7 @@ import { dbQuery } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import Nav from '@/components/Nav'
+import PageHeader from '@/components/PageHeader'
 import Link from 'next/link'
 import { ChevronRight, FileText } from 'lucide-react'
 
@@ -38,15 +39,10 @@ export default function EnemLista() {
   return (
     <div style={{ paddingBottom: 80 }}>
       <Nav />
-      <div style={{
-        background: 'white', borderBottom: '0.5px solid rgba(0,0,0,0.08)',
-        padding: '16px 20px', position: 'sticky', top: 0, zIndex: 10,
-      }}>
-        <div style={{ fontSize: 17, fontWeight: 700 }}>Provas do ENEM</div>
-        <div style={{ fontSize: 11, color: '#999' }}>
-          {isAluno ? 'Baixe o caderno, preencha o cartão e receba sua nota por área' : 'Medicina'}
-        </div>
-      </div>
+      <PageHeader
+        eyebrow={isAluno ? 'Baixe o caderno · preencha o cartão · nota por área' : 'Medicina'}
+        title="Provas do ENEM"
+      />
 
       <div style={{ padding: 16, maxWidth: 720, margin: '0 auto' }}>
         {isAluno && (

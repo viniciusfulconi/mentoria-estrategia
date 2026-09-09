@@ -56,7 +56,7 @@ export default function RelatorioAluno() {
   }, [id])
 
   if (loading) return (
-    <div style={{ padding: 60, textAlign: 'center', color: '#999', fontFamily: 'DM Sans, sans-serif' }}>
+    <div style={{ padding: 60, textAlign: 'center', color: '#999' }}>
       Preparando relatório...
     </div>
   )

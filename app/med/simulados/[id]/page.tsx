@@ -342,7 +342,7 @@ export default function SimuladoDetalhe() {
     padding: '8px 12px', borderRadius: 8,
     border: '1px solid rgba(0,0,0,0.12)', fontSize: 13,
     background: 'white', outline: 'none',
-    fontFamily: 'DM Sans, sans-serif', color: '#1a1a1a',
+    color: '#1a1a1a',
   }
 
   if (carregando) return <div style={{ paddingBottom: 80 }}><Nav /><div style={{ textAlign: 'center', padding: 60, color: '#aaa', fontSize: 13 }}>Carregando...</div></div>
@@ -404,7 +404,7 @@ export default function SimuladoDetalhe() {
               fontSize: 13, fontWeight: tab === t.id ? 600 : 400,
               color: tab === t.id ? 'var(--purple)' : '#888',
               borderBottom: tab === t.id ? '2px solid var(--purple)' : '2px solid transparent',
-              fontFamily: 'DM Sans, sans-serif', whiteSpace: 'nowrap',
+              whiteSpace: 'nowrap',
             }}>
               {t.label}
             </button>
@@ -510,7 +510,7 @@ export default function SimuladoDetalhe() {
                                       placeholder="—"
                                       style={{
                                         width: '100%', padding: '5px 8px', borderRadius: 6, border: '1px solid rgba(0,0,0,0.12)',
-                                        fontSize: 12, fontFamily: 'DM Sans, sans-serif', color: '#1a1a1a',
+                                        fontSize: 12, color: '#1a1a1a',
                                         background: 'transparent', outline: 'none', boxSizing: 'border-box',
                                       }}
                                     />
@@ -524,7 +524,7 @@ export default function SimuladoDetalhe() {
                                         onClick={() => setGabaritoMap(m => ({ ...m, [q.id]: m[q.id] === letra ? '' : letra }))}
                                         style={{
                                           width: 30, height: 30, borderRadius: 6, border: '1px solid',
-                                          cursor: 'pointer', fontSize: 12, fontWeight: 700, fontFamily: 'DM Sans, sans-serif',
+                                          cursor: 'pointer', fontSize: 12, fontWeight: 700, 
                                           borderColor: val === letra ? '#f97316' : 'rgba(0,0,0,0.15)',
                                           background: val === letra ? '#f97316' : 'white',
                                           color: val === letra ? 'white' : '#555',
@@ -538,7 +538,7 @@ export default function SimuladoDetalhe() {
                                       onClick={() => setGabaritoMap(m => ({ ...m, [q.id]: m[q.id] === 'ANULADA' ? '' : 'ANULADA' }))}
                                       style={{
                                         padding: '0 10px', height: 30, borderRadius: 6, border: '1px solid',
-                                        cursor: 'pointer', fontSize: 11, fontWeight: 700, fontFamily: 'DM Sans, sans-serif',
+                                        cursor: 'pointer', fontSize: 11, fontWeight: 700, 
                                         borderColor: val === 'ANULADA' ? '#DC2626' : 'rgba(0,0,0,0.15)',
                                         background: val === 'ANULADA' ? '#DC2626' : 'white',
                                         color: val === 'ANULADA' ? 'white' : '#888',
@@ -569,7 +569,7 @@ export default function SimuladoDetalhe() {
               background: salvandoGabarito ? '#ccc' : 'var(--purple)',
               color: 'white', fontSize: 14, fontWeight: 600,
               cursor: salvandoGabarito ? 'not-allowed' : 'pointer',
-              fontFamily: 'DM Sans, sans-serif',
+              
             }}
           >
             <Save size={15} /> {salvandoGabarito ? 'Salvando...' : 'Salvar gabarito'}
@@ -591,7 +591,7 @@ export default function SimuladoDetalhe() {
                   background: modoRanking === val ? 'white' : 'transparent',
                   color: modoRanking === val ? '#1a1a1a' : '#888',
                   boxShadow: modoRanking === val ? '0 1px 2px rgba(0,0,0,0.08)' : 'none',
-                  fontFamily: 'DM Sans, sans-serif',
+                  
                 }}>
                   {label}
                 </button>
@@ -728,7 +728,7 @@ export default function SimuladoDetalhe() {
                             background: active ? 'white' : 'transparent',
                             color: active ? '#1a1a1a' : '#888',
                             boxShadow: active ? '0 1px 2px rgba(0,0,0,0.08)' : 'none',
-                            fontFamily: 'DM Sans, sans-serif',
+                            
                           }}>
                             {label}
                           </button>
@@ -827,7 +827,7 @@ export default function SimuladoDetalhe() {
                   {(['ingles', 'espanhol'] as const).map(g => (
                     <button key={g} onClick={() => { setGrupoLinguagem(g); setLinhasCSV([]) }} style={{
                       padding: '8px 12px', borderRadius: 8, border: '1px solid',
-                      cursor: 'pointer', fontSize: 12, fontWeight: 600, fontFamily: 'DM Sans, sans-serif',
+                      cursor: 'pointer', fontSize: 12, fontWeight: 600, 
                       borderColor: grupoLinguagem === g ? 'var(--purple)' : 'rgba(0,0,0,0.12)',
                       background: grupoLinguagem === g ? 'var(--purple-light)' : 'white',
                       color: grupoLinguagem === g ? 'var(--purple)' : '#555',
@@ -914,7 +914,7 @@ export default function SimuladoDetalhe() {
                   background: salvandoResultados ? '#ccc' : 'var(--purple)',
                   color: 'white', fontSize: 14, fontWeight: 600,
                   cursor: salvandoResultados ? 'not-allowed' : 'pointer',
-                  fontFamily: 'DM Sans, sans-serif',
+                  
                 }}
               >
                 <Upload size={15} /> {salvandoResultados ? 'Importando...' : `Importar resultados`}

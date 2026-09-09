@@ -59,7 +59,7 @@ export default function NovoSimulado() {
           <label>Matérias envolvidas</label>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 6 }}>
             {materias.map(m => (
-              <button key={m} onClick={() => toggleMateria(m)} style={{ padding: '5px 12px', borderRadius: 20, fontSize: 11, border: '0.5px solid rgba(0,0,0,0.12)', background: materiasSel.includes(m) ? '#f97316' : 'transparent', color: materiasSel.includes(m) ? 'white' : '#666', cursor: 'pointer', fontFamily: 'DM Sans,sans-serif' }}>{m}</button>
+              <button key={m} onClick={() => toggleMateria(m)} style={{ padding: '5px 12px', borderRadius: 20, fontSize: 11, border: '0.5px solid rgba(0,0,0,0.12)', background: materiasSel.includes(m) ? '#f97316' : 'transparent', color: materiasSel.includes(m) ? 'white' : '#666', cursor: 'pointer' }}>{m}</button>
             ))}
           </div>
         </div>

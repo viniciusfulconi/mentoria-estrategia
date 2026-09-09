@@ -461,7 +461,7 @@ export default function AprovadosITA() {
                     width: '100%', padding: '7px 10px 7px 30px', borderRadius: 10,
                     border: '0.5px solid rgba(0,0,0,0.15)', fontSize: 13,
                     background: '#F8FAFC', outline: 'none', boxSizing: 'border-box',
-                    fontFamily: 'DM Sans, sans-serif',
+                    
                   }}
                 />
               </div>

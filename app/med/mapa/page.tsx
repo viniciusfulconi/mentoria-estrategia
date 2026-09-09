@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import Nav from '@/components/Nav'
 import Link from 'next/link'
+import PageHeader from '@/components/PageHeader'
 import { Plus, ChevronRight, Target } from 'lucide-react'
 
 type Mapa = {
@@ -45,23 +46,16 @@ export default function MapasList() {
     <div style={{ paddingBottom: 80 }}>
       <Nav />
 
-      <div style={{
-        background: 'white', borderBottom: '0.5px solid rgba(0,0,0,0.08)',
-        padding: '16px 20px', position: 'sticky', top: 0, zIndex: 10,
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      }}>
-        <div>
-          <div style={{ fontSize: 17, fontWeight: 700 }}>Mapa de revisão</div>
-          <div style={{ fontSize: 11, color: '#999' }}>Medicina</div>
-        </div>
+      <PageHeader eyebrow="Medicina" title="Mapa de revisão" actions={
         <Link href="/med/mapa/novo" style={{
           display: 'flex', alignItems: 'center', gap: 6,
           background: 'var(--purple)', color: 'white', textDecoration: 'none',
           padding: '9px 14px', borderRadius: 10, fontSize: 13, fontWeight: 600,
+          boxShadow: '0 2px 8px rgba(249,115,22,0.32)',
         }}>
           <Plus size={15} /> Novo mapa
         </Link>
-      </div>
+      } />
 
       <div style={{ padding: 16, maxWidth: 780, margin: '0 auto' }}>
         {carregando ? (

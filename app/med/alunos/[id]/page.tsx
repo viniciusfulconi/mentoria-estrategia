@@ -221,7 +221,7 @@ export default function AlunoMedDetalhe() {
     width: '100%', padding: '10px 14px', borderRadius: 10,
     border: '1px solid rgba(0,0,0,0.12)', fontSize: 14,
     background: 'white', outline: 'none', boxSizing: 'border-box' as const,
-    fontFamily: 'DM Sans, sans-serif', color: '#1a1a1a',
+    color: '#1a1a1a',
   }
 
   const disabledStyle = {
@@ -303,7 +303,7 @@ export default function AlunoMedDetalhe() {
               fontSize: 13, fontWeight: pageTab === v ? 700 : 400,
               color: pageTab === v ? 'var(--purple)' : '#888',
               borderBottom: pageTab === v ? '2px solid var(--purple)' : '2px solid transparent',
-              fontFamily: 'DM Sans, sans-serif', transition: 'all 0.15s',
+              transition: 'all 0.15s',
             }}
           >
             {l}
@@ -332,7 +332,7 @@ export default function AlunoMedDetalhe() {
                   background: 'white', borderRadius: 12, padding: '14px 16px',
                   border: '0.5px solid rgba(0,0,0,0.10)', cursor: 'pointer',
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
-                  textAlign: 'left', fontFamily: 'DM Sans, sans-serif',
+                  textAlign: 'left', 
                   transition: 'box-shadow 0.15s',
                 }}
                 onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 2px 12px rgba(0,0,0,0.08)')}
@@ -391,7 +391,7 @@ export default function AlunoMedDetalhe() {
                 {['Presencial', 'Online'].map(m => (
                   <button key={m} onClick={() => setForm({ ...form, modalidade: m as any })} style={{
                     flex: 1, padding: '10px', borderRadius: 10, border: '1px solid',
-                    cursor: 'pointer', fontSize: 13, fontWeight: 500, fontFamily: 'DM Sans, sans-serif',
+                    cursor: 'pointer', fontSize: 13, fontWeight: 500, 
                     borderColor: form.modalidade === m ? 'var(--purple)' : 'rgba(0,0,0,0.12)',
                     background: form.modalidade === m ? 'var(--purple-light)' : 'white',
                     color: form.modalidade === m ? 'var(--purple)' : '#555',
@@ -456,7 +456,7 @@ export default function AlunoMedDetalhe() {
               style={{
                 width: '100%', padding: '10px 14px', background: 'white', border: 'none',
                 cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                fontSize: 13, fontFamily: 'DM Sans, sans-serif',
+                fontSize: 13, 
                 color: form.vestibulares_interesse.length ? '#1a1a1a' : '#aaa',
               }}
             >
@@ -472,7 +472,7 @@ export default function AlunoMedDetalhe() {
                 {VESTIBULARES.map(v => (
                   <button key={v} onClick={() => toggleVestibular(v)} style={{
                     padding: '4px 10px', borderRadius: 20, border: '1px solid', cursor: 'pointer',
-                    fontSize: 12, fontWeight: 500, fontFamily: 'DM Sans, sans-serif',
+                    fontSize: 12, fontWeight: 500, 
                     background: form.vestibulares_interesse.includes(v) ? 'var(--purple)' : 'white',
                     borderColor: form.vestibulares_interesse.includes(v) ? 'var(--purple)' : 'rgba(0,0,0,0.15)',
                     color: form.vestibulares_interesse.includes(v) ? 'white' : '#555',
@@ -518,7 +518,7 @@ export default function AlunoMedDetalhe() {
                     padding: '8px 14px', borderRadius: 8,
                     border: '1px solid var(--purple)', background: 'var(--purple-light)',
                     color: 'var(--purple)', fontSize: 12, fontWeight: 600,
-                    cursor: 'pointer', fontFamily: 'DM Sans, sans-serif',
+                    cursor: 'pointer', 
                   }}
                 >
                   Encaminhar
@@ -542,7 +542,7 @@ export default function AlunoMedDetalhe() {
                     padding: '8px 14px', borderRadius: 8,
                     border: '1px solid rgba(0,0,0,0.12)', background: 'white',
                     color: '#666', fontSize: 12, fontWeight: 500,
-                    cursor: 'pointer', fontFamily: 'DM Sans, sans-serif',
+                    cursor: 'pointer', 
                   }}
                 >
                   Trocar
@@ -566,7 +566,7 @@ export default function AlunoMedDetalhe() {
                     padding: '8px 14px', borderRadius: 8,
                     border: '1px solid rgba(0,0,0,0.12)', background: 'white',
                     color: '#666', fontSize: 12, fontWeight: 500,
-                    cursor: 'pointer', fontFamily: 'DM Sans, sans-serif',
+                    cursor: 'pointer', 
                   }}
                 >
                   Trocar
@@ -585,7 +585,7 @@ export default function AlunoMedDetalhe() {
             background: salvando ? '#ccc' : 'var(--purple)',
             color: 'white', fontSize: 15, fontWeight: 600,
             cursor: salvando ? 'not-allowed' : 'pointer',
-            fontFamily: 'DM Sans, sans-serif',
+            
           }}
         >
           {salvando ? 'Salvando...' : 'Salvar alterações'}
@@ -618,7 +618,7 @@ export default function AlunoMedDetalhe() {
                 style={{
                   flex: 1, padding: 13, borderRadius: 12,
                   border: '1px solid rgba(0,0,0,0.12)', background: 'white',
-                  fontSize: 14, fontWeight: 500, cursor: 'pointer', fontFamily: 'DM Sans, sans-serif',
+                  fontSize: 14, fontWeight: 500, cursor: 'pointer', 
                 }}
               >
                 Cancelar
@@ -628,7 +628,7 @@ export default function AlunoMedDetalhe() {
                 style={{
                   flex: 2, padding: 13, borderRadius: 12, border: 'none',
                   background: '#ef4444', color: 'white',
-                  fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'DM Sans, sans-serif',
+                  fontSize: 14, fontWeight: 600, cursor: 'pointer', 
                 }}
               >
                 Confirmar e bloquear
@@ -669,7 +669,7 @@ export default function AlunoMedDetalhe() {
                     padding: '12px 16px', borderRadius: 12,
                     border: `1.5px solid ${mentorSelecionado === m.id ? 'var(--purple)' : 'rgba(0,0,0,0.10)'}`,
                     background: mentorSelecionado === m.id ? 'var(--purple-light)' : 'white',
-                    cursor: 'pointer', textAlign: 'left', fontFamily: 'DM Sans, sans-serif',
+                    cursor: 'pointer', textAlign: 'left', 
                   }}
                 >
                   <div style={{ fontSize: 14, fontWeight: 600, color: mentorSelecionado === m.id ? 'var(--purple)' : '#1a1a1a' }}>
@@ -685,7 +685,7 @@ export default function AlunoMedDetalhe() {
                 style={{
                   flex: 1, padding: 13, borderRadius: 12,
                   border: '1px solid rgba(0,0,0,0.12)', background: 'white',
-                  fontSize: 14, fontWeight: 500, cursor: 'pointer', fontFamily: 'DM Sans, sans-serif',
+                  fontSize: 14, fontWeight: 500, cursor: 'pointer', 
                 }}
               >
                 Cancelar
@@ -698,7 +698,7 @@ export default function AlunoMedDetalhe() {
                   background: mentorSelecionado && !salvandoMentor ? 'var(--purple)' : '#ccc',
                   color: 'white', fontSize: 14, fontWeight: 600,
                   cursor: mentorSelecionado && !salvandoMentor ? 'pointer' : 'not-allowed',
-                  fontFamily: 'DM Sans, sans-serif',
+                  
                 }}
               >
                 {salvandoMentor ? 'Encaminhando...' : 'Encaminhar'}

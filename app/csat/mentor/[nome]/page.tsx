@@ -198,9 +198,9 @@ export default function MentorCSAT() {
 
       {/* Seletor pesquisa */}
       <div style={{ display: 'flex', gap: 6, overflowX: 'auto', padding: '8px 16px', background: 'white', borderBottom: '0.5px solid rgba(0,0,0,0.06)' }}>
-        <button onClick={() => setPesquisaAtiva('todas')} style={{ padding: '4px 12px', borderRadius: 16, fontSize: 11, border: 'none', background: pesquisaAtiva === 'todas' ? '#f97316' : '#F1F5F9', color: pesquisaAtiva === 'todas' ? 'white' : '#666', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'DM Sans,sans-serif' }}>Geral</button>
+        <button onClick={() => setPesquisaAtiva('todas')} style={{ padding: '4px 12px', borderRadius: 16, fontSize: 11, border: 'none', background: pesquisaAtiva === 'todas' ? '#f97316' : '#F1F5F9', color: pesquisaAtiva === 'todas' ? 'white' : '#666', cursor: 'pointer', whiteSpace: 'nowrap' }}>Geral</button>
         {pesquisas.filter(p => respostas.some(r => r.pesquisa_id === p.id)).map(p => (
-          <button key={p.id} onClick={() => setPesquisaAtiva(p.id)} style={{ padding: '4px 12px', borderRadius: 16, fontSize: 11, border: 'none', background: pesquisaAtiva === p.id ? '#f97316' : '#F1F5F9', color: pesquisaAtiva === p.id ? 'white' : '#666', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'DM Sans,sans-serif' }}>{p.nome}</button>
+          <button key={p.id} onClick={() => setPesquisaAtiva(p.id)} style={{ padding: '4px 12px', borderRadius: 16, fontSize: 11, border: 'none', background: pesquisaAtiva === p.id ? '#f97316' : '#F1F5F9', color: pesquisaAtiva === p.id ? 'white' : '#666', cursor: 'pointer', whiteSpace: 'nowrap' }}>{p.nome}</button>
         ))}
       </div>
 
@@ -294,7 +294,7 @@ export default function MentorCSAT() {
                 padding: '5px 12px', borderRadius: 16, fontSize: 11, border: 'none',
                 background: abaFeedback === a.id ? '#1a1a1a' : '#F1F5F9',
                 color: abaFeedback === a.id ? 'white' : '#666',
-                cursor: 'pointer', fontFamily: 'DM Sans,sans-serif'
+                cursor: 'pointer'
               }}>{a.label}</button>
             ))}
           </div>

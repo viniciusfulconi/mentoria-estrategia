@@ -54,7 +54,7 @@ export default function TemplatesList() {
           display: 'flex', alignItems: 'center', gap: 6,
           background: 'var(--purple)', color: 'white', textDecoration: 'none',
           padding: '9px 14px', borderRadius: 10, fontSize: 13, fontWeight: 600,
-          fontFamily: 'DM Sans, sans-serif',
+          
         }}>
           <Plus size={15} /> Novo modelo
         </Link>
@@ -72,7 +72,7 @@ export default function TemplatesList() {
               display: 'inline-flex', alignItems: 'center', gap: 6,
               background: 'var(--purple)', color: 'white', textDecoration: 'none',
               padding: '10px 20px', borderRadius: 10, fontSize: 13, fontWeight: 600,
-              fontFamily: 'DM Sans, sans-serif',
+              
             }}>
               <Plus size={14} /> Criar primeiro modelo
             </Link>

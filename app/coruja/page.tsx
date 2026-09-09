@@ -34,7 +34,7 @@ function SqlBlock({ sql, linhas }: { sql: string; linhas?: number }) {
           display: 'flex', alignItems: 'center', gap: 5,
           background: 'none', border: 'none', cursor: 'pointer',
           color: 'var(--text-hint)', fontSize: 11, padding: 0,
-          fontFamily: 'DM Sans, sans-serif',
+          
         }}
       >
         {aberto ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
@@ -238,7 +238,7 @@ export default function CorujaPage() {
                       padding: '10px 16px', borderRadius: 12,
                       border: '1px solid var(--border)', background: 'white',
                       color: 'var(--text)', fontSize: 13, cursor: 'pointer',
-                      textAlign: 'left', fontFamily: 'DM Sans, sans-serif',
+                      textAlign: 'left', 
                       transition: 'background 0.15s',
                     }}
                     onMouseEnter={e => { e.currentTarget.style.background = 'var(--purple-light)' }}
@@ -296,7 +296,7 @@ export default function CorujaPage() {
               style={{
                 flex: 1, border: 'none', background: 'transparent', resize: 'none',
                 fontSize: 14, lineHeight: 1.5, color: 'var(--text)',
-                fontFamily: 'DM Sans, sans-serif', outline: 'none',
+                outline: 'none',
                 maxHeight: 120, overflowY: 'auto',
               }}
               onInput={e => {

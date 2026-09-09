@@ -131,7 +131,7 @@ export default function NovaAula() {
                 border: `1.5px solid ${form.frequencia === op.val ? '#f97316' : 'rgba(0,0,0,0.1)'}`,
                 background: form.frequencia === op.val ? '#fff7ed' : 'transparent',
                 color: form.frequencia === op.val ? '#f97316' : '#666',
-                cursor: 'pointer', fontFamily: 'DM Sans,sans-serif', fontWeight: 500
+                cursor: 'pointer', fontWeight: 500
               }}>{op.label}</button>
             ))}
           </div>

@@ -120,7 +120,7 @@ export default function NovoAtendimento() {
                 border: `1.5px solid ${form.tipo === t ? '#f97316' : 'rgba(0,0,0,0.1)'}`,
                 background: form.tipo === t ? '#fff7ed' : 'transparent',
                 color: form.tipo === t ? '#f97316' : '#666',
-                cursor: 'pointer', fontFamily: 'DM Sans,sans-serif', fontSize: 13, fontWeight: 500
+                cursor: 'pointer', fontSize: 13, fontWeight: 500
               }}>{t}</button>
             ))}
           </div>

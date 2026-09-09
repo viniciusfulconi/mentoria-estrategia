@@ -129,7 +129,7 @@ export default function NovoTemplate() {
     width: '100%', padding: '10px 14px', borderRadius: 10,
     border: '1px solid rgba(0,0,0,0.12)', fontSize: 14,
     background: 'white', outline: 'none', boxSizing: 'border-box',
-    fontFamily: 'DM Sans, sans-serif', color: '#1a1a1a',
+    color: '#1a1a1a',
   }
 
   const btn = (active: boolean): React.CSSProperties => ({
@@ -137,7 +137,7 @@ export default function NovoTemplate() {
     border: `1px solid ${active ? 'var(--purple)' : 'rgba(0,0,0,0.12)'}`,
     background: active ? 'var(--purple-light)' : 'white',
     color: active ? 'var(--purple)' : '#555',
-    cursor: 'pointer', fontSize: 12, fontWeight: 500, fontFamily: 'DM Sans, sans-serif',
+    cursor: 'pointer', fontSize: 12, fontWeight: 500, 
   })
 
   return (
@@ -175,7 +175,7 @@ export default function NovoTemplate() {
             {[1, 2, 3].map(n => (
               <button key={n} onClick={() => setNumFases(n)} style={{
                 padding: '10px 24px', borderRadius: 10, cursor: 'pointer',
-                fontFamily: 'DM Sans, sans-serif', fontSize: 14, fontWeight: 600,
+                fontSize: 14, fontWeight: 600,
                 border: `1.5px solid ${fases.length === n ? 'var(--purple)' : 'rgba(0,0,0,0.12)'}`,
                 background: fases.length === n ? 'var(--purple-light)' : 'white',
                 color: fases.length === n ? 'var(--purple)' : '#555',
@@ -223,7 +223,7 @@ export default function NovoTemplate() {
                       style={{
                         width: '100%', padding: '10px 14px', background: '#FAFAFA',
                         border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                        borderRadius: exp ? '10px 10px 0 0' : 10, fontFamily: 'DM Sans, sans-serif',
+                        borderRadius: exp ? '10px 10px 0 0' : 10, 
                       }}
                     >
                       <span style={{ fontSize: 13, fontWeight: 600 }}>Dia {di + 1}</span>
@@ -317,7 +317,7 @@ export default function NovoTemplate() {
                             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                             padding: '10px', borderRadius: 10, border: '1.5px dashed rgba(0,0,0,0.15)',
                             background: 'transparent', color: 'var(--purple)', cursor: 'pointer',
-                            fontSize: 13, fontWeight: 600, fontFamily: 'DM Sans, sans-serif',
+                            fontSize: 13, fontWeight: 600, 
                           }}
                         >
                           <Plus size={14} /> Adicionar matéria
@@ -347,7 +347,7 @@ export default function NovoTemplate() {
             background: saving ? '#ccc' : 'var(--purple)',
             color: 'white', fontSize: 15, fontWeight: 600,
             cursor: saving ? 'not-allowed' : 'pointer',
-            fontFamily: 'DM Sans, sans-serif',
+            
           }}
         >
           {saving ? 'Salvando...' : 'Salvar modelo de prova'}

@@ -176,7 +176,7 @@ export default function NovaTarefa() {
                   border: `1.5px solid ${materia === m ? cor : 'rgba(0,0,0,0.12)'}`,
                   background: materia === m ? cor : 'transparent',
                   color: materia === m ? 'white' : '#666',
-                  cursor: 'pointer', fontFamily: 'DM Sans,sans-serif',
+                  cursor: 'pointer', 
                 }}>{m}</button>
               )
             })}

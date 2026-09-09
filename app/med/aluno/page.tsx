@@ -4,7 +4,7 @@ import { dbQuery, dbUpdate } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import Nav from '@/components/Nav'
-import { ChevronDown, ChevronUp, X } from 'lucide-react'
+import { ChevronDown, ChevronUp, X, FileText, TrendingUp, Award } from 'lucide-react'
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -29,11 +29,13 @@ const MATERIAS_MED = [
   'Matemática','Física','Química','Inglês','Sociologia',
   'Filosofia','Artes','Biologia','História','Geografia','Espanhol',
 ]
+// Paleta categórica das matérias — distinguíveis ENTRE SI (cor de dado, não da
+// marca). Tons médios espaçados no matiz, ajustados para daltonismo.
 const CORES: Record<string, string> = {
-  'Matemática':'#6366f1','Física':'#3b82f6','Química':'#10b981',
-  'Inglês':'#f59e0b','Sociologia':'#8b5cf6','Filosofia':'#ec4899',
-  'Artes':'#f97316','Biologia':'#22c55e','História':'#a78bfa',
-  'Geografia':'#14b8a6','Espanhol':'#ef4444',
+  'Matemática':'#2563EB','Física':'#0EA5E9','Química':'#059669',
+  'Inglês':'#D97706','Sociologia':'#7C3AED','Filosofia':'#DB2777',
+  'Artes':'#EA580C','Biologia':'#16A34A','História':'#9333EA',
+  'Geografia':'#0D9488','Espanhol':'#DC2626',
 }
 const PHASE = [
   { label: 'Fundamentos', icon: '🌱', color: '#ef4444', bg: '#fee2e2' },
@@ -119,8 +121,8 @@ function SCurveChart({ simulados }: { simulados: SimuladoScore[] }) {
       <div style={{ maxWidth: 420, margin: '0 auto' }}>
         <div style={{ position: 'relative' }}>
           <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ opacity: 0.2, display: 'block' }}>
-            <path d={refFill} fill="#8b5cf6" fillOpacity="0.15" />
-            <path d={refPath} fill="none" stroke="#8b5cf6" strokeWidth="2" />
+            <path d={refFill} fill="#12305f" fillOpacity="0.15" />
+            <path d={refPath} fill="none" stroke="#12305f" strokeWidth="2" />
           </svg>
           <div style={{
             position: 'absolute', inset: 0,
@@ -142,8 +144,8 @@ function SCurveChart({ simulados }: { simulados: SimuladoScore[] }) {
       <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ overflow: 'visible', display: 'block' }}>
         <defs>
           <linearGradient id="scRef" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#8b5cf6" stopOpacity="0.10" />
-            <stop offset="100%" stopColor="#8b5cf6" stopOpacity="0.01" />
+            <stop offset="0%" stopColor="#12305f" stopOpacity="0.10" />
+            <stop offset="100%" stopColor="#12305f" stopOpacity="0.01" />
           </linearGradient>
           <linearGradient id="scLine" x1="0" y1="0" x2="1" y2="0">
             <stop offset="0%" stopColor="#ef4444" />
@@ -197,7 +199,7 @@ function SCurveChart({ simulados }: { simulados: SimuladoScore[] }) {
               )}
               <circle cx={p.px} cy={p.py} r={isLast ? 5.5 : 4}
                 fill="white"
-                stroke={isLast ? cur.color : '#8b5cf6'}
+                stroke={isLast ? cur.color : '#12305f'}
                 strokeWidth={isLast ? 2.5 : 1.8}
                 filter={isLast ? 'url(#scGlow)' : undefined}
               />
@@ -283,8 +285,8 @@ function RadarChart({ scores }: { scores: MateriaScore[] }) {
     <svg width="100%" viewBox={`0 0 ${W} ${H}`}>
       <defs>
         <linearGradient id="radarFill" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#8b5cf6" stopOpacity="0.4" />
-          <stop offset="100%" stopColor="#8b5cf6" stopOpacity="0.1" />
+          <stop offset="0%" stopColor="#12305f" stopOpacity="0.4" />
+          <stop offset="100%" stopColor="#12305f" stopOpacity="0.1" />
         </linearGradient>
       </defs>
 
@@ -309,13 +311,13 @@ function RadarChart({ scores }: { scores: MateriaScore[] }) {
       })}
 
       {/* Student polygon */}
-      <polygon points={polyStr} fill="url(#radarFill)" stroke="#8b5cf6" strokeWidth="2" />
+      <polygon points={polyStr} fill="url(#radarFill)" stroke="#12305f" strokeWidth="2" />
 
       {/* Dots + labels */}
       {scores.map((s, i) => {
         const [dx, dy] = pt(i, s.pct / 100)
         const [lx, ly] = pt(i, 1.28)
-        const cor = CORES[s.materia] || '#8b5cf6'
+        const cor = CORES[s.materia] || '#12305f'
         const short = s.materia.length > 7 ? s.materia.slice(0, 6) + '.' : s.materia
         return (
           <g key={i}>
@@ -471,7 +473,7 @@ export default function MedAlunoHome() {
     width: '100%', padding: '10px 14px', borderRadius: 10,
     border: '1px solid rgba(0,0,0,0.12)', fontSize: 14,
     background: 'white', outline: 'none', boxSizing: 'border-box',
-    fontFamily: 'DM Sans, sans-serif', color: '#1a1a1a',
+    color: '#1a1a1a',
   }
 
   if (carregando) return (
@@ -503,14 +505,15 @@ export default function MedAlunoHome() {
         <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
           <div style={{
             width: 52, height: 52, borderRadius: '50%', flexShrink: 0,
-            background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+            background: 'linear-gradient(135deg, #12305f, #0a1a3a)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 18, fontWeight: 700, color: 'white',
+            fontSize: 18, fontWeight: 700, color: 'white', letterSpacing: '-0.01em',
+            boxShadow: '0 4px 14px rgba(15,37,84,0.28)',
           }}>
             {aluno.nome.split(' ').map(w => w[0]).slice(0, 2).join('')}
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 17, fontWeight: 700, color: '#1a1a1a', marginBottom: 4 }}>{aluno.nome}</div>
+            <div style={{ fontSize: 19, fontWeight: 700, color: 'var(--navy)', marginBottom: 4, letterSpacing: '-0.02em' }}>{aluno.nome}</div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, alignItems: 'center' }}>
               <span style={{ background: cfg.bg, color: cfg.color, fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 20 }}>
                 {cfg.label}
@@ -535,7 +538,7 @@ export default function MedAlunoHome() {
             fontSize: 13, fontWeight: aba === v ? 700 : 400,
             color: aba === v ? 'var(--purple)' : '#888',
             borderBottom: aba === v ? '2px solid var(--purple)' : '2px solid transparent',
-            fontFamily: 'DM Sans, sans-serif',
+            
           }}>{l}</button>
         ))}
       </div>
@@ -547,22 +550,21 @@ export default function MedAlunoHome() {
           {/* Stats row */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
             {[
-              { label: 'Simulados', value: simulados.length, unit: '',  icon: '📝', color: '#6366f1' },
-              { label: 'Média',     value: mediaGeral,       unit: '%', icon: '📊', color: '#8b5cf6', trend: tendencia },
-              { label: 'Melhor',    value: melhorNota,       unit: '%', icon: '⭐', color: '#f59e0b' },
+              { label: 'Simulados', value: simulados.length, unit: '',  Icon: FileText,   accent: 'var(--navy)' },
+              { label: 'Média',     value: mediaGeral,       unit: '%', Icon: TrendingUp, accent: 'var(--primary-dark)', trend: tendencia },
+              { label: 'Melhor',    value: melhorNota,       unit: '%', Icon: Award,      accent: 'var(--teal-dark)' },
             ].map(s => (
               <div key={s.label} style={{
-                background: 'white', borderRadius: 14, padding: '14px 10px',
-                border: '0.5px solid rgba(0,0,0,0.08)',
-                boxShadow: '0 1px 4px rgba(0,0,0,0.04)', textAlign: 'center',
+                background: 'white', borderRadius: 16, padding: '15px 12px',
+                border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)',
               }}>
-                <div style={{ fontSize: 18, marginBottom: 4 }}>{s.icon}</div>
-                <div style={{ fontSize: 22, fontWeight: 800, color: s.color, lineHeight: 1 }}>
-                  {s.value}{s.unit}
+                <s.Icon size={16} color={s.accent} strokeWidth={2.4} />
+                <div style={{ fontSize: 26, fontWeight: 800, color: 'var(--navy)', lineHeight: 1.05, marginTop: 8, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>
+                  {s.value}<span style={{ fontSize: 15, color: 'var(--text-hint)' }}>{s.unit}</span>
                 </div>
-                <div style={{ fontSize: 10, color: '#9ca3af', marginTop: 4, fontWeight: 500 }}>{s.label}</div>
+                <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 3, fontWeight: 500 }}>{s.label}</div>
                 {'trend' in s && s.trend !== null && s.trend !== undefined && (
-                  <div style={{ fontSize: 10, color: s.trend >= 0 ? '#22c55e' : '#ef4444', marginTop: 2, fontWeight: 600 }}>
+                  <div style={{ fontSize: 11, color: s.trend >= 0 ? 'var(--teal-dark)' : 'var(--red)', marginTop: 3, fontWeight: 700 }}>
                     {s.trend >= 0 ? '▲' : '▼'} {Math.abs(s.trend)}pp
                   </div>
                 )}
@@ -606,7 +608,7 @@ export default function MedAlunoHome() {
               <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 14 }}>Ranking por Matéria</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 11 }}>
                 {[...materias].sort((a, b) => b.pct - a.pct).map((m, idx) => {
-                  const cor = CORES[m.materia] || '#8b5cf6'
+                  const cor = CORES[m.materia] || '#12305f'
                   return (
                     <div key={m.materia}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
@@ -657,13 +659,13 @@ export default function MedAlunoHome() {
                         borderRadius: 12, padding: '12px 14px',
                         border: `0.5px solid ${isLatest ? 'rgba(99,102,241,0.25)' : 'rgba(0,0,0,0.06)'}`,
                         cursor: 'pointer', width: '100%', textAlign: 'left',
-                        fontFamily: 'DM Sans, sans-serif',
+                        
                       }}
                     >
                       <div style={{ flex: 1, minWidth: 0 }}>
                         {isLatest && (
                           <div style={{ marginBottom: 3 }}>
-                            <span style={{ fontSize: 9, fontWeight: 700, color: '#6366f1', background: '#EDE9FE', padding: '1px 7px', borderRadius: 10 }}>
+                            <span style={{ fontSize: 9, fontWeight: 700, color: 'var(--primary-dark)', background: 'var(--primary-light)', padding: '1px 7px', borderRadius: 10 }}>
                               MAIS RECENTE
                             </span>
                           </div>
@@ -748,7 +750,7 @@ export default function MedAlunoHome() {
               <button onClick={() => setVestOpen(v => !v)} style={{
                 width: '100%', padding: '10px 14px', background: 'white', border: 'none',
                 cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                fontSize: 13, fontFamily: 'DM Sans, sans-serif', color: vestibulares.length ? '#1a1a1a' : '#aaa',
+                fontSize: 13, color: vestibulares.length ? '#1a1a1a' : '#aaa',
               }}>
                 <span>{vestibulares.length > 0 ? `${vestibulares.length} selecionado(s)` : 'Selecionar vestibulares'}</span>
                 {vestOpen ? <ChevronUp size={16} color="#888" /> : <ChevronDown size={16} color="#888" />}
@@ -758,7 +760,7 @@ export default function MedAlunoHome() {
                   {VESTIBULARES.map(v => (
                     <button key={v} onClick={() => toggleVest(v)} style={{
                       padding: '4px 10px', borderRadius: 20, border: '1px solid', cursor: 'pointer',
-                      fontSize: 12, fontWeight: 500, fontFamily: 'DM Sans, sans-serif',
+                      fontSize: 12, fontWeight: 500, 
                       background: vestibulares.includes(v) ? 'var(--purple)' : 'white',
                       borderColor: vestibulares.includes(v) ? 'var(--purple)' : 'rgba(0,0,0,0.15)',
                       color: vestibulares.includes(v) ? 'white' : '#555',
@@ -790,7 +792,7 @@ export default function MedAlunoHome() {
             background: salvando ? '#ccc' : 'var(--purple)',
             color: 'white', fontSize: 15, fontWeight: 600,
             cursor: salvando ? 'not-allowed' : 'pointer',
-            fontFamily: 'DM Sans, sans-serif',
+            
           }}>
             {salvando ? 'Salvando...' : 'Salvar alterações'}
           </button>

@@ -495,7 +495,7 @@ export function RadarSection({ rankings }: { rankings: any[] }) {
               padding: '3px 10px', borderRadius: 12, fontSize: 10, border: 'none',
               background: modo === m ? '#f97316' : '#F1F5F9',
               color: modo === m ? 'white' : '#666',
-              cursor: 'pointer', fontFamily: 'DM Sans,sans-serif'
+              cursor: 'pointer'
             }}>{m === 'media' ? 'Média geral' : 'Último ciclo'}</button>
           ))}
         </div>

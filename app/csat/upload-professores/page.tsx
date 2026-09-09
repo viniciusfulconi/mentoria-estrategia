@@ -163,7 +163,7 @@ export default function UploadProfessores() {
             <select
               value={materia}
               onChange={e => setMateria(e.target.value)}
-              style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '0.5px solid rgba(0,0,0,0.12)', background: '#F7F6F3', fontSize: 13, fontFamily: 'DM Sans, sans-serif' }}
+              style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '0.5px solid rgba(0,0,0,0.12)', background: '#F7F6F3', fontSize: 13 }}
             >
               {MATERIAS.map(m => <option key={m} value={m}>{m}</option>)}
             </select>

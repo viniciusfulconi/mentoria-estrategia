@@ -138,13 +138,13 @@ export default function Login() {
               <label style={{ fontSize: 12, fontWeight: 500, color: '#555', display: 'block', marginBottom: 6 }}>E-mail</label>
               <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="seu@email.com"
                 onKeyDown={e => e.key === 'Enter' && entrar()}
-                style={{ width: '100%', padding: '12px 16px', borderRadius: 12, border: '1.5px solid rgba(0,0,0,0.1)', background: 'white', color: '#1a1a1a', fontSize: 14, fontFamily: 'DM Sans, sans-serif', outline: 'none', boxSizing: 'border-box' }} />
+                style={{ width: '100%', padding: '12px 16px', borderRadius: 12, border: '1.5px solid rgba(0,0,0,0.1)', background: 'white', color: '#1a1a1a', fontSize: 14, outline: 'none', boxSizing: 'border-box' }} />
             </div>
             <div>
               <label style={{ fontSize: 12, fontWeight: 500, color: '#555', display: 'block', marginBottom: 6 }}>Senha</label>
               <input type="password" value={senha} onChange={e => setSenha(e.target.value)} placeholder="••••••••"
                 onKeyDown={e => e.key === 'Enter' && entrar()}
-                style={{ width: '100%', padding: '12px 16px', borderRadius: 12, border: '1.5px solid rgba(0,0,0,0.1)', background: 'white', color: '#1a1a1a', fontSize: 14, fontFamily: 'DM Sans, sans-serif', outline: 'none', boxSizing: 'border-box' }} />
+                style={{ width: '100%', padding: '12px 16px', borderRadius: 12, border: '1.5px solid rgba(0,0,0,0.1)', background: 'white', color: '#1a1a1a', fontSize: 14, outline: 'none', boxSizing: 'border-box' }} />
             </div>
 
             {erro && (
@@ -156,7 +156,7 @@ export default function Login() {
               background: loading ? '#aaa' : '#f97316', color: 'white',
               border: 'none', fontSize: 15, fontWeight: 600,
               cursor: loading ? 'not-allowed' : 'pointer',
-              fontFamily: 'DM Sans, sans-serif', marginTop: 4,
+              marginTop: 4,
             }}>
               {loading ? 'Entrando...' : 'Entrar'}
             </button>
@@ -165,7 +165,7 @@ export default function Login() {
           <div style={{ textAlign: 'center', marginTop: 16 }}>
             <button
               onClick={() => { setRecuperando(v => !v); setRecuperacaoEnviada(false) }}
-              style={{ background: 'none', border: 'none', fontSize: 13, color: '#f97316', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif' }}
+              style={{ background: 'none', border: 'none', fontSize: 13, color: '#f97316', cursor: 'pointer' }}
             >
               Esqueci minha senha
             </button>
@@ -189,12 +189,12 @@ export default function Login() {
                     value={emailRecuperacao}
                     onChange={e => setEmailRecuperacao(e.target.value)}
                     placeholder="seu@email.com"
-                    style={{ width: '100%', padding: '10px 14px', borderRadius: 10, border: '1.5px solid rgba(0,0,0,0.1)', background: '#F7F6F3', fontSize: 14, fontFamily: 'DM Sans, sans-serif', outline: 'none', boxSizing: 'border-box', marginBottom: 10 }}
+                    style={{ width: '100%', padding: '10px 14px', borderRadius: 10, border: '1.5px solid rgba(0,0,0,0.1)', background: '#F7F6F3', fontSize: 14, outline: 'none', boxSizing: 'border-box', marginBottom: 10 }}
                   />
                   <button
                     onClick={enviarRecuperacao}
                     disabled={loadingRecuperacao || !emailRecuperacao}
-                    style={{ width: '100%', padding: '10px', borderRadius: 10, background: loadingRecuperacao || !emailRecuperacao ? '#aaa' : '#f97316', color: 'white', border: 'none', fontSize: 14, fontWeight: 500, cursor: loadingRecuperacao || !emailRecuperacao ? 'not-allowed' : 'pointer', fontFamily: 'DM Sans, sans-serif' }}
+                    style={{ width: '100%', padding: '10px', borderRadius: 10, background: loadingRecuperacao || !emailRecuperacao ? '#aaa' : '#f97316', color: 'white', border: 'none', fontSize: 14, fontWeight: 500, cursor: loadingRecuperacao || !emailRecuperacao ? 'not-allowed' : 'pointer' }}
                   >
                     {loadingRecuperacao ? 'Enviando...' : 'Enviar link'}
                   </button>

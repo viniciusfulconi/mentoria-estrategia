@@ -196,7 +196,7 @@ export default function Termometro({ rankings }: Props) {
         {([2024, 2025] as Ano[]).map(ano => (
           <button key={ano} onClick={() => setAnoITA(ano)} style={{
             padding: '6px 20px', borderRadius: 20, fontSize: 12, fontWeight: 600,
-            border: 'none', cursor: 'pointer', fontFamily: 'DM Sans,sans-serif',
+            border: 'none', cursor: 'pointer', 
             background: anoITA === ano ? '#f97316' : '#F1F5F9',
             color: anoITA === ano ? 'white' : '#666',
           }}>

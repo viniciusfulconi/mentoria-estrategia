@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { carregarAlunos, carregarMaterias, type AlunoBasico } from '@/lib/alunos'
 import Nav from '@/components/Nav'
+import PageHeader from '@/components/PageHeader'
 import {
   criarRevisoes730, flattenRevisoes, stepColumn, todayISO,
   type Revisao730, type RevisaoStep,
@@ -146,26 +147,21 @@ export default function Revisoes() {
   return (
     <div style={{ paddingBottom: 90 }}>
       <Nav />
-      <div style={{
-        background: 'white', borderBottom: '0.5px solid rgba(0,0,0,0.08)', padding: '16px 20px',
-        position: 'sticky', top: 0, zIndex: 10, display: 'flex', alignItems: 'center', gap: 12,
-      }}>
-        <CalendarClock size={19} color="var(--purple)" style={{ flex: 'none' }} />
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 17, fontWeight: 700 }}>Revisões 7-15-30</div>
-          <div style={{ fontSize: 11, color: '#999' }}>
-            {isAluno ? 'Conteúdo fechado volta em 7, 15 e 30 dias' : 'Acompanhe as revisões dos seus alunos'}
-          </div>
-        </div>
-        {alunoAtivo && (
+      <PageHeader
+        eyebrow={isAluno ? 'Conteúdo fechado volta em 7, 15 e 30 dias' : 'Acompanhe as revisões dos seus alunos'}
+        title={<span style={{ display: 'inline-flex', alignItems: 'center', gap: 9 }}>
+          <CalendarClock size={20} color="var(--primary)" /> Revisões 7-15-30
+        </span>}
+        actions={alunoAtivo && (
           <button onClick={() => { setErro(''); setModal(true) }} style={{
             display: 'flex', alignItems: 'center', gap: 6, background: 'var(--purple)', color: 'white',
             border: 'none', padding: '9px 14px', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer',
+            boxShadow: '0 2px 8px rgba(249,115,22,0.32)',
           }}>
             <Plus size={15} /> Fechei um conteúdo
           </button>
         )}
-      </div>
+      />
 
       <div style={{ padding: 16, maxWidth: 720, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 12 }}>
         {erro && !modal && (

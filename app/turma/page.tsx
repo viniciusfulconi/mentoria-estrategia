@@ -161,14 +161,14 @@ export default function Turma() {
           padding: '5px 12px', borderRadius: 20, fontSize: 11, border: '0.5px solid rgba(0,0,0,0.12)',
           background: cicloAtivo === 'geral' ? '#1a1a1a' : 'transparent',
           color: cicloAtivo === 'geral' ? 'white' : '#666',
-          cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'DM Sans,sans-serif'
+          cursor: 'pointer', whiteSpace: 'nowrap'
         }}>Geral</button>
         {ciclos.map(c => (
           <button key={c} onClick={() => setCicloAtivo(c)} style={{
             padding: '5px 12px', borderRadius: 20, fontSize: 11, border: '0.5px solid rgba(0,0,0,0.12)',
             background: cicloAtivo === c ? '#f97316' : 'transparent',
             color: cicloAtivo === c ? 'white' : '#666',
-            cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'DM Sans,sans-serif'
+            cursor: 'pointer', whiteSpace: 'nowrap'
           }}>
             {c.replace('Ciclo ', 'C').replace(' - ITA', '').replace(' - IME', '')}
           </button>
@@ -182,7 +182,7 @@ export default function Turma() {
             padding: '4px 12px', borderRadius: 16, fontSize: 11, border: 'none',
             background: aba === a.id ? '#1a1a1a' : '#F1F5F9',
             color: aba === a.id ? 'white' : '#666',
-            cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'DM Sans,sans-serif'
+            cursor: 'pointer', whiteSpace: 'nowrap'
           }}>{a.label}</button>
         ))}
       </div>
@@ -288,7 +288,7 @@ export default function Turma() {
                       border: 'none',
                       background: anoITA === ano ? '#f97316' : '#F1F5F9',
                       color: anoITA === ano ? 'white' : '#666',
-                      cursor: 'pointer', fontFamily: 'DM Sans,sans-serif',
+                      cursor: 'pointer', 
                     }}>ITA {ano}</button>
                   ))}
                 </div>

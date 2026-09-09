@@ -222,7 +222,7 @@ export default function AlunoSimuladoDetalhe() {
               background: tab === v ? 'white' : 'transparent',
               color: tab === v ? '#1a1a1a' : '#888',
               boxShadow: tab === v ? '0 1px 2px rgba(0,0,0,0.08)' : 'none',
-              fontFamily: 'DM Sans, sans-serif',
+              
             }}>{l}</button>
           ))}
         </div>
@@ -261,7 +261,7 @@ export default function AlunoSimuladoDetalhe() {
                         background: COR[s].bg, color: COR[s].text,
                         border: av ? '2.5px solid rgba(0,0,0,0.25)' : '2px solid transparent',
                         cursor: 'pointer', fontSize: 11, fontWeight: 700,
-                        fontFamily: 'DM Sans, sans-serif',
+                        
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         transition: 'transform 0.1s',
                         position: 'relative',
@@ -386,7 +386,7 @@ export default function AlunoSimuladoDetalhe() {
                       onClick={() => salvarAutoavaliacao(q.id, key)}
                       style={{
                         padding: '5px 12px', borderRadius: 20, cursor: 'pointer',
-                        fontSize: 12, fontFamily: 'DM Sans, sans-serif', fontWeight: motivoAtual === key ? 600 : 400,
+                        fontSize: 12, fontWeight: motivoAtual === key ? 600 : 400,
                         border: `1px solid ${motivoAtual === key ? 'var(--purple)' : 'rgba(0,0,0,0.12)'}`,
                         background: motivoAtual === key ? 'var(--purple)' : 'white',
                         color: motivoAtual === key ? 'white' : '#555',
@@ -482,7 +482,7 @@ export default function AlunoSimuladoDetalhe() {
               {pctTurma != null && (
                 <div style={{ marginBottom: 16 }}>
                   <div style={{ height: 6, borderRadius: 3, background: '#F1F5F9', overflow: 'hidden' }}>
-                    <div style={{ height: '100%', width: `${pctTurma}%`, borderRadius: 3, background: '#6366f1' }} />
+                    <div style={{ height: '100%', width: `${pctTurma}%`, borderRadius: 3, background: 'var(--navy)' }} />
                   </div>
                   <div style={{ fontSize: 11, color: '#aaa', marginTop: 4, textAlign: 'right' }}>
                     {pctTurma >= 70 ? 'Questão fácil' : pctTurma >= 40 ? 'Questão média' : 'Questão difícil'}
@@ -503,7 +503,7 @@ export default function AlunoSimuladoDetalhe() {
                         onClick={() => salvarAutoavaliacao(questaoSelecionada.id, key)}
                         style={{
                           padding: '8px 16px', borderRadius: 20, cursor: 'pointer',
-                          fontSize: 13, fontFamily: 'DM Sans, sans-serif', fontWeight: motivoAtual === key ? 600 : 400,
+                          fontSize: 13, fontWeight: motivoAtual === key ? 600 : 400,
                           border: `1.5px solid ${motivoAtual === key ? 'var(--purple)' : 'rgba(0,0,0,0.12)'}`,
                           background: motivoAtual === key ? 'var(--purple)' : 'white',
                           color: motivoAtual === key ? 'white' : '#555',

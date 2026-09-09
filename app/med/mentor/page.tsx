@@ -90,14 +90,23 @@ export default function MentorMed() {
     return alunos.filter(a => a.nome.toLowerCase().includes(busca.toLowerCase()))
   }, [alunos, busca])
 
-  function Avatar({ nome }: { nome: string }) {
-    const iniciais = nome.split(' ').map(w => w[0]).slice(0, 2).join('')
+  // Avatar com cor derivada do nome — a turma inteira em laranja vira um borrão;
+  // uma paleta suave por inicial deixa a lista escaneável num relance.
+  const AVATAR_TONS = [
+    { bg: '#FFF1E7', fg: '#C2410C' }, { bg: '#E8F0FE', fg: '#1D4ED8' },
+    { bg: '#E7F7EF', fg: '#047857' }, { bg: '#F3ECFC', fg: '#7C3AED' },
+    { bg: '#FDECF2', fg: '#BE185D' }, { bg: '#FEF6E0', fg: '#B45309' },
+  ]
+  function Avatar({ nome, size = 40 }: { nome: string; size?: number }) {
+    const iniciais = nome.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase()
+    const cod = [...nome].reduce((a, c) => a + c.charCodeAt(0), 0)
+    const t = AVATAR_TONS[cod % AVATAR_TONS.length]
     return (
       <div style={{
-        width: 38, height: 38, borderRadius: '50%', flexShrink: 0,
-        background: 'var(--purple-light)',
+        width: size, height: size, borderRadius: '50%', flexShrink: 0,
+        background: t.bg, color: t.fg,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: 13, fontWeight: 700, color: 'var(--purple)',
+        fontSize: size * 0.34, fontWeight: 700, letterSpacing: '-0.01em',
       }}>
         {iniciais}
       </div>
@@ -110,11 +119,32 @@ export default function MentorMed() {
 
       {/* Header */}
       <div style={{
-        background: 'white', borderBottom: '0.5px solid rgba(0,0,0,0.08)',
-        padding: '16px 20px',
+        background: 'white', borderBottom: '1px solid var(--border)',
+        padding: '20px 20px 16px',
       }}>
-        <div style={{ fontSize: 11, color: '#999', marginBottom: 2 }}>Mentor · Medicina</div>
-        <div style={{ fontSize: 17, fontWeight: 700 }}>{perfil?.mentor_nome || perfil?.nome}</div>
+        <div style={{
+          fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase',
+          color: 'var(--primary-dark)', marginBottom: 4,
+        }}>Mentor · Medicina</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--navy)' }}>
+            {perfil?.mentor_nome || perfil?.nome}
+          </div>
+          {!carregando && mentorId && (
+            <div style={{ display: 'flex', gap: 6, marginLeft: 'auto' }}>
+              {pendentes.length > 0 && (
+                <span style={{
+                  fontSize: 12, fontWeight: 700, padding: '4px 11px', borderRadius: 20,
+                  background: '#FEF9C3', color: '#854d0e',
+                }}>{pendentes.length} pendente{pendentes.length > 1 ? 's' : ''}</span>
+              )}
+              <span style={{
+                fontSize: 12, fontWeight: 700, padding: '4px 11px', borderRadius: 20,
+                background: 'var(--navy-light)', color: 'var(--navy)',
+              }}>{alunos.length} aluno{alunos.length === 1 ? '' : 's'}</span>
+            </div>
+          )}
+        </div>
       </div>
 
       {carregando ? (
@@ -197,7 +227,7 @@ export default function MentorMed() {
                           flex: 1, padding: '10px', borderRadius: 10,
                           border: '1px solid rgba(0,0,0,0.12)', background: 'white',
                           fontSize: 13, fontWeight: 600, cursor: processando === aluno.id ? 'not-allowed' : 'pointer',
-                          color: '#888', fontFamily: 'DM Sans, sans-serif',
+                          color: '#888', 
                           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                         }}
                       >
@@ -211,7 +241,7 @@ export default function MentorMed() {
                           background: processando === aluno.id ? '#ccc' : 'var(--purple)',
                           color: 'white', fontSize: 13, fontWeight: 600,
                           cursor: processando === aluno.id ? 'not-allowed' : 'pointer',
-                          fontFamily: 'DM Sans, sans-serif',
+                          
                           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                         }}
                       >
@@ -247,7 +277,7 @@ export default function MentorMed() {
                   style={{
                     width: '100%', padding: '9px 12px 9px 34px', borderRadius: 10,
                     border: '1px solid rgba(0,0,0,0.10)', fontSize: 13, background: 'white',
-                    fontFamily: 'DM Sans, sans-serif', outline: 'none', boxSizing: 'border-box' as const,
+                    outline: 'none', boxSizing: 'border-box' as const,
                   }}
                 />
               </div>
@@ -267,15 +297,16 @@ export default function MentorMed() {
                       href={`/med/alunos/${aluno.id}`}
                       style={{ textDecoration: 'none' }}
                     >
-                      <div style={{
-                        background: 'white', borderRadius: 14, padding: '14px 16px',
-                        border: '0.5px solid rgba(0,0,0,0.08)',
-                        boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-                        display: 'flex', alignItems: 'center', gap: 12,
+                      <div className="aluno-card" style={{
+                        background: 'white', borderRadius: 14, padding: '13px 15px',
+                        border: '1px solid var(--border)',
+                        boxShadow: 'var(--shadow-xs)',
+                        display: 'flex', alignItems: 'center', gap: 13,
+                        transition: 'box-shadow .18s ease, transform .18s ease, border-color .18s ease',
                       }}>
                         <Avatar nome={aluno.nome} />
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 14, fontWeight: 600, color: '#1a1a1a', marginBottom: 4 }}>
+                          <div style={{ fontSize: 14.5, fontWeight: 600, color: 'var(--navy)', marginBottom: 5, letterSpacing: '-0.01em' }}>
                             {aluno.nome}
                           </div>
                           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, alignItems: 'center' }}>
@@ -293,7 +324,7 @@ export default function MentorMed() {
                             )}
                           </div>
                         </div>
-                        <ChevronRight size={18} color="#ccc" />
+                        <ChevronRight size={17} color="var(--text-hint)" className="aluno-chevron" style={{ transition: 'transform .18s ease' }} />
                       </div>
                     </Link>
                   )

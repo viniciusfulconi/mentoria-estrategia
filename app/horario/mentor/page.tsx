@@ -91,7 +91,7 @@ export default function MentorEstudo() {
                   border: `1.5px solid ${form.materia === m ? cor : 'rgba(0,0,0,0.12)'}`,
                   background: form.materia === m ? cor : 'transparent',
                   color: form.materia === m ? 'white' : '#666',
-                  cursor: 'pointer', fontFamily: 'DM Sans,sans-serif'
+                  cursor: 'pointer'
                 }}>{m}</button>
               )
             })}
@@ -116,7 +116,7 @@ export default function MentorEstudo() {
                 border: '0.5px solid rgba(0,0,0,0.12)',
                 background: repeticao === op.val ? '#f97316' : 'transparent',
                 color: repeticao === op.val ? 'white' : '#666',
-                cursor: 'pointer', fontFamily: 'DM Sans,sans-serif'
+                cursor: 'pointer'
               }}>{op.label}</button>
             ))}
           </div>

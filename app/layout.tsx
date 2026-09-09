@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Plus_Jakarta_Sans } from 'next/font/google'
+import { Plus_Jakarta_Sans, Outfit } from 'next/font/google'
 import './globals.css'
 import '@excalidraw/excalidraw/index.css'
 import 'katex/dist/katex.min.css'
@@ -13,6 +13,14 @@ const jakarta = Plus_Jakarta_Sans({
   display: 'swap',
 })
 
+// Display geométrica para títulos e marca — o corpo continua na Jakarta.
+const outfit = Outfit({
+  subsets: ['latin'],
+  weight: ['500', '600', '700', '800'],
+  variable: '--font-display',
+  display: 'swap',
+})
+
 export const metadata: Metadata = {
   title: 'Mentoria Estratégia',
   description: 'Plataforma de coordenação de mentoria',
@@ -20,7 +28,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt-BR" className={jakarta.variable}>
+    <html lang="pt-BR" className={`${jakarta.variable} ${outfit.variable}`}>
       <body>
         <AuthProvider>
           <AppShell>

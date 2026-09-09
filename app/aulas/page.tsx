@@ -48,7 +48,7 @@ export default function Aulas() {
           <button key={f} onClick={() => setFiltro(f)} style={{
             padding: '5px 12px', borderRadius: 20, fontSize: 12, border: '0.5px solid rgba(0,0,0,0.12)',
             background: filtro === f ? '#f97316' : 'transparent', color: filtro === f ? 'white' : '#666',
-            cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'DM Sans,sans-serif'
+            cursor: 'pointer', whiteSpace: 'nowrap'
           }}>{f === 'todas' ? 'Todas' : f}</button>
         ))}
       </div>

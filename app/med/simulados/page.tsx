@@ -57,7 +57,7 @@ export default function SimuladosMed() {
             background: 'white', border: '1px solid rgba(0,0,0,0.12)',
             color: '#555', textDecoration: 'none',
             padding: '9px 14px', borderRadius: 10, fontSize: 13, fontWeight: 500,
-            fontFamily: 'DM Sans, sans-serif',
+            
           }}>
             <FileText size={14} /> Modelos
           </Link>
@@ -65,7 +65,7 @@ export default function SimuladosMed() {
             display: 'flex', alignItems: 'center', gap: 5,
             background: 'var(--purple)', color: 'white', textDecoration: 'none',
             padding: '9px 14px', borderRadius: 10, fontSize: 13, fontWeight: 600,
-            fontFamily: 'DM Sans, sans-serif',
+            
           }}>
             <Plus size={15} /> Novo
           </Link>
@@ -86,7 +86,7 @@ export default function SimuladosMed() {
               display: 'inline-flex', alignItems: 'center', gap: 6,
               background: 'var(--purple)', color: 'white', textDecoration: 'none',
               padding: '10px 20px', borderRadius: 10, fontSize: 13, fontWeight: 600,
-              fontFamily: 'DM Sans, sans-serif',
+              
             }}>
               <Plus size={14} /> Criar primeiro simulado
             </Link>}
