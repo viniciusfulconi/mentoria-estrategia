@@ -5,16 +5,21 @@
 // do Play (`questoes` e `simulado-enem-pdfs`). Os uuid das questões são
 // preservados, senão o jsonb `areas` das provas deixa de casar.
 //
-//   node scripts/import_enem/copiar_acervo.mjs check    # só relata
-//   node scripts/import_enem/copiar_acervo.mjs insert   # copia (idempotente)
+//   node scripts/import_enem/copiar_acervo.mjs check  <caminho-do-.env.local-de-origem>
+//   node scripts/import_enem/copiar_acervo.mjs insert <caminho-do-.env.local-de-origem>
 //
-// Lê as credenciais dos dois .env.local. Nada é escrito no Play.
+// JÁ FOI EXECUTADO — o acervo está inteiro neste projeto e as figuras/cadernos
+// foram trazidos para o Storage daqui por `desvincular_play.mjs`. Este arquivo
+// fica só como registro de como o acervo entrou. O caminho da origem é
+// argumento de propósito: a plataforma do trabalho não referencia projeto
+// pessoal nenhum. Nada é escrito na origem.
 
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 
 const MODO = process.argv[2] || 'check'
-const PLAY = '/Users/viniciusfulconi/Desktop/01 - Play Aprovação/play-aprovacao/.env.local'
+const PLAY = process.argv[3]
+if (!PLAY) throw new Error('informe o caminho do .env.local do projeto de origem como 2º argumento')
 const MENT = fileURLToPath(new URL('../../.env.local', import.meta.url))
 
 const env = (p) => Object.fromEntries(
